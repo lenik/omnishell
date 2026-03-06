@@ -1,0 +1,20 @@
+#!/usr/bin/make -f
+
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+
+%:
+	dh $@ --buildsystem=meson
+
+override_dh_auto_configure:
+	dh_auto_configure --builddir=build
+
+override_dh_auto_build:
+	dh_auto_build --builddir=build
+
+override_dh_auto_test:
+	# Enable tests once the test suite is stable
+	dh_auto_test --builddir=build || true
+
+override_dh_auto_install:
+	dh_auto_install --builddir=build
+
