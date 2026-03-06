@@ -1,0 +1,46 @@
+Source: omnishell
+Section: x11
+Priority: optional
+Maintainer: OmniShell Developers <omnishell@example.com>
+Build-Depends:
+ debhelper-compat (= 13),
+ meson,
+ ninja-build,
+ pkg-config,
+ libwxgtk3.2-dev
+    | libwxgtk3.0-gtk3-dev,
+ libbas-c-dev,
+ libbas-cpp-dev,
+ libbas-ui-dev
+Standards-Version: 4.6.2
+Rules-Requires-Root: no
+
+Package: omnishell
+Section: x11
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, libomnishell1 (= ${binary:Version})
+Description: Desktop-like shell environment in a single application
+ OmniShell provides a Windows-style desktop environment implemented as a
+ single wxWidgets application. It offers a desktop, taskbar, start menu,
+ system tray and a modular application system backed by a virtual file
+ system abstraction layer.
+
+Package: libomnishell1
+Section: libs
+Architecture: any
+Multi-Arch: same
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: shared library for OmniShell desktop environment
+ This package contains the shared library used by OmniShell-based
+ applications. It provides core module infrastructure, shell integration
+ helpers and common UI/runtime functionality.
+
+Package: libomnishell-dev
+Section: libdevel
+Architecture: any
+Multi-Arch: same
+Depends: libomnishell1 (= ${binary:Version}), ${misc:Depends}
+Description: development files for OmniShell desktop environment
+ This package contains the development headers, pkg-config file and
+ unversioned shared library symlink needed to build applications and
+ services against libomnishell.

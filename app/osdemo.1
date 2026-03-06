@@ -1,0 +1,62 @@
+.TH osdemo 1 "March 2026" "OmniShell 1.0.0" "User Commands"
+.SH NAME
+osdemo \- OmniShell desktop environment demo launcher
+.SH SYNOPSIS
+.B osdemo
+[\fB-D\fR]
+[\fB-l\fR \fIPATH\fR]
+[\fB-o\fR \fIPATH\fR]
+.SH DESCRIPTION
+\fBosdemo\fR launches the OmniShell desktop environment, a Windows\-style
+shell implemented as a single wxWidgets application.
+It provides a desktop, taskbar, start menu, system tray and a modular
+application system backed by a virtual file system (VFS) abstraction.
+.P
+By default a local VFS volume is created for the user's home directory.
+Additional volumes and startup files can be specified on the command line.
+.SH OPTIONS
+.TP
+\fB-D\fR, \fB--dump\fR
+Dump the directory tree of the default VFS volume to standard output and
+exit. No GUI is started in this mode.
+.TP
+\fB-l\fR \fIPATH\fR, \fB--local\fR=\fIPATH\fR
+Add a local filesystem volume rooted at \fIPATH\fR.
+This option may be specified multiple times to register several volumes.
+.TP
+\fB-o\fR \fIPATH\fR, \fB--open\fR=\fIPATH\fR
+Request that OmniShell opens \fIPATH\fR at startup, where \fIPATH\fR is
+interpreted relative to the first configured VFS volume.
+This option may be specified multiple times.
+.TP
+\fB-h\fR, \fB--help\fR
+Show a summary of options and exit.
+.TP
+\fB-V\fR, \fB--version\fR
+Show version information and exit.
+.SH EXAMPLES
+.TP
+Start OmniShell using the home directory as the default volume:
+.RS
+.nf
+osdemo
+.fi
+.RE
+.TP
+Add an extra volume and open a file on startup:
+.RS
+.nf
+osdemo -l /mnt/data -o /documents/report.txt
+.fi
+.RE
+.TP
+Dump the contents of the default volume:
+.RS
+.nf
+osdemo --dump
+.fi
+.RE
+.SH SEE ALSO
+The project README and VFS documentation shipped with the \fBomnishell\fR
+package.
+

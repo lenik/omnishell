@@ -1,0 +1,9 @@
+#!/bin/bash
+
+while read svg; do
+    
+    #dir="${svg%/*}"
+    #pngdir=${dir/\/svg\//\/png\/}
+    svg2assets -o "$pngdir" "$svg"
+
+done < <(find -name '*.svg')
