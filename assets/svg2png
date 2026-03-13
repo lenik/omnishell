@@ -4,6 +4,6 @@ while read svg; do
     
     #dir="${svg%/*}"
     #pngdir=${dir/\/svg\//\/png\/}
-    svg2assets -o "$pngdir" "$svg"
+    svg2assets -s 16,24,32,48 -o "$pngdir" "$svg"
 
 done < <(find -name '*.svg')
