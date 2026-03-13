@@ -10,7 +10,7 @@ class VolumeManager;
 namespace os {
 
 class App {
-public:
+  public:
     std::unique_ptr<VolumeManager> volumeManager;
     std::vector<std::string> startFiles;
 
@@ -19,6 +19,8 @@ public:
 
     App(const App&) = delete;
     App& operator=(const App&) = delete;
+
+    void parseOptions(int argc, char* argv[]);
 };
 
 extern App app;
@@ -26,4 +28,3 @@ extern App app;
 } // namespace os
 
 #endif
-

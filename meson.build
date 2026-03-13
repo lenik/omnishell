@@ -2,6 +2,8 @@ project('omnishell', 'cpp',
   version : '1.0.0',
   default_options : ['warning_level=0', 'cpp_std=c++17'])
 
+pkgdatadir = get_option('datadir') / meson.project_name()
+
 fs = import('fs')
 cpp = meson.get_compiler('cpp')
 
@@ -59,11 +61,12 @@ cpp_sources = files(
   'src/shell/Taskbar.cpp',
   'src/shell/StartMenu.cpp',
   'src/shell/Shell.cpp',
-  'src/app/notepad/NotepadApp.cpp',
-  'src/app/controlpanel/ControlPanelApp.cpp',
+  'src/mod/notepad/NotepadApp.cpp',
+  'src/mod/controlpanel/ControlPanelApp.cpp',
   'src/ui/dialogs/ChooseFileDialog.cpp',
   'src/ui/dialogs/ChooseFolderDialog.cpp',
   'src/ui/dialogs/ChoosePrinterDialog.cpp',
+  'src/wx/LabeledIcon.cpp',
 )
 
 # Assets will be zipped and linked as a section in the executable
@@ -130,13 +133,20 @@ exe_inc = [
 
 lib_omnishell = library('omnishell',
     cpp_sources,
+    assets_o,
+    'src/module.cpp',
     dependencies : exe_deps,
     include_directories : exe_inc,
-    cpp_args : cpp_nowarn + ['-DLOGGER_NAME=os'],
+    cpp_args : cpp_nowarn + ['-DLOGGER_NAME=omni'],
     override_options: ['b_lundef=false'], # Allows undefined symbols at link time
     version : meson.project_version(),
     soversion : meson.project_version().split('.')[0],
     install : true,
+)
+
+omnishell_dep = declare_dependency(
+    link_with: lib_omnishell,
+    include_directories: exe_inc
 )
 
 # ---- pkg-config ----
@@ -214,8 +224,10 @@ foreach test_rel_path : all_test_files
     # Create the executable (LOGGER_NAME so program.h and logger.c work in tests)
     test_exe = executable(test_name,
         all_sources,
+        assets_o,
+        'src/module.cpp',
         include_directories : exe_inc,
-        dependencies : exe_deps,
+        dependencies : exe_deps + [omnishell_dep],
         cpp_args : cpp_nowarn + ['-DLOGGER_NAME=' + test_name],
         install : false,
     )
@@ -237,14 +249,20 @@ endif
 
 foreach app_cpp : app_cpp_list
     app_name = app_cpp.split('/')[-1].replace('.cpp', '')
+    if app_name.startswith('os')
+        install_dir = get_option('bindir')
+    else
+        install_dir = pkgdatadir / 'app'
+    endif
     app_exe = executable(app_name,
         app_cpp,
         assets_o,
-        link_with : lib_omnishell,
+        'src/module.cpp',
         include_directories : exe_inc,
-        dependencies : exe_deps,
+        dependencies : exe_deps + [omnishell_dep],
         cpp_args : cpp_nowarn + ['-DLOGGER_NAME=' + app_name],
         install : true,
+        install_dir : install_dir,
     )
 endforeach
 

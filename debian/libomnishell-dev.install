@@ -1,2 +1,3 @@
 usr/include/omnishell
+usr/lib/*/libomnishell.so
 usr/lib/*/pkgconfig/omnishell.pc

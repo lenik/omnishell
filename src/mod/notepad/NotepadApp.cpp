@@ -17,19 +17,18 @@ namespace os {
 OMNISHELL_REGISTER_MODULE("omnishell.notepad", NotepadApp)
 
 static wxString displayNameFromPath(const std::string& path) {
-    if (path.empty()) return "Untitled";
+    if (path.empty())
+        return "Untitled";
     size_t last = path.rfind('/');
-    if (last == std::string::npos) return wxString(path);
-    if (last + 1 >= path.size()) return "Untitled";
+    if (last == std::string::npos)
+        return wxString(path);
+    if (last + 1 >= path.size())
+        return "Untitled";
     return wxString(path.substr(last + 1));
 }
 
 NotepadApp::NotepadApp()
-    : frame_(nullptr)
-    , editor_(nullptr)
-    , statusBar_(nullptr)
-    , modified_(false)
-{
+    : frame_(nullptr), editor_(nullptr), statusBar_(nullptr), modified_(false) {
     initializeMetadata();
 }
 
@@ -45,7 +44,13 @@ void NotepadApp::initializeMetadata() {
     label = "Notepad";
     description = "Simple text editor";
     doc = "A basic text editor for viewing and editing text files.";
-    image = ImageSet(Path("streamline-vectors/core/pop/interface-essential/blank-notepad.svg"));
+
+    std::string dir = "streamline-vectors/core/pop/interface-essential";
+    image = ImageSet(Path(dir, "blank-notepad.svg"))
+                .scale(16, 16, Path(dir, "blank-notepad-16x16.png"))
+                .scale(24, 24, Path(dir, "blank-notepad-24x24.png"))
+                .scale(32, 32, Path(dir, "blank-notepad-32x32.png"))
+                .scale(48, 48, Path(dir, "blank-notepad-48x48.png"));
 }
 
 void NotepadApp::run() {
@@ -60,12 +65,10 @@ void NotepadApp::run() {
 }
 
 void NotepadApp::createMainWindow() {
-    frame_ = new wxFrame(nullptr, wxID_ANY, "Notepad",
-                          wxDefaultPosition, wxSize(800, 600));
+    frame_ = new wxFrame(nullptr, wxID_ANY, "Notepad", wxDefaultPosition, wxSize(800, 600));
     createMenuBar();
-    editor_ = new wxTextCtrl(frame_, wxID_ANY, "",
-                              wxDefaultPosition, wxDefaultSize,
-                              wxTE_MULTILINE | wxTE_RICH2 | wxTE_PROCESS_ENTER);
+    editor_ = new wxTextCtrl(frame_, wxID_ANY, "", wxDefaultPosition, wxDefaultSize,
+                             wxTE_MULTILINE | wxTE_RICH2 | wxTE_PROCESS_ENTER);
     wxFont font(10, wxFONTFAMILY_MODERN, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL);
     editor_->SetFont(font);
     statusBar_ = frame_->CreateStatusBar(2);
@@ -120,12 +123,14 @@ void NotepadApp::setupEvents() {
     frame_->Bind(wxEVT_MENU, &NotepadApp::OnFind, this, wxID_FIND);
     frame_->Bind(wxEVT_CLOSE_WINDOW, [this](wxCloseEvent& event) {
         if (modified_) {
-            int ret = wxMessageBox("Save changes?", "Notepad", wxYES_NO | wxCANCEL | wxICON_QUESTION);
+            int ret =
+                wxMessageBox("Save changes?", "Notepad", wxYES_NO | wxCANCEL | wxICON_QUESTION);
             if (ret == wxYES) {
                 if (currentFile_.isNotEmpty()) {
                     saveFile(currentFile_);
                 } else {
-                    if (!saveFileAs()) return;
+                    if (!saveFileAs())
+                        return;
                 }
             } else if (ret == wxCANCEL) {
                 return;
@@ -149,7 +154,8 @@ void NotepadApp::setupEvents() {
 }
 
 bool NotepadApp::loadFile(const VolumeFile& vf) {
-    if (vf.isEmpty()) return false;
+    if (vf.isEmpty())
+        return false;
     try {
         std::string content = vf.readFileString("UTF-8");
         editor_->SetValue(wxString(content));
@@ -165,7 +171,8 @@ bool NotepadApp::loadFile(const VolumeFile& vf) {
 }
 
 bool NotepadApp::saveFile(const VolumeFile& vf) {
-    if (vf.isEmpty()) return false;
+    if (vf.isEmpty())
+        return false;
     try {
         std::string data = editor_->GetValue().ToStdString();
         vf.writeFileString(data, "UTF-8");
@@ -180,7 +187,8 @@ bool NotepadApp::saveFile(const VolumeFile& vf) {
 }
 
 bool NotepadApp::saveFileAs() {
-    VolumeManager* vm = ShellApp::getInstance() ? ShellApp::getInstance()->getVolumeManager() : nullptr;
+    VolumeManager* vm =
+        ShellApp::getInstance() ? ShellApp::getInstance()->getVolumeManager() : nullptr;
     if (!vm) {
         wxMessageBox("No volume manager", "Error", wxOK | wxICON_ERROR);
         return false;
@@ -189,9 +197,11 @@ bool NotepadApp::saveFileAs() {
     dlg.addFilter("Text files", "*.txt");
     dlg.addFilter("All files", "*.*");
     dlg.setFileMustExist(false);
-    if (dlg.ShowModal() != wxID_OK) return false;
+    if (dlg.ShowModal() != wxID_OK)
+        return false;
     VolumeFile vf = dlg.getVolumeFile();
-    if (vf.isEmpty()) return false;
+    if (vf.isEmpty())
+        return false;
     return saveFile(vf);
 }
 
@@ -202,7 +212,8 @@ void NotepadApp::OnNew(wxCommandEvent& event) {
             if (currentFile_.isNotEmpty()) {
                 saveFile(currentFile_);
             } else {
-                if (!saveFileAs()) return;
+                if (!saveFileAs())
+                    return;
             }
         } else if (ret == wxCANCEL) {
             return;
@@ -218,11 +229,15 @@ void NotepadApp::OnOpen(wxCommandEvent& event) {
     if (modified_) {
         int ret = wxMessageBox("Save changes?", "Notepad", wxYES_NO | wxCANCEL | wxICON_QUESTION);
         if (ret == wxYES) {
-            if (currentFile_.isNotEmpty()) saveFile(currentFile_);
-            else if (!saveFileAs()) return;
-        } else if (ret == wxCANCEL) return;
+            if (currentFile_.isNotEmpty())
+                saveFile(currentFile_);
+            else if (!saveFileAs())
+                return;
+        } else if (ret == wxCANCEL)
+            return;
     }
-    VolumeManager* vm = ShellApp::getInstance() ? ShellApp::getInstance()->getVolumeManager() : nullptr;
+    VolumeManager* vm =
+        ShellApp::getInstance() ? ShellApp::getInstance()->getVolumeManager() : nullptr;
     if (!vm) {
         wxMessageBox("No volume manager", "Error", wxOK | wxICON_ERROR);
         return;
@@ -244,16 +259,13 @@ void NotepadApp::OnSave(wxCommandEvent& event) {
     }
 }
 
-void NotepadApp::OnSaveAs(wxCommandEvent& event) {
-    saveFileAs();
-}
+void NotepadApp::OnSaveAs(wxCommandEvent& event) { saveFileAs(); }
 
-void NotepadApp::OnExit(wxCommandEvent& event) {
-    frame_->Close();
-}
+void NotepadApp::OnExit(wxCommandEvent& event) { frame_->Close(); }
 
 void NotepadApp::OnAbout(wxCommandEvent& event) {
-    wxMessageBox("Notepad for OmniShell\n\nA simple text editor (VFS)", "About Notepad", wxOK | wxICON_INFORMATION);
+    wxMessageBox("Notepad for OmniShell\n\nA simple text editor (VFS)", "About Notepad",
+                 wxOK | wxICON_INFORMATION);
 }
 
 void NotepadApp::OnFind(wxCommandEvent& event) {

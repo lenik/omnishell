@@ -37,6 +37,7 @@ debian/tmp/
 /.cache
 /bin
 /obj
+/tmp
 
 #CodeBlocks
 omnishell.depend

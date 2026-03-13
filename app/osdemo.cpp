@@ -5,15 +5,20 @@
  * initializes global `os::app`, then runs the wxWidgets shell.
  */
 
- #include "core/App.hpp"
- #include "shell/Shell.hpp"
+#include "core/App.hpp"
+#include "shell/Shell.hpp"
 
- #include "app/controlpanel/ControlPanelApp.hpp"
- #include "app/notepad/NotepadApp.hpp"
+#include "mod/controlpanel/ControlPanelApp.hpp"
+#include "mod/notepad/NotepadApp.hpp"
 
+#include <bas/proc/env.cpp>
+#include <bas/proc/stackdump.h>
 #include <bas/volume/LocalVolume.hpp>
 #include <bas/volume/Volume.hpp>
 #include <bas/volume/VolumeManager.hpp>
+
+#include <bas/wx/app.hpp>
+#include <bas/wx/appframe.hpp>
 
 #include <iostream>
 
@@ -21,19 +26,20 @@
 #include <getopt.h>
 #endif
 
-static bool initAppFromCommandLine(int argc, char* argv[]) {
+int main(int argc, char** argv) {
+    stackdump_install_crash_handler(&stackdump_color_schema_default);
+    stackdump_set_interactive(1);
+
     os::app.volumeManager = std::make_unique<VolumeManager>();
     os::app.startFiles.clear();
 
     bool dump = false;
 
 #if defined(__unix__) || defined(__APPLE__)
-    static struct option longopts[] = {
-        {"dump",     no_argument,       nullptr, 'D'},
-        {"open",     required_argument, nullptr, 'o'},
-        {"local",    required_argument, nullptr, 'l'},
-        {nullptr,    0,                 nullptr,  0}
-    };
+    static struct option longopts[] = {{"dump", no_argument, nullptr, 'D'},
+                                       {"open", required_argument, nullptr, 'o'},
+                                       {"local", required_argument, nullptr, 'l'},
+                                       {nullptr, 0, nullptr, 0}};
 
     int opt;
     while ((opt = getopt_long(argc, argv, "Dl:u:p:o:", longopts, nullptr)) != -1) {
@@ -47,7 +53,8 @@ static bool initAppFromCommandLine(int argc, char* argv[]) {
             }
             break;
         case 'o':
-            if (optarg) os::app.startFiles.push_back(optarg);
+            if (optarg)
+                os::app.startFiles.push_back(optarg);
             break;
         default:
             break;
@@ -56,7 +63,7 @@ static bool initAppFromCommandLine(int argc, char* argv[]) {
 #endif
 
     if (os::app.volumeManager->getVolumeCount() == 0) {
-        os::app.volumeManager->addVolume(std::make_unique<LocalVolume>(getHomePath()));
+        os::app.volumeManager->addVolume(std::make_unique<LocalVolume>(bas::getHomePath()));
     }
 
     if (dump) {
@@ -65,37 +72,16 @@ static bool initAppFromCommandLine(int argc, char* argv[]) {
             try {
                 auto entries = vol->readDir("/", true);
                 for (const auto& e : entries) {
-                    std::cout << (e->isDirectory() ? "d " : "f ") << e->name << " " << e->size << "\n";
+                    std::cout << (e->isDirectory() ? "d " : "f ") << e->name //
+                              << " " << e->size << std::endl;
                 }
             } catch (const std::exception& ex) {
-                std::cerr << "dump error: " << ex.what() << "\n";
+                std::cerr << "dump error: " << ex.what() << std::endl;
             }
         }
         return false;
     }
 
-    return true;
-}
-
-int main(int argc, char* argv[]) {
-    if (!initAppFromCommandLine(argc, argv)) {
-        return 0;
-    }
-
-    // Explicit wxWidgets lifecycle management (no wxEntry()).
-    wxApp::SetInstance(new os::ShellApp());
-    if (!wxEntryStart(argc, argv)) {
-        return 1;
-    }
-
-    int rc = 0;
-    if (wxTheApp && wxTheApp->CallOnInit()) {
-        rc = wxTheApp->OnRun();
-        wxTheApp->OnExit();
-    } else {
-        rc = 1;
-    }
-
-    wxEntryCleanup();
-    return rc;
+    os::ShellApp app;
+    return app.main(argc, argv);
 }

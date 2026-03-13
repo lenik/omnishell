@@ -2,6 +2,7 @@
 #define OMNISHELL_SHELL_DESKTOP_WINDOW_HPP
 
 #include "../core/Module.hpp"
+#include "../wx/LabeledIcon.hpp"
 
 #include <wx/dnd.h>
 #include <wx/wx.h>
@@ -13,43 +14,43 @@ class Volume;
 
 namespace os {
 
+struct DesktopIcon {
+    wxPoint position;
+    LabeledIcon* widget{nullptr};
+    bool selected{false};
+
+    virtual ~DesktopIcon() = default;
+
+    virtual bool isModule() const { return false; }
+    virtual bool isVolume() const { return false; }
+};
+
 /**
  * Desktop Icon - module application
  */
-struct DesktopIcon {
-    ModulePtr module;
-    wxPoint position;
-    wxStaticBitmap* bitmap;
-    wxStaticText* label;
-    bool selected;
+struct DesktopModuleIcon : public DesktopIcon {
+    ModulePtr module{nullptr};
 
-    DesktopIcon()
-        : bitmap(nullptr)
-        , label(nullptr)
-        , selected(false)
-    {}
+    bool isModule() const override { return true; }
 };
 
 /**
  * Volume Icon - VFS volume on desktop
  */
-struct VolumeDesktopIcon {
-    Volume* volume;
-    wxPoint position;
-    wxStaticBitmap* bitmap;
-    wxStaticText* label;
+struct VolumeDesktopIcon : public DesktopIcon {
+    Volume* volume{nullptr};
 
-    VolumeDesktopIcon() : volume(nullptr), bitmap(nullptr), label(nullptr) {}
+    bool isVolume() const override { return true; }
 };
 
 /**
  * Desktop Window
- * 
+ *
  * Main desktop area displaying:
  * - Module icons
  * - Background image/color
  * - Context menus
- * 
+ *
  * Supports:
  * - Icon layout and arrangement
  * - Drag and drop
@@ -57,20 +58,20 @@ struct VolumeDesktopIcon {
  * - Right-click context menu
  */
 class DesktopWindow : public wxPanel {
-public:
+  public:
     DesktopWindow(wxWindow* parent);
     virtual ~DesktopWindow();
-    
+
     /**
      * Add a module icon to desktop
      */
     void addIcon(ModulePtr module, const wxPoint& position = wxDefaultPosition);
-    
+
     /**
      * Remove a module icon
      */
     void removeIcon(const std::string& moduleUri);
-    
+
     /**
      * Set VolumeManager for volume icons (call before addVolumeIcons).
      */
@@ -90,54 +91,67 @@ public:
      * Arrange icons in grid
      */
     void arrangeIcons();
-    
+
     /**
      * Set desktop background color
      */
     void setBackgroundColor(const wxColour& color);
-    
+
     /**
      * Set desktop background image
      */
     void setBackgroundImage(const wxBitmap& bitmap);
-    
+
     /**
-     * Get all desktop icons
+     * Get all desktop module icons
      */
-    const std::vector<DesktopIcon>& getIcons() const { return icons_; }
-    
+    const std::vector<DesktopModuleIcon>& getIcons() const { return icons_; }
+
     /**
      * Launch a module
      */
     void launchModule(ModulePtr module);
 
-protected:
+    // Persist and restore icon layout
+    void saveLayout() const;
+    void loadLayout();
+
+  protected:
     void OnPaint(wxPaintEvent& event);
     void OnSize(wxSizeEvent& event);
     void OnLeftDoubleClick(wxMouseEvent& event);
     void OnRightClick(wxMouseEvent& event);
     void OnEraseBackground(wxEraseEvent& event);
-    
+
     void OnIconLeftDoubleClick(wxMouseEvent& event);
     void OnIconRightClick(wxMouseEvent& event);
-    
+    void OnIconLeftDown(wxMouseEvent& event);
+    void OnIconLeftUp(wxMouseEvent& event);
+    void OnIconMouseMove(wxMouseEvent& event);
+
     void CreateIconControls(DesktopIcon& icon);
     void CreateVolumeIconControls(VolumeDesktopIcon& icon);
     void UpdateIconPositions();
     DesktopIcon* FindIconAt(const wxPoint& pos);
-    DesktopIcon* FindIconByModule(const std::string& uri);
+    DesktopModuleIcon* FindIconByModule(const std::string& uri);
+    DesktopIcon* FindIconByWindow(wxWindow* window);
 
-private:
+  private:
     DECLARE_EVENT_TABLE()
 
     VolumeManager* volumeManager_;
-    std::vector<DesktopIcon> icons_;
+    std::vector<DesktopModuleIcon> icons_;
     std::vector<VolumeDesktopIcon> volumeIcons_;
     wxColour backgroundColor_;
     wxBitmap backgroundImage_;
     wxSize iconSize_;
     int iconSpacing_;
     int margin_;
+
+    bool isDragging_ = false;
+    DesktopIcon* draggingIcon_ = nullptr;
+    wxPoint dragStartMousePos_;
+    wxPoint dragStartIconPos_;
 };
 
 } // namespace os

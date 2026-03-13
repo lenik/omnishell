@@ -10,63 +10,32 @@
 
 #include <wx/wx.h>
 
+#include <bas/wx/app.hpp>
+#include <bas/wx/appframe.hpp>
+
 class VolumeManager;
 
 namespace os {
 
-/**
- * OmniShell Shell Application
- *
- * Main application class that:
- * - Creates the main window
- * - Initializes module system and VFS (VolumeManager)
- * - Manages lifecycle
- * - Coordinates UI components
- */
-class ShellApp : public wxApp {
-public:
+class ShellApp : public uiApp {
+  public:
     ShellApp();
     virtual ~ShellApp();
 
-    virtual bool OnInit() override;
+    virtual bool OnUserInit() override;
     virtual int OnExit() override;
 
-    /**
-     * Get shell instance
-     */
     static ShellApp* getInstance();
 
-    /**
-     * Get volume manager (VFS). Never null after OnInit.
-     */
     VolumeManager* getVolumeManager() const { return volumeManager_; }
-
-    /**
-     * Get desktop window
-     */
     DesktopWindow* getDesktopWindow() const { return desktop_; }
-
-    /**
-     * Get taskbar
-     */
     Taskbar* getTaskbar() const { return taskbar_; }
-
-    /**
-     * Get start menu
-     */
     StartMenu* getStartMenu() const { return startMenu_; }
 
-    /**
-     * Launch a module
-     */
     void launchModule(ModulePtr module);
-
-    /**
-     * Refresh desktop icons (volumes + modules)
-     */
     void refreshDesktop();
 
-private:
+  private:
     bool initializeModules();
     void createUI();
     void setupEventHandlers();
@@ -79,9 +48,6 @@ private:
 
     static ShellApp* instance_;
 };
-
-// Application macro
-wxDECLARE_APP(ShellApp);
 
 } // namespace os
 
