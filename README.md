@@ -4,6 +4,14 @@ OmniShell is a **desktop-like shell environment** implemented as a single wxWidg
 It aims to provide a self-contained, Windows‑style desktop experience (desktop, taskbar, start menu, tray, apps)
 inside one process, with strong boundaries between user-facing UI and underlying storage/security layers.
 
+### Screenshots
+
+| Name        | Screenshot     |
+|-------------|----------------|
+| Desktop     | ![Desktop](screenshots/desktop.png) |
+| ControlPanel| ![Desktop](screenshots/controlpanel.png) |
+| Notepad     | ![Desktop](screenshots/notepad.png) |
+
 ### Motivation
 
 - **Unified application shell**: Many enterprise systems ship dozens of small utilities, daemons, and UIs. OmniShell
