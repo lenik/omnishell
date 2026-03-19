@@ -102,6 +102,9 @@ class DesktopWindow : public wxPanel {
      */
     void setBackgroundImage(const wxBitmap& bitmap);
 
+    /** Load background settings from RegistryDb (color or image). */
+    void loadBackgroundSettings();
+
     /**
      * Get all desktop module icons
      */
@@ -144,14 +147,17 @@ class DesktopWindow : public wxPanel {
     std::vector<VolumeDesktopIcon> volumeIcons_;
     wxColour backgroundColor_;
     wxBitmap backgroundImage_;
+    wxImage backgroundImageSrc_;
+
+    void UpdateScaledBackground();
     wxSize iconSize_;
     int iconSpacing_;
     int margin_;
 
     bool isDragging_ = false;
     DesktopIcon* draggingIcon_ = nullptr;
-    wxPoint dragStartMousePos_;
-    wxPoint dragStartIconPos_;
+    // Offset from icon's top-left to the mouse position at drag start.
+    wxPoint dragOffset_;
 };
 
 } // namespace os

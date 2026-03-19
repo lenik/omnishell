@@ -6,12 +6,12 @@
 #include "Taskbar.hpp"
 
 #include "../core/ModuleRegistry.hpp"
-#include "../core/ServiceManager.hpp"
+
+#include <bas/wx/app.hpp>
 
 #include <wx/wx.h>
 
-#include <bas/wx/app.hpp>
-#include <bas/wx/appframe.hpp>
+// #include <bas/wx/uiframe.hpp>
 
 class VolumeManager;
 
@@ -19,7 +19,7 @@ namespace os {
 
 class ShellApp : public uiApp {
   public:
-    ShellApp();
+    explicit ShellApp(std::string name = "OmniShell");
     virtual ~ShellApp();
 
     virtual bool OnUserInit() override;
@@ -27,10 +27,17 @@ class ShellApp : public uiApp {
 
     static ShellApp* getInstance();
 
+    const std::string& getName() const { return name_; }
+
     VolumeManager* getVolumeManager() const { return volumeManager_; }
+    ModuleRegistry* getModuleRegistry() const { return moduleRegistry_; }
     DesktopWindow* getDesktopWindow() const { return desktop_; }
     Taskbar* getTaskbar() const { return taskbar_; }
     StartMenu* getStartMenu() const { return startMenu_; }
+
+    void openExplorerAt(const std::string& dir);
+
+    void toggleStartMenu();
 
     void launchModule(ModulePtr module);
     void refreshDesktop();
@@ -39,8 +46,11 @@ class ShellApp : public uiApp {
     bool initializeModules();
     void createUI();
     void setupEventHandlers();
+    void positionStartMenu();
 
+    std::string name_;
     VolumeManager* volumeManager_;
+    ModuleRegistry* moduleRegistry_;
     wxFrame* mainWindow_;
     DesktopWindow* desktop_;
     Taskbar* taskbar_;

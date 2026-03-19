@@ -1,12 +1,12 @@
 #ifndef OMNISHELL_APP_NOTEPAD_HPP
 #define OMNISHELL_APP_NOTEPAD_HPP
 
+#include "NotepadCore.hpp"
+
 #include "../../core/Module.hpp"
+#include "../../core/ModuleRegistry.hpp"
 
-#include <bas/volume/VolumeFile.hpp>
-
-#include <wx/textctrl.h>
-#include <wx/wx.h>
+#include <bas/wx/uiframe.hpp>
 
 namespace os {
 
@@ -16,38 +16,28 @@ namespace os {
  * Basic text editor using VFS (VolumeFile) for all file I/O.
  */
 class NotepadApp : public Module {
-public:
-    NotepadApp();
+  public:
+    NotepadApp(CreateModuleContext* ctx);
     virtual ~NotepadApp();
 
-    virtual void run() override;
+    virtual ProcessPtr run() override;
 
     void initializeMetadata();
 
-private:
-    void createMainWindow();
-    void createMenuBar();
-    void setupEvents();
+    /** Open a file in a new Notepad window. */
+    static ProcessPtr open(VolumeManager* volumeManager, VolumeFile file);
 
-    bool loadFile(const VolumeFile& vf);
-    bool saveFile(const VolumeFile& vf);
-    bool saveFileAs();
+    // void createFragmentView(CreateViewContext* ctx) override;
+    // wxEvtHandler* getEventHandler() override;
 
-    void OnNew(wxCommandEvent& event);
-    void OnOpen(wxCommandEvent& event);
-    void OnSave(wxCommandEvent& event);
-    void OnSaveAs(wxCommandEvent& event);
-    void OnExit(wxCommandEvent& event);
-    void OnAbout(wxCommandEvent& event);
-    void OnFind(wxCommandEvent& event);
-    void OnEncoding(wxCommandEvent& event);
+  private:
+    VolumeManager* volumeManager_;
+    NotepadCore core_;
 
-    wxFrame* frame_;
-    wxTextCtrl* editor_;
-    wxStatusBar* statusBar_;
+    // wxTextCtrl* editor_;
+    // wxStatusBar* statusBar_;
 
-    VolumeFile currentFile_;
-    bool modified_;
+    void onAbout(PerformContext*);
 };
 
 } // namespace os

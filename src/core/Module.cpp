@@ -1,11 +1,14 @@
 #include "Module.hpp"
 
+#include "RegistryDb.hpp"
+
 #include <wx/log.h>
 
 namespace os {
 
-Module::Module() 
-    : runCount(0)
+Module::Module(CreateModuleContext* ctx) 
+    : categoryId(ID_CATEGORY_NONE)
+    , runCount(0)
 {
 }
 
@@ -13,7 +16,10 @@ Module::~Module() {
 }
 
 bool Module::isEnabled() const {
-    return true;
+    // Configurable enable/disable via RegistryDb.
+    // Key convention: Module.Disabled.<fullUri> = "1"
+    const std::string key = "Module.Disabled." + getFullUri();
+    return RegistryDb::getInstance().get(key, "0") != "1";
 }
 
 bool Module::isVisible() const {

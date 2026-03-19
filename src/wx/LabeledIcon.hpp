@@ -1,11 +1,11 @@
 #ifndef OMNISHELL_UI_WX_LABELED_ICON_HPP
 #define OMNISHELL_UI_WX_LABELED_ICON_HPP
 
+#include <wx/event.h>
 #include <wx/panel.h>
+#include <wx/sizer.h>
 #include <wx/statbmp.h>
 #include <wx/stattext.h>
-#include <wx/sizer.h>
-#include <wx/event.h>
 
 namespace os {
 

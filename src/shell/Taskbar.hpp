@@ -2,6 +2,7 @@
 #define OMNISHELL_SHELL_TASKBAR_HPP
 
 #include "../core/Module.hpp"
+#include "../core/Process.hpp"
 
 #include <wx/taskbar.h>
 #include <wx/wx.h>
@@ -17,6 +18,7 @@ namespace os {
  */
 struct TaskbarButton {
     ModulePtr module;
+    ProcessPtr process;
     wxWindow* window;
     wxButton* button;
     bool active;
@@ -53,6 +55,8 @@ public:
      * Add a running application to taskbar
      */
     void addApplication(ModulePtr module, wxWindow* window);
+    void addProcess(ProcessPtr process); // subscribes to window additions
+    void removeProcess(ProcessPtr process);
     
     /**
      * Remove an application from taskbar
@@ -98,6 +102,8 @@ protected:
     void UpdateButtonLayout();
     TaskbarButton* FindButtonByModule(ModulePtr module);
     TaskbarButton* FindButtonByWindow(wxWindow* window);
+    void RemoveButtonByIndex(size_t idx);
+    void SetButtonVisual(TaskbarButton& b);
 
 private:
     DECLARE_EVENT_TABLE()

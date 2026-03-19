@@ -4,9 +4,9 @@
 #include <bas/volume/LocalVolume.hpp>
 #include <bas/volume/VolumeManager.hpp>
 
-#include <getopt.h>
-
 #include <iostream>
+
+#include <getopt.h>
 
 namespace os {
 
@@ -62,9 +62,9 @@ void App::parseOptions(int argc, char* argv[]) {
         }
     }
 
-    // If no volumes were added, add default home volume
+    // If no volumes were added, auto-discover local volumes.
     if (volumeManager->getVolumeCount() == 0) {
-        volumeManager->addVolume(std::make_unique<LocalVolume>(bas::getHomePath()));
+        volumeManager->addLocalVolumes();
     }
 }
 
