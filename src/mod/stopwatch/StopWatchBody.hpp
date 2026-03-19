@@ -9,10 +9,10 @@
 
 namespace os {
 
-class StopWatchCore : public UIFragment {
+class StopWatchBody : public UIFragment {
 public:
-    StopWatchCore();
-    ~StopWatchCore() override;
+    StopWatchBody();
+    ~StopWatchBody() override;
 
     void createFragmentView(CreateViewContext* ctx) override;
     wxEvtHandler* getEventHandler() override;

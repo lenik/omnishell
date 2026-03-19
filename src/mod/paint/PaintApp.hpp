@@ -1,7 +1,7 @@
 #ifndef OMNISHELL_APP_PAINT_HPP
 #define OMNISHELL_APP_PAINT_HPP
 
-#include "PaintCore.hpp"
+#include "PaintBody.hpp"
 
 #include "../../core/Module.hpp"
 
@@ -26,7 +26,7 @@ public:
     static ProcessPtr openImage(VolumeManager* volumeManager, VolumeFile file);
 
 private:
-    PaintCore m_core;
+    PaintBody m_body;
 };
 
 } // namespace os

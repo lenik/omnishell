@@ -1,4 +1,4 @@
-#include "CalendarCore.hpp"
+#include "CalendarBody.hpp"
 
 #include <wx/dateevt.h>
 
@@ -13,7 +13,7 @@ enum {
 };
 }
 
-CalendarCore::CalendarCore() {
+CalendarBody::CalendarBody() {
     std::string dir = "heroicons/normal";
 
     group(ID_GROUP_NAV, "view", "navigate", 1000, "&Navigate", "Calendar navigation").install();
@@ -33,7 +33,7 @@ CalendarCore::CalendarCore() {
         .install();
 }
 
-void CalendarCore::createFragmentView(CreateViewContext* ctx) {
+void CalendarBody::createFragmentView(CreateViewContext* ctx) {
     wxWindow* parent = ctx->getParent();
     uiFrame* frame = dynamic_cast<uiFrame*>(parent);
     if (!frame)
@@ -43,16 +43,16 @@ void CalendarCore::createFragmentView(CreateViewContext* ctx) {
     m_cal = new wxCalendarCtrl(parent, wxID_ANY, wxDefaultDateTime, ctx->getPos(), ctx->getSize());
 }
 
-wxEvtHandler* CalendarCore::getEventHandler() {
+wxEvtHandler* CalendarBody::getEventHandler() {
     return m_cal ? m_cal->GetEventHandler() : nullptr;
 }
 
-void CalendarCore::onToday(PerformContext*) {
+void CalendarBody::onToday(PerformContext*) {
     if (m_cal)
         m_cal->SetDate(wxDateTime::Today());
 }
 
-void CalendarCore::onPrevMonth(PerformContext*) {
+void CalendarBody::onPrevMonth(PerformContext*) {
     if (!m_cal)
         return;
     wxDateTime d = m_cal->GetDate();
@@ -60,7 +60,7 @@ void CalendarCore::onPrevMonth(PerformContext*) {
     m_cal->SetDate(d);
 }
 
-void CalendarCore::onNextMonth(PerformContext*) {
+void CalendarBody::onNextMonth(PerformContext*) {
     if (!m_cal)
         return;
     wxDateTime d = m_cal->GetDate();

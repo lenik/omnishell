@@ -4,7 +4,7 @@ namespace os {
 
 NotepadFrame::NotepadFrame() //
     : uiFrame("Notepad") {
-    addFragment(&m_core);
+    addFragment(&m_body);
     createView();
 }
 

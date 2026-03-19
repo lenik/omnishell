@@ -18,7 +18,7 @@ OMNISHELL_REGISTER_MODULE("omnishell.notepad", NotepadApp)
 
 NotepadApp::NotepadApp(CreateModuleContext* ctx)
     : Module(ctx)
-    , m_core(ctx->getVolumeManager()) //
+    , m_body(ctx->getVolumeManager()) //
 {
     initializeMetadata();
 }
@@ -46,7 +46,7 @@ ProcessPtr NotepadApp::run() {
     proc->icon = image;
 
     uiFrame* frame = new uiFrame("Notepad");
-    frame->addFragment(&m_core);
+    frame->addFragment(&m_body);
     frame->createView();
     // createMenuBar();
     // editor_ = new wxTextCtrl(frame_, wxID_ANY, "", wxDefaultPosition, wxDefaultSize,
@@ -70,7 +70,7 @@ ProcessPtr NotepadApp::open(VolumeManager* volumeManager, VolumeFile file) {
     std::string dir = "streamline-vectors/core/pop/interface-essential";
     proc->icon = ImageSet(Path(dir, "blank-notepad.svg"));
 
-    auto core = std::make_shared<NotepadCore>(volumeManager);
+    auto core = std::make_shared<NotepadBody>(volumeManager);
     uiFrame* frame = new uiFrame("Notepad");
     frame->addFragment(core.get());
     frame->createView();

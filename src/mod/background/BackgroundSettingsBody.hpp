@@ -9,10 +9,10 @@
 
 namespace os {
 
-class BackgroundSettingsCore : public UIFragment {
+class BackgroundSettingsBody : public UIFragment {
 public:
-    BackgroundSettingsCore();
-    ~BackgroundSettingsCore() override = default;
+    BackgroundSettingsBody();
+    ~BackgroundSettingsBody() override = default;
 
     void createFragmentView(CreateViewContext* ctx) override;
     wxEvtHandler* getEventHandler() override;

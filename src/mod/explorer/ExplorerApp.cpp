@@ -81,7 +81,7 @@ ProcessPtr ExplorerApp::openInternal(Volume* volume, const std::string& dir) {
     proc->icon = ImageSet(Path(iconDir, "folder-add.svg"));
 
     // Own the core for the lifetime of the window (wx Bind copies functors, so use shared_ptr).
-    auto core = std::make_shared<ExplorerCore>(vm, volume, dir);
+    auto core = std::make_shared<ExplorerBody>(vm, volume, dir);
     uiFrame* frame = new uiFrame("Explorer");
     frame->addFragment(core.get());
     frame->createView();

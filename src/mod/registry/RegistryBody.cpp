@@ -1,4 +1,4 @@
-#include "RegistryCore.hpp"
+#include "RegistryBody.hpp"
 
 #include "../../core/RegistryDb.hpp"
 
@@ -41,7 +41,7 @@ enum {
 
 } // namespace
 
-RegistryCore::RegistryCore() {
+RegistryBody::RegistryBody() {
     std::string dir = "heroicons/normal";
 
     group(ID_GROUP_REG, "file", "registry", 1000, "&Registry", "Registry actions").install();
@@ -51,7 +51,7 @@ RegistryCore::RegistryCore() {
         .install();
 }
 
-void RegistryCore::createFragmentView(CreateViewContext* ctx) {
+void RegistryBody::createFragmentView(CreateViewContext* ctx) {
     wxWindow* parent = ctx->getParent();
     uiFrame* frame = dynamic_cast<uiFrame*>(parent);
     if (!frame)
@@ -96,17 +96,17 @@ void RegistryCore::createFragmentView(CreateViewContext* ctx) {
     populateProperties(m_selectedPath);
 }
 
-wxEvtHandler* RegistryCore::getEventHandler() {
+wxEvtHandler* RegistryBody::getEventHandler() {
     return m_tree ? m_tree->GetEventHandler() : nullptr;
 }
 
-void RegistryCore::onReload(PerformContext*) {
+void RegistryBody::onReload(PerformContext*) {
     RegistryDb::getInstance().load();
     buildTree();
     populateProperties(m_selectedPath);
 }
 
-void RegistryCore::buildTree() {
+void RegistryBody::buildTree() {
     if (!m_tree)
         return;
     m_tree->DeleteAllItems();
@@ -153,7 +153,7 @@ void RegistryCore::buildTree() {
     m_tree->Expand(root);
 }
 
-void RegistryCore::populateProperties(const std::string& nodePath) {
+void RegistryBody::populateProperties(const std::string& nodePath) {
     if (!m_list)
         return;
     m_list->DeleteAllItems();
@@ -196,7 +196,7 @@ void RegistryCore::populateProperties(const std::string& nodePath) {
     }
 }
 
-void RegistryCore::editSelectedProperty() {
+void RegistryBody::editSelectedProperty() {
     if (!m_list)
         return;
     long item = -1;

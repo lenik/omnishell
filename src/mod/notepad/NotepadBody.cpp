@@ -1,4 +1,4 @@
-#include "NotepadCore.hpp"
+#include "NotepadBody.hpp"
 
 #include "../../ui/dialogs/ChooseFileDialog.hpp"
 
@@ -19,7 +19,7 @@ enum {
     ID_ZOOM_RESET,
 };
 
-NotepadCore::NotepadCore(VolumeManager* volumeManager)
+NotepadBody::NotepadBody(VolumeManager* volumeManager)
     : m_volumeManager(volumeManager) //
 {
     std::string dir = "streamline-vectors/core/pop/interface-essential";
@@ -104,7 +104,7 @@ static wxString displayNameFromPath(const std::string& path) {
     return wxString(path.substr(last + 1));
 }
 
-void NotepadCore::createFragmentView(CreateViewContext* ctx) {
+void NotepadBody::createFragmentView(CreateViewContext* ctx) {
     wxWindow* parent = ctx->getParent();
     uiFrame* frame = dynamic_cast<uiFrame*>(parent);
     if (!frame) {
@@ -117,13 +117,13 @@ void NotepadCore::createFragmentView(CreateViewContext* ctx) {
     const wxSize& size = ctx->getSize();
     m_text = new wxTextCtrl(parent, wxID_ANY, "", pos, size, wxTE_MULTILINE | wxTE_WORDWRAP);
 
-    m_frame->Bind(wxEVT_CLOSE_WINDOW, &NotepadCore::onFrameClose, this);
-    m_text->Bind(wxEVT_TEXT, &NotepadCore::onFrameText, this);
+    m_frame->Bind(wxEVT_CLOSE_WINDOW, &NotepadBody::onFrameClose, this);
+    m_text->Bind(wxEVT_TEXT, &NotepadBody::onFrameText, this);
 }
 
-wxEvtHandler* NotepadCore::getEventHandler() { return m_text->GetEventHandler(); }
+wxEvtHandler* NotepadBody::getEventHandler() { return m_text->GetEventHandler(); }
 
-void NotepadCore::onFrameClose(wxCloseEvent& event) {
+void NotepadBody::onFrameClose(wxCloseEvent& event) {
     if (m_modified) {
         int ret = wxMessageBox("Save changes?", "Notepad", wxYES_NO | wxCANCEL | wxICON_QUESTION);
         if (ret == wxYES) {
@@ -141,7 +141,7 @@ void NotepadCore::onFrameClose(wxCloseEvent& event) {
     m_frame = nullptr;
 }
 
-void NotepadCore::onFrameText(wxCommandEvent& event) {
+void NotepadBody::onFrameText(wxCommandEvent& event) {
     if (!m_modified) {
         m_modified = true;
         wxString title = "Notepad - ";
@@ -154,13 +154,13 @@ void NotepadCore::onFrameText(wxCommandEvent& event) {
     }
 }
 
-void NotepadCore::persistObject(VolumeFile file) {
+void NotepadBody::persistObject(VolumeFile file) {
     std::string utf8(m_text->GetValue().ToUTF8());
     file.writeFileString(utf8, m_encoding.ToStdString());
     m_modified = false;
 }
 
-bool NotepadCore::uiPersistObject(VolumeFile file) {
+bool NotepadBody::uiPersistObject(VolumeFile file) {
     if (file.isEmpty())
         return false;
     try {
@@ -172,7 +172,7 @@ bool NotepadCore::uiPersistObject(VolumeFile file) {
     return true;
 }
 
-bool NotepadCore::uiSaveAs() {
+bool NotepadBody::uiSaveAs() {
     if (!m_volumeManager) {
         wxMessageBox("No volume manager", "Error", wxOK | wxICON_ERROR);
         return false;
@@ -192,14 +192,14 @@ bool NotepadCore::uiSaveAs() {
     return true;
 }
 
-void NotepadCore::restoreObject(VolumeFile file) {
+void NotepadBody::restoreObject(VolumeFile file) {
     std::string utf8 = file.readFileString(m_encoding.ToStdString());
     m_text->SetValue(wxString(utf8));
     m_modified = false;
     m_file = file;
 }
 
-bool NotepadCore::uiRestoreObject(VolumeFile file) {
+bool NotepadBody::uiRestoreObject(VolumeFile file) {
     if (file.isEmpty())
         return false;
     if (m_modified) {
@@ -226,7 +226,7 @@ bool NotepadCore::uiRestoreObject(VolumeFile file) {
     return true;
 }
 
-void NotepadCore::onNew(PerformContext* ctx) {
+void NotepadBody::onNew(PerformContext* ctx) {
     if (m_modified) {
         int ret = wxMessageBox("Save changes?", "Notepad", wxYES_NO | wxCANCEL | wxICON_QUESTION);
         if (ret == wxYES) {
@@ -246,7 +246,7 @@ void NotepadCore::onNew(PerformContext* ctx) {
     m_frame->SetTitle("Notepad - Untitled");
 }
 
-void NotepadCore::onOpen(PerformContext* ctx) {
+void NotepadBody::onOpen(PerformContext* ctx) {
     if (m_modified) {
         int ret = wxMessageBox("Save changes?", "Notepad", wxYES_NO | wxCANCEL | wxICON_QUESTION);
         if (ret == wxYES) {
@@ -272,7 +272,7 @@ void NotepadCore::onOpen(PerformContext* ctx) {
     }
 }
 
-void NotepadCore::onSave(PerformContext* ctx) {
+void NotepadBody::onSave(PerformContext* ctx) {
     if (m_file.isEmpty()) {
         uiSaveAs();
     } else {
@@ -280,39 +280,39 @@ void NotepadCore::onSave(PerformContext* ctx) {
     }
 }
 
-void NotepadCore::onSaveAs(PerformContext* ctx) { uiSaveAs(); }
+void NotepadBody::onSaveAs(PerformContext* ctx) { uiSaveAs(); }
 
-void NotepadCore::onUndo(PerformContext* ctx) { m_text->Undo(); }
+void NotepadBody::onUndo(PerformContext* ctx) { m_text->Undo(); }
 
-void NotepadCore::onRedo(PerformContext* ctx) { m_text->Redo(); }
+void NotepadBody::onRedo(PerformContext* ctx) { m_text->Redo(); }
 
-void NotepadCore::onSelectAll(PerformContext* ctx) { m_text->SelectAll(); }
+void NotepadBody::onSelectAll(PerformContext* ctx) { m_text->SelectAll(); }
 
-void NotepadCore::onClear(PerformContext* ctx) { m_text->Clear(); }
+void NotepadBody::onClear(PerformContext* ctx) { m_text->Clear(); }
 
-void NotepadCore::onCut(PerformContext* ctx) { m_text->Cut(); }
+void NotepadBody::onCut(PerformContext* ctx) { m_text->Cut(); }
 
-void NotepadCore::onCopy(PerformContext* ctx) { m_text->Copy(); }
+void NotepadBody::onCopy(PerformContext* ctx) { m_text->Copy(); }
 
-void NotepadCore::onPaste(PerformContext* ctx) { m_text->Paste(); }
+void NotepadBody::onPaste(PerformContext* ctx) { m_text->Paste(); }
 
-void NotepadCore::onZoomIn(PerformContext* ctx) {
+void NotepadBody::onZoomIn(PerformContext* ctx) {
     int fontSize = m_text->GetFont().GetPointSize();
     m_text->SetFont(
         wxFont(fontSize + 1, wxFONTFAMILY_DEFAULT, wxFONTWEIGHT_NORMAL, wxFONTSTYLE_NORMAL));
 }
 
-void NotepadCore::onZoomOut(PerformContext* ctx) {
+void NotepadBody::onZoomOut(PerformContext* ctx) {
     int fontSize = m_text->GetFont().GetPointSize();
     m_text->SetFont(
         wxFont(fontSize - 1, wxFONTFAMILY_DEFAULT, wxFONTWEIGHT_NORMAL, wxFONTSTYLE_NORMAL));
 }
 
-void NotepadCore::onZoomReset(PerformContext* ctx) {
+void NotepadBody::onZoomReset(PerformContext* ctx) {
     m_text->SetFont(wxFont(12, wxFONTFAMILY_DEFAULT, wxFONTWEIGHT_NORMAL, wxFONTSTYLE_NORMAL));
 }
 
-void NotepadCore::onFind(PerformContext* ctx) {
+void NotepadBody::onFind(PerformContext* ctx) {
     wxTextEntryDialog findDlg(m_frame, "Find what:", "Find");
     if (findDlg.ShowModal() != wxID_OK)
         return;
@@ -339,7 +339,7 @@ void NotepadCore::onFind(PerformContext* ctx) {
     m_text->ShowPosition(pos);
 }
 
-void NotepadCore::onReplace(PerformContext* ctx) {
+void NotepadBody::onReplace(PerformContext* ctx) {
     wxTextEntryDialog findDlg(m_frame, "Find what:", "Replace");
     if (findDlg.ShowModal() != wxID_OK)
         return;
@@ -358,7 +358,7 @@ void NotepadCore::onReplace(PerformContext* ctx) {
     m_modified = true;
 }
 
-void NotepadCore::onEncoding(PerformContext* ctx) {
+void NotepadBody::onEncoding(PerformContext* ctx) {
     wxArrayString choices;
     choices.Add("UTF-8");
     choices.Add("ASCII");

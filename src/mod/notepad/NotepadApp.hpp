@@ -1,7 +1,7 @@
 #ifndef OMNISHELL_APP_NOTEPAD_HPP
 #define OMNISHELL_APP_NOTEPAD_HPP
 
-#include "NotepadCore.hpp"
+#include "NotepadBody.hpp"
 
 #include "../../core/Module.hpp"
 #include "../../core/ModuleRegistry.hpp"
@@ -32,7 +32,7 @@ class NotepadApp : public Module {
 
   private:
     VolumeManager* m_volumeManager;
-    NotepadCore m_core;
+    NotepadBody m_body;
 
     // wxTextCtrl* editor_;
     // wxStatusBar* statusBar_;

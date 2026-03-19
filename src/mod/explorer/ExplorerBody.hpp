@@ -19,10 +19,10 @@ struct VolumeFile;
 
 namespace os {
 
-class ExplorerCore : public UIFragment {
+class ExplorerBody : public UIFragment {
 public:
-    ExplorerCore(VolumeManager* vm, Volume* volume, std::string dir);
-    ~ExplorerCore() override = default;
+    ExplorerBody(VolumeManager* vm, Volume* volume, std::string dir);
+    ~ExplorerBody() override = default;
 
     void createFragmentView(CreateViewContext* ctx) override;
     wxEvtHandler* getEventHandler() override;

@@ -1,7 +1,7 @@
 #ifndef NOTEPAD_FRAME_HPP
 #define NOTEPAD_FRAME_HPP
 
-#include "NotepadCore.hpp"
+#include "NotepadBody.hpp"
 
 #include <bas/ui/arch/UIFragment.hpp>
 #include <bas/wx/uiframe.hpp>
@@ -16,7 +16,7 @@ class NotepadFrame : public uiFrame {
     void createFragmentView(CreateViewContext* ctx) override;
 
   private:
-    NotepadCore m_core;
+    NotepadBody m_body;
 };
 
 } // namespace os

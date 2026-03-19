@@ -1,7 +1,7 @@
 #ifndef OMNISHELL_APP_EXPLORER_HPP
 #define OMNISHELL_APP_EXPLORER_HPP
 
-#include "ExplorerCore.hpp"
+#include "ExplorerBody.hpp"
 
 #include "../../core/Module.hpp"
 

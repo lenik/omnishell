@@ -14,10 +14,10 @@
 #include <wx/textctrl.h>
 #include <wx/textdlg.h>
 
-class NotepadCore : public UIFragment, public IFileForm {
+class NotepadBody : public UIFragment, public IFileForm {
   public:
-    NotepadCore(VolumeManager* volumeManager);
-    virtual ~NotepadCore() {}
+    NotepadBody(VolumeManager* volumeManager);
+    virtual ~NotepadBody() {}
 
     void createFragmentView(CreateViewContext* ctx) override;
 

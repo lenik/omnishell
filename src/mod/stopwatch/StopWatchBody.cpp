@@ -1,4 +1,4 @@
-#include "StopWatchCore.hpp"
+#include "StopWatchBody.hpp"
 
 #include <wx/button.h>
 #include <wx/panel.h>
@@ -15,7 +15,7 @@ enum {
 };
 }
 
-StopWatchCore::StopWatchCore() {
+StopWatchBody::StopWatchBody() {
     const std::string dir = "heroicons/normal";
 
     group(ID_GROUP_SW, "controls", "stopwatch", 1000, "&StopWatch", "Stopwatch controls").install();
@@ -35,19 +35,19 @@ StopWatchCore::StopWatchCore() {
         .install();
 }
 
-StopWatchCore::~StopWatchCore() {
+StopWatchBody::~StopWatchBody() {
     if (m_timer.IsRunning())
         m_timer.Stop();
 }
 
-void StopWatchCore::createFragmentView(CreateViewContext* ctx) {
+void StopWatchBody::createFragmentView(CreateViewContext* ctx) {
     wxWindow* parent = ctx->getParent();
     uiFrame* frame = dynamic_cast<uiFrame*>(parent);
     if (!frame)
         return;
     m_frame = frame;
 
-    m_frame->Bind(wxEVT_CLOSE_WINDOW, &StopWatchCore::onClose, this);
+    m_frame->Bind(wxEVT_CLOSE_WINDOW, &StopWatchBody::onClose, this);
 
     wxPanel* root = new wxPanel(parent, wxID_ANY, ctx->getPos(), ctx->getSize());
     wxBoxSizer* sizer = new wxBoxSizer(wxVERTICAL);
@@ -76,7 +76,7 @@ void StopWatchCore::createFragmentView(CreateViewContext* ctx) {
     });
 
     m_timer.SetOwner(m_frame);
-    m_frame->Bind(wxEVT_TIMER, &StopWatchCore::onTimer, this, m_timer.GetId());
+    m_frame->Bind(wxEVT_TIMER, &StopWatchBody::onTimer, this, m_timer.GetId());
 
     buttonSizer->Add(startBtn, 1, wxALL, 5);
     buttonSizer->Add(stopBtn, 1, wxALL, 5);
@@ -87,30 +87,30 @@ void StopWatchCore::createFragmentView(CreateViewContext* ctx) {
     root->SetSizer(sizer);
 }
 
-wxEvtHandler* StopWatchCore::getEventHandler() {
+wxEvtHandler* StopWatchBody::getEventHandler() {
     return m_frame ? m_frame->GetEventHandler() : nullptr;
 }
 
-void StopWatchCore::onStart(PerformContext*) {
+void StopWatchBody::onStart(PerformContext*) {
     if (!m_timer.IsRunning()) {
         m_timer.Start(100);
     }
 }
 
-void StopWatchCore::onStop(PerformContext*) {
+void StopWatchBody::onStop(PerformContext*) {
     if (m_timer.IsRunning()) {
         m_timer.Stop();
     }
 }
 
-void StopWatchCore::onReset(PerformContext*) {
+void StopWatchBody::onReset(PerformContext*) {
     m_elapsedMs = 0;
     if (m_display) {
         m_display->SetLabel("00:00.0");
     }
 }
 
-void StopWatchCore::onTimer(wxTimerEvent&) {
+void StopWatchBody::onTimer(wxTimerEvent&) {
     if (!m_frame || !m_display) {
         if (m_timer.IsRunning())
             m_timer.Stop();
@@ -127,12 +127,12 @@ void StopWatchCore::onTimer(wxTimerEvent&) {
     m_display->SetLabel(text);
 }
 
-void StopWatchCore::onClose(wxCloseEvent& event) {
+void StopWatchBody::onClose(wxCloseEvent& event) {
     if (m_timer.IsRunning())
         m_timer.Stop();
     if (m_frame) {
-        m_frame->Unbind(wxEVT_TIMER, &StopWatchCore::onTimer, this, m_timer.GetId());
-        m_frame->Unbind(wxEVT_CLOSE_WINDOW, &StopWatchCore::onClose, this);
+        m_frame->Unbind(wxEVT_TIMER, &StopWatchBody::onTimer, this, m_timer.GetId());
+        m_frame->Unbind(wxEVT_CLOSE_WINDOW, &StopWatchBody::onClose, this);
     }
     m_display = nullptr;
     m_frame = nullptr;

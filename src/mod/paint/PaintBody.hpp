@@ -9,10 +9,10 @@
 
 namespace os {
 
-class PaintCore : public UIFragment {
+class PaintBody : public UIFragment {
 public:
-    PaintCore();
-    ~PaintCore() override = default;
+    PaintBody();
+    ~PaintBody() override = default;
 
     void createFragmentView(CreateViewContext* ctx) override;
     wxEvtHandler* getEventHandler() override;

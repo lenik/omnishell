@@ -1,4 +1,4 @@
-#include "PaintCore.hpp"
+#include "PaintBody.hpp"
 
 #include <wx/button.h>
 #include <wx/dcbuffer.h>
@@ -48,7 +48,7 @@ enum {
 
 } // namespace
 
-class PaintCore::PaintCanvas : public wxPanel {
+class PaintBody::PaintCanvas : public wxPanel {
 public:
     PaintCanvas(wxWindow* parent)
         : wxPanel(parent, wxID_ANY) {
@@ -301,7 +301,7 @@ private:
     bool m_previewActive{false};
 };
 
-PaintCore::PaintCore() {
+PaintBody::PaintBody() {
     std::string dir = "heroicons/normal";
 
     // Top-level menu groups (force consistent menu ordering + explicit submenus).
@@ -362,7 +362,7 @@ PaintCore::PaintCore() {
         .install();
 }
 
-void PaintCore::loadImage(const wxImage& img) {
+void PaintBody::loadImage(const wxImage& img) {
     if (m_canvas) {
         m_canvas->loadImage(img);
         return;
@@ -370,7 +370,7 @@ void PaintCore::loadImage(const wxImage& img) {
     m_pendingImage = img;
 }
 
-void PaintCore::createFragmentView(CreateViewContext* ctx) {
+void PaintBody::createFragmentView(CreateViewContext* ctx) {
     wxWindow* parent = ctx->getParent();
     uiFrame* frame = dynamic_cast<uiFrame*>(parent);
     if (!frame)
@@ -492,11 +492,11 @@ void PaintCore::createFragmentView(CreateViewContext* ctx) {
     });
 }
 
-wxEvtHandler* PaintCore::getEventHandler() {
+wxEvtHandler* PaintBody::getEventHandler() {
     return m_root ? m_root->GetEventHandler() : nullptr;
 }
 
-void PaintCore::onSavePng(PerformContext*) {
+void PaintBody::onSavePng(PerformContext*) {
     if (!m_frame || !m_canvas)
         return;
     wxFileDialog dlg(m_frame, "Save image", "", "paint.png", "PNG files (*.png)|*.png",
@@ -506,20 +506,20 @@ void PaintCore::onSavePng(PerformContext*) {
     }
 }
 
-void PaintCore::onClear(PerformContext*) {
+void PaintBody::onClear(PerformContext*) {
     if (m_canvas)
         m_canvas->clear();
 }
 
-void PaintCore::onToolPencil(PerformContext*) { if (m_canvas) m_canvas->setTool(Tool::Pencil); }
-void PaintCore::onToolBrush(PerformContext*) { if (m_canvas) m_canvas->setTool(Tool::Brush); }
-void PaintCore::onToolEraser(PerformContext*) { if (m_canvas) m_canvas->setTool(Tool::Eraser); }
-void PaintCore::onToolLine(PerformContext*) { if (m_canvas) m_canvas->setTool(Tool::Line); }
-void PaintCore::onToolRect(PerformContext*) { if (m_canvas) m_canvas->setTool(Tool::Rect); }
-void PaintCore::onToolEllipse(PerformContext*) { if (m_canvas) m_canvas->setTool(Tool::Ellipse); }
-void PaintCore::onToolFill(PerformContext*) { if (m_canvas) m_canvas->setTool(Tool::Fill); }
-void PaintCore::onToolPicker(PerformContext*) { if (m_canvas) m_canvas->setTool(Tool::Picker); }
-void PaintCore::onToolText(PerformContext*) { if (m_canvas) m_canvas->setTool(Tool::Text); }
+void PaintBody::onToolPencil(PerformContext*) { if (m_canvas) m_canvas->setTool(Tool::Pencil); }
+void PaintBody::onToolBrush(PerformContext*) { if (m_canvas) m_canvas->setTool(Tool::Brush); }
+void PaintBody::onToolEraser(PerformContext*) { if (m_canvas) m_canvas->setTool(Tool::Eraser); }
+void PaintBody::onToolLine(PerformContext*) { if (m_canvas) m_canvas->setTool(Tool::Line); }
+void PaintBody::onToolRect(PerformContext*) { if (m_canvas) m_canvas->setTool(Tool::Rect); }
+void PaintBody::onToolEllipse(PerformContext*) { if (m_canvas) m_canvas->setTool(Tool::Ellipse); }
+void PaintBody::onToolFill(PerformContext*) { if (m_canvas) m_canvas->setTool(Tool::Fill); }
+void PaintBody::onToolPicker(PerformContext*) { if (m_canvas) m_canvas->setTool(Tool::Picker); }
+void PaintBody::onToolText(PerformContext*) { if (m_canvas) m_canvas->setTool(Tool::Text); }
 
 } // namespace os
 

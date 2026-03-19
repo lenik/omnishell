@@ -1,4 +1,4 @@
-#include "BackgroundSettingsCore.hpp"
+#include "BackgroundSettingsBody.hpp"
 
 #include "../../core/RegistryDb.hpp"
 #include "../../shell/Shell.hpp"
@@ -22,7 +22,7 @@ enum {
 };
 }
 
-BackgroundSettingsCore::BackgroundSettingsCore() {
+BackgroundSettingsBody::BackgroundSettingsBody() {
     const std::string dir = "heroicons/normal";
 
     group(ID_GROUP_BG, "settings", "background", 1000, "&Background", "Desktop background settings").install();
@@ -42,7 +42,7 @@ BackgroundSettingsCore::BackgroundSettingsCore() {
         .install();
 }
 
-void BackgroundSettingsCore::createFragmentView(CreateViewContext* ctx) {
+void BackgroundSettingsBody::createFragmentView(CreateViewContext* ctx) {
     wxWindow* parent = ctx->getParent();
     uiFrame* frame = dynamic_cast<uiFrame*>(parent);
     if (!frame)
@@ -98,11 +98,11 @@ void BackgroundSettingsCore::createFragmentView(CreateViewContext* ctx) {
     m_root->SetSizer(sizer);
 }
 
-wxEvtHandler* BackgroundSettingsCore::getEventHandler() {
+wxEvtHandler* BackgroundSettingsBody::getEventHandler() {
     return m_root ? m_root->GetEventHandler() : nullptr;
 }
 
-void BackgroundSettingsCore::onChooseImage(PerformContext*) {
+void BackgroundSettingsBody::onChooseImage(PerformContext*) {
     auto shell = ShellApp::getInstance();
     if (!shell || !shell->getVolumeManager() || !m_frame)
         return;
@@ -118,7 +118,7 @@ void BackgroundSettingsCore::onChooseImage(PerformContext*) {
     m_selectedImagePath = vf.getPath();
 }
 
-void BackgroundSettingsCore::onApplyColor(PerformContext*) {
+void BackgroundSettingsBody::onApplyColor(PerformContext*) {
     auto shell = ShellApp::getInstance();
     if (!shell || !shell->getDesktopWindow() || !m_picker)
         return;
@@ -133,7 +133,7 @@ void BackgroundSettingsCore::onApplyColor(PerformContext*) {
     shell->getDesktopWindow()->setBackgroundColor(c);
 }
 
-void BackgroundSettingsCore::onApplyImage(PerformContext*) {
+void BackgroundSettingsBody::onApplyImage(PerformContext*) {
     auto shell = ShellApp::getInstance();
     if (!shell || !shell->getDesktopWindow() || !shell->getVolumeManager())
         return;

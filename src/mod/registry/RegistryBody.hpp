@@ -16,10 +16,10 @@ public:
     std::string path;
 };
 
-class RegistryCore : public UIFragment {
+class RegistryBody : public UIFragment {
 public:
-    RegistryCore();
-    ~RegistryCore() override = default;
+    RegistryBody();
+    ~RegistryBody() override = default;
 
     void createFragmentView(CreateViewContext* ctx) override;
     wxEvtHandler* getEventHandler() override;

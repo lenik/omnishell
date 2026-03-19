@@ -8,10 +8,10 @@
 
 namespace os {
 
-class CalendarCore : public UIFragment {
+class CalendarBody : public UIFragment {
 public:
-    CalendarCore();
-    ~CalendarCore() override = default;
+    CalendarBody();
+    ~CalendarBody() override = default;
 
     void createFragmentView(CreateViewContext* ctx) override;
     wxEvtHandler* getEventHandler() override;

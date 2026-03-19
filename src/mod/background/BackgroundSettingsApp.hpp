@@ -1,7 +1,7 @@
 #ifndef OMNISHELL_APP_BACKGROUND_SETTINGS_HPP
 #define OMNISHELL_APP_BACKGROUND_SETTINGS_HPP
 
-#include "BackgroundSettingsCore.hpp"
+#include "BackgroundSettingsBody.hpp"
 
 #include "../../core/Module.hpp"
 
@@ -19,7 +19,7 @@ public:
     void initializeMetadata();
 
 private:
-    BackgroundSettingsCore m_core;
+    BackgroundSettingsBody m_body;
 };
 
 } // namespace os

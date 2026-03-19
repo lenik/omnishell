@@ -13,7 +13,7 @@ OMNISHELL_REGISTER_MODULE("omnishell.paint", PaintApp)
 
 PaintApp::PaintApp(CreateModuleContext* ctx)
     : Module(ctx)
-    , m_core() {
+    , m_body() {
     initializeMetadata();
 }
 
@@ -40,7 +40,7 @@ ProcessPtr PaintApp::run() {
     proc->icon = image;
 
     uiFrame* frame = new uiFrame("Paint");
-    frame->addFragment(&m_core);
+    frame->addFragment(&m_body);
     frame->createView();
     frame->Centre();
     frame->Show(true);
@@ -56,7 +56,7 @@ ProcessPtr PaintApp::openImage(VolumeManager* volumeManager, VolumeFile file) {
     std::string dir = "streamline-vectors/core/pop/interface-essential";
     proc->icon = ImageSet(Path(dir, "paint-palette.svg"));
 
-    auto core = std::make_shared<PaintCore>();
+    auto core = std::make_shared<PaintBody>();
     uiFrame* frame = new uiFrame("Paint");
     frame->addFragment(core.get());
     frame->createView();

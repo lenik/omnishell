@@ -1,4 +1,4 @@
-#include "ExplorerCore.hpp"
+#include "ExplorerBody.hpp"
 
 #include "../../shell/Shell.hpp"
 #include "../notepad/NotepadApp.hpp"
@@ -44,7 +44,7 @@ static std::string parentPath(const std::string& p) {
 }
 } // namespace
 
-ExplorerCore::ExplorerCore(VolumeManager* vm, Volume* volume, std::string dir)
+ExplorerBody::ExplorerBody(VolumeManager* vm, Volume* volume, std::string dir)
     : m_vm(vm)
     , m_volume(volume)
     , m_dir(std::move(dir)) {
@@ -62,7 +62,7 @@ ExplorerCore::ExplorerCore(VolumeManager* vm, Volume* volume, std::string dir)
         .install();
 }
 
-void ExplorerCore::createFragmentView(CreateViewContext* ctx) {
+void ExplorerBody::createFragmentView(CreateViewContext* ctx) {
     wxWindow* parent = ctx->getParent();
     uiFrame* frame = dynamic_cast<uiFrame*>(parent);
     if (!frame)
@@ -189,17 +189,17 @@ void ExplorerCore::createFragmentView(CreateViewContext* ctx) {
     refresh();
 }
 
-wxEvtHandler* ExplorerCore::getEventHandler() {
+wxEvtHandler* ExplorerBody::getEventHandler() {
     return m_list ? m_list->GetEventHandler() : (m_tree ? m_tree->GetEventHandler() : nullptr);
 }
 
-void ExplorerCore::setDir(std::string dir) {
+void ExplorerBody::setDir(std::string dir) {
     m_dir = std::move(dir);
     refresh();
     selectTreePath(m_volume, m_dir);
 }
 
-void ExplorerCore::refresh() {
+void ExplorerBody::refresh() {
     if (!m_volume || !m_list || !m_pathLabel)
         return;
     try {
@@ -243,7 +243,7 @@ void ExplorerCore::refresh() {
     }
 }
 
-void ExplorerCore::refreshTreeVolumes() {
+void ExplorerBody::refreshTreeVolumes() {
     if (!m_tree || !m_vm)
         return;
     m_tree->DeleteAllItems();
@@ -263,7 +263,7 @@ void ExplorerCore::refreshTreeVolumes() {
     m_tree->Expand(root);
 }
 
-void ExplorerCore::loadTreeChildren(const wxTreeItemId& id) {
+void ExplorerBody::loadTreeChildren(const wxTreeItemId& id) {
     if (!m_tree || !id.IsOk())
         return;
     auto* d = dynamic_cast<TreeData*>(m_tree->GetItemData(id));
@@ -287,7 +287,7 @@ void ExplorerCore::loadTreeChildren(const wxTreeItemId& id) {
     }
 }
 
-void ExplorerCore::selectTreePath(Volume* vol, const std::string& path) {
+void ExplorerBody::selectTreePath(Volume* vol, const std::string& path) {
     if (!m_tree || !vol)
         return;
     wxTreeItemId root = m_tree->GetRootItem();
@@ -353,7 +353,7 @@ void ExplorerCore::selectTreePath(Volume* vol, const std::string& path) {
     }
 }
 
-void ExplorerCore::openChild(const std::string& name, bool isDir) {
+void ExplorerBody::openChild(const std::string& name, bool isDir) {
     if (!isDir)
         return;
     const std::string next = joinPath(m_dir, name);
@@ -368,7 +368,7 @@ bool extIn(const std::string& ext, const std::vector<std::string>& list) {
 }
 } // namespace
 
-int ExplorerCore::listIconForExtension(const std::string& ext) const {
+int ExplorerBody::listIconForExtension(const std::string& ext) const {
     if (ext.empty()) return m_iconFileGeneric;
     static const std::vector<std::string> image = {
         "png","jpg","jpeg","jfif","bmp","gif","webp","ico","svg","tiff","tif","heic","avif","raw","cr2","nef","arw"
@@ -419,7 +419,7 @@ static bool looksLikeTextFile(const std::string& name) {
     return false;
 }
 
-void ExplorerCore::openFile(const std::string& name) {
+void ExplorerBody::openFile(const std::string& name) {
     if (!m_volume || !m_vm)
         return;
     const std::string path = joinPath(m_dir, name);
@@ -451,11 +451,11 @@ void ExplorerCore::openFile(const std::string& name) {
     }
 }
 
-void ExplorerCore::onUp(PerformContext*) {
+void ExplorerBody::onUp(PerformContext*) {
     setDir(parentPath(m_dir));
 }
 
-void ExplorerCore::onRefresh(PerformContext*) {
+void ExplorerBody::onRefresh(PerformContext*) {
     refresh();
 }
 

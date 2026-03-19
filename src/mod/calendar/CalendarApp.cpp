@@ -10,7 +10,7 @@ OMNISHELL_REGISTER_MODULE("omnishell.calendar", CalendarApp)
 
 CalendarApp::CalendarApp(CreateModuleContext* ctx)
     : Module(ctx)
-    , m_core() {
+    , m_body() {
     initializeMetadata();
 }
 
@@ -37,7 +37,7 @@ ProcessPtr CalendarApp::run() {
     proc->icon = image;
 
     uiFrame* frame = new uiFrame("Calendar");
-    frame->addFragment(&m_core);
+    frame->addFragment(&m_body);
     frame->createView();
     frame->Centre();
     frame->Show(true);

@@ -1,7 +1,7 @@
 #ifndef OMNISHELL_APP_STOPWATCH_HPP
 #define OMNISHELL_APP_STOPWATCH_HPP
 
-#include "StopWatchCore.hpp"
+#include "StopWatchBody.hpp"
 
 #include "../../core/Module.hpp"
 
@@ -20,7 +20,7 @@ public:
     void initializeMetadata();
 
 private:
-    StopWatchCore m_core;
+    StopWatchBody m_body;
 };
 
 } // namespace os

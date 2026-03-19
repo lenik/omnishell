@@ -1,7 +1,7 @@
 #ifndef OMNISHELL_APP_CALENDAR_HPP
 #define OMNISHELL_APP_CALENDAR_HPP
 
-#include "CalendarCore.hpp"
+#include "CalendarBody.hpp"
 
 #include "../../core/Module.hpp"
 
@@ -20,7 +20,7 @@ public:
     void initializeMetadata();
 
 private:
-    CalendarCore m_core;
+    CalendarBody m_body;
 };
 
 } // namespace os

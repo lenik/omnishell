@@ -1,7 +1,7 @@
 #ifndef OMNISHELL_APP_REGISTRY_HPP
 #define OMNISHELL_APP_REGISTRY_HPP
 
-#include "RegistryCore.hpp"
+#include "RegistryBody.hpp"
 
 #include "../../core/Module.hpp"
 
@@ -24,7 +24,7 @@ public:
     void initializeMetadata();
 
 private:
-    RegistryCore m_core;
+    RegistryBody m_body;
 };
 
 } // namespace os
