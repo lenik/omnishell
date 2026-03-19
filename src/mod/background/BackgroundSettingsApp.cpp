@@ -10,7 +10,7 @@ OMNISHELL_REGISTER_MODULE("omnishell.backgroundsettings", BackgroundSettingsApp)
 
 BackgroundSettingsApp::BackgroundSettingsApp(CreateModuleContext* ctx) //
     : Module(ctx)
-    , core_() {
+    , m_core() {
     initializeMetadata();
 }
 
@@ -37,7 +37,7 @@ ProcessPtr BackgroundSettingsApp::run() {
     proc->icon = image;
 
     uiFrame* frame = new uiFrame("Background Settings");
-    frame->addFragment(&core_);
+    frame->addFragment(&m_core);
     frame->createView();
     frame->SetSize(wxSize(520, 260));
     frame->Centre();

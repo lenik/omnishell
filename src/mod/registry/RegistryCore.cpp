@@ -56,7 +56,7 @@ void RegistryCore::createFragmentView(CreateViewContext* ctx) {
     uiFrame* frame = dynamic_cast<uiFrame*>(parent);
     if (!frame)
         return;
-    frame_ = frame;
+    m_frame = frame;
 
     RegistryDb::getInstance().load();
 
@@ -66,51 +66,51 @@ void RegistryCore::createFragmentView(CreateViewContext* ctx) {
 
     wxPanel* left = new wxPanel(split, wxID_ANY);
     wxBoxSizer* leftSizer = new wxBoxSizer(wxVERTICAL);
-    tree_ = new wxTreeCtrl(left, wxID_ANY, wxDefaultPosition, wxDefaultSize,
+    m_tree = new wxTreeCtrl(left, wxID_ANY, wxDefaultPosition, wxDefaultSize,
                            wxTR_HAS_BUTTONS | wxTR_LINES_AT_ROOT | wxTR_DEFAULT_STYLE);
-    leftSizer->Add(tree_, 1, wxEXPAND | wxALL, 6);
+    leftSizer->Add(m_tree, 1, wxEXPAND | wxALL, 6);
     left->SetSizer(leftSizer);
 
     wxPanel* right = new wxPanel(split, wxID_ANY);
     wxBoxSizer* rightSizer = new wxBoxSizer(wxVERTICAL);
-    list_ = new wxListCtrl(right, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxLC_REPORT | wxLC_SINGLE_SEL);
-    list_->InsertColumn(0, "Name", wxLIST_FORMAT_LEFT, 220);
-    list_->InsertColumn(1, "Value", wxLIST_FORMAT_LEFT, 420);
-    rightSizer->Add(list_, 1, wxEXPAND | wxALL, 6);
+    m_list = new wxListCtrl(right, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxLC_REPORT | wxLC_SINGLE_SEL);
+    m_list->InsertColumn(0, "Name", wxLIST_FORMAT_LEFT, 220);
+    m_list->InsertColumn(1, "Value", wxLIST_FORMAT_LEFT, 420);
+    rightSizer->Add(m_list, 1, wxEXPAND | wxALL, 6);
     right->SetSizer(rightSizer);
 
     split->SplitVertically(left, right);
 
-    tree_->Bind(wxEVT_TREE_SEL_CHANGED, [this](wxTreeEvent& e) {
+    m_tree->Bind(wxEVT_TREE_SEL_CHANGED, [this](wxTreeEvent& e) {
         wxTreeItemId id = e.GetItem();
         RegistryTreePathData* d =
-            id.IsOk() ? dynamic_cast<RegistryTreePathData*>(tree_->GetItemData(id)) : nullptr;
-        selectedPath_ = d ? d->path : "";
-        populateProperties(selectedPath_);
+            id.IsOk() ? dynamic_cast<RegistryTreePathData*>(m_tree->GetItemData(id)) : nullptr;
+        m_selectedPath = d ? d->path : "";
+        populateProperties(m_selectedPath);
         e.Skip();
     });
-    list_->Bind(wxEVT_LIST_ITEM_ACTIVATED, [this](wxListEvent&) { editSelectedProperty(); });
+    m_list->Bind(wxEVT_LIST_ITEM_ACTIVATED, [this](wxListEvent&) { editSelectedProperty(); });
 
     buildTree();
-    selectedPath_.clear();
-    populateProperties(selectedPath_);
+    m_selectedPath.clear();
+    populateProperties(m_selectedPath);
 }
 
 wxEvtHandler* RegistryCore::getEventHandler() {
-    return tree_ ? tree_->GetEventHandler() : nullptr;
+    return m_tree ? m_tree->GetEventHandler() : nullptr;
 }
 
 void RegistryCore::onReload(PerformContext*) {
     RegistryDb::getInstance().load();
     buildTree();
-    populateProperties(selectedPath_);
+    populateProperties(m_selectedPath);
 }
 
 void RegistryCore::buildTree() {
-    if (!tree_)
+    if (!m_tree)
         return;
-    tree_->DeleteAllItems();
-    wxTreeItemId root = tree_->AddRoot("Registry", -1, -1, new RegistryTreePathData(""));
+    m_tree->DeleteAllItems();
+    wxTreeItemId root = m_tree->AddRoot("Registry", -1, -1, new RegistryTreePathData(""));
 
     const auto& data = RegistryDb::getInstance().data();
     std::set<std::string> folderPaths;
@@ -140,7 +140,7 @@ void RegistryCore::buildTree() {
             auto it = nodeByPath.find(next);
             if (it == nodeByPath.end()) {
                 wxTreeItemId nid =
-                    tree_->AppendItem(parent, part, -1, -1, new RegistryTreePathData(next));
+                    m_tree->AppendItem(parent, part, -1, -1, new RegistryTreePathData(next));
                 nodeByPath[next] = nid;
                 parent = nid;
             } else {
@@ -150,13 +150,13 @@ void RegistryCore::buildTree() {
         }
     }
 
-    tree_->Expand(root);
+    m_tree->Expand(root);
 }
 
 void RegistryCore::populateProperties(const std::string& nodePath) {
-    if (!list_)
+    if (!m_list)
         return;
-    list_->DeleteAllItems();
+    m_list->DeleteAllItems();
 
     const auto& data = RegistryDb::getInstance().data();
     const std::string prefix = nodePath.empty() ? "" : (nodePath + ".");
@@ -190,59 +190,59 @@ void RegistryCore::populateProperties(const std::string& nodePath) {
 
     long idx = 0;
     for (const auto& [name, e] : entries) {
-        list_->InsertItem(idx, name);
-        list_->SetItem(idx, 1, e.hasValue ? e.value : "(folder)");
+        m_list->InsertItem(idx, name);
+        m_list->SetItem(idx, 1, e.hasValue ? e.value : "(folder)");
         ++idx;
     }
 }
 
 void RegistryCore::editSelectedProperty() {
-    if (!list_)
+    if (!m_list)
         return;
     long item = -1;
-    item = list_->GetNextItem(item, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED);
+    item = m_list->GetNextItem(item, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED);
     if (item == -1)
         return;
 
-    wxString name = list_->GetItemText(item, 0);
-    wxString val = list_->GetItemText(item, 1);
+    wxString name = m_list->GetItemText(item, 0);
+    wxString val = m_list->GetItemText(item, 1);
     if (val == "(folder)") {
-        const std::string next = selectedPath_.empty() ? name.ToStdString()
-                                                       : (selectedPath_ + "." + name.ToStdString());
-        wxTreeItemId root = tree_->GetRootItem();
+        const std::string next = m_selectedPath.empty() ? name.ToStdString()
+                                                       : (m_selectedPath + "." + name.ToStdString());
+        wxTreeItemId root = m_tree->GetRootItem();
         std::vector<std::string> parts = splitKey(next);
         wxTreeItemId cur = root;
         for (const auto& p : parts) {
             wxTreeItemIdValue cookie;
-            wxTreeItemId child = tree_->GetFirstChild(cur, cookie);
+            wxTreeItemId child = m_tree->GetFirstChild(cur, cookie);
             bool found = false;
             while (child.IsOk()) {
-                if (tree_->GetItemText(child).ToStdString() == p) {
+                if (m_tree->GetItemText(child).ToStdString() == p) {
                     cur = child;
                     found = true;
                     break;
                 }
-                child = tree_->GetNextChild(cur, cookie);
+                child = m_tree->GetNextChild(cur, cookie);
             }
             if (!found)
                 break;
         }
         if (cur.IsOk())
-            tree_->SelectItem(cur);
+            m_tree->SelectItem(cur);
         return;
     }
 
     const std::string fullKey =
-        selectedPath_.empty() ? name.ToStdString() : (selectedPath_ + "." + name.ToStdString());
+        m_selectedPath.empty() ? name.ToStdString() : (m_selectedPath + "." + name.ToStdString());
 
-    wxTextEntryDialog dlg(frame_, "Value:", "Edit Registry Value", val);
+    wxTextEntryDialog dlg(m_frame, "Value:", "Edit Registry Value", val);
     if (dlg.ShowModal() != wxID_OK)
         return;
     wxString newVal = dlg.GetValue();
 
     RegistryDb::getInstance().set(fullKey, newVal.ToStdString());
     RegistryDb::getInstance().save();
-    populateProperties(selectedPath_);
+    populateProperties(m_selectedPath);
 }
 
 } // namespace os

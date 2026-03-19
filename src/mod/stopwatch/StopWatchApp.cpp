@@ -10,7 +10,7 @@ OMNISHELL_REGISTER_MODULE("omnishell.stopwatch", StopWatchApp)
 
 StopWatchApp::StopWatchApp(CreateModuleContext* ctx)
     : Module(ctx)
-    , core_() {
+    , m_core() {
     initializeMetadata();
 }
 
@@ -37,7 +37,7 @@ ProcessPtr StopWatchApp::run() {
     proc->icon = image;
 
     uiFrame* frame = new uiFrame("StopWatch");
-    frame->addFragment(&core_);
+    frame->addFragment(&m_core);
     frame->createView();
     frame->SetSize(wxSize(300, 150));
     frame->Centre();

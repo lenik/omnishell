@@ -117,14 +117,14 @@ protected:
     void UpdateStatus();
 
 private:
-    wxListCtrl* printerList_;
-    wxStaticText* statusText_;
-    wxStaticText* messageText_;
-    wxButton* setDefaultButton_;
+    wxListCtrl* m_printerList;
+    wxStaticText* m_statusText;
+    wxStaticText* m_messageText;
+    wxButton* m_setDefaultButton;
     
-    std::vector<PrinterInfo> printers_;
-    int selectedIndex_;
-    wxString defaultPrinter_;
+    std::vector<PrinterInfo> m_printers;
+    int m_selectedIndex;
+    wxString m_defaultPrinter;
 };
 
 } // namespace os

@@ -79,8 +79,8 @@ EVT_ERASE_BACKGROUND(DesktopWindow::OnEraseBackground)
 END_EVENT_TABLE()
 
 DesktopWindow::DesktopWindow(wxWindow* parent)
-    : wxPanel(parent, wxID_ANY), volumeManager_(nullptr), backgroundColor_(*wxLIGHT_GREY),
-      iconSize_(64, 80), iconSpacing_(10), margin_(20) {
+    : wxPanel(parent, wxID_ANY), m_volumeManager(nullptr), m_backgroundColor(*wxLIGHT_GREY),
+      m_iconSize(64, 80), m_iconSpacing(10), m_margin(20) {
     SetBackgroundStyle(wxBG_STYLE_PAINT);
     SetMinSize(wxSize(800, 600));
 }
@@ -103,67 +103,67 @@ void DesktopWindow::addIcon(ModulePtr module, const wxPoint& position) {
     icon.selected = false;
 
     CreateIconControls(icon);
-    icons_.push_back(icon);
+    m_icons.push_back(icon);
 
     Refresh();
 }
 
 void DesktopWindow::removeIcon(const std::string& moduleUri) {
     auto it =
-        std::find_if(icons_.begin(), icons_.end(), [&moduleUri](const DesktopModuleIcon& icon) {
+        std::find_if(m_icons.begin(), m_icons.end(), [&moduleUri](const DesktopModuleIcon& icon) {
             return icon.module && icon.module->getFullUri() == moduleUri;
         });
 
-    if (it != icons_.end()) {
+    if (it != m_icons.end()) {
         if (it->widget) {
             it->widget->Destroy();
         }
-        icons_.erase(it);
+        m_icons.erase(it);
         Refresh();
     }
 }
 
-void DesktopWindow::setVolumeManager(VolumeManager* vm) { volumeManager_ = vm; }
+void DesktopWindow::setVolumeManager(VolumeManager* vm) { m_volumeManager = vm; }
 
 void DesktopWindow::addVolumeIcons() {
-    if (!volumeManager_)
+    if (!m_volumeManager)
         return;
-    for (size_t i = 0; i < volumeManager_->getVolumeCount(); i++) {
-        Volume* vol = volumeManager_->getVolume(i);
+    for (size_t i = 0; i < m_volumeManager->getVolumeCount(); i++) {
+        Volume* vol = m_volumeManager->getVolume(i);
         if (!vol)
             continue;
         VolumeDesktopIcon icon;
         icon.volume = vol;
         icon.position = wxPoint(0, 0);
         CreateVolumeIconControls(icon);
-        volumeIcons_.push_back(icon);
+        m_volumeIcons.push_back(icon);
     }
     Refresh();
 }
 
 void DesktopWindow::clearIcons() {
-    for (auto& icon : volumeIcons_) {
+    for (auto& icon : m_volumeIcons) {
         if (icon.widget)
             icon.widget->Destroy();
     }
-    volumeIcons_.clear();
-    for (auto& icon : icons_) {
+    m_volumeIcons.clear();
+    for (auto& icon : m_icons) {
         if (icon.widget)
             icon.widget->Destroy();
     }
-    icons_.clear();
+    m_icons.clear();
 }
 
 void DesktopWindow::arrangeIcons() {
     const int cellW = 120;
     const int cellH = 100;
-    int x = margin_;
-    int y = margin_;
+    int x = m_margin;
+    int y = m_margin;
     int maxWidth = GetClientSize().GetWidth();
 
-    for (auto& icon : volumeIcons_) {
-        if (x + cellW > maxWidth - margin_) {
-            x = margin_;
+    for (auto& icon : m_volumeIcons) {
+        if (x + cellW > maxWidth - m_margin) {
+            x = m_margin;
             y += cellH;
         }
         icon.position = wxPoint(x, y);
@@ -172,9 +172,9 @@ void DesktopWindow::arrangeIcons() {
         }
         x += cellW;
     }
-    for (auto& icon : icons_) {
-        if (x + cellW > maxWidth - margin_) {
-            x = margin_;
+    for (auto& icon : m_icons) {
+        if (x + cellW > maxWidth - m_margin) {
+            x = m_margin;
             y += cellH;
         }
         icon.position = wxPoint(x, y);
@@ -197,7 +197,7 @@ void DesktopWindow::CreateVolumeIconControls(VolumeDesktopIcon& icon) {
     std::string labelStr = icon.volume->getLabel();
     if (labelStr.empty())
         labelStr = icon.volume->getId();
-    icon.widget = new LabeledIcon(this, wxID_ANY, bitmap, labelStr, icon.position, iconSize_);
+    icon.widget = new LabeledIcon(this, wxID_ANY, bitmap, labelStr, icon.position, m_iconSize);
 
     // Double-click opens Explorer for this volume
     icon.widget->onLeftDClick([this](wxMouseEvent& event) {
@@ -217,15 +217,15 @@ void DesktopWindow::CreateVolumeIconControls(VolumeDesktopIcon& icon) {
 }
 
 void DesktopWindow::setBackgroundColor(const wxColour& color) {
-    backgroundColor_ = color;
-    backgroundImage_ = wxBitmap();
-    backgroundImageSrc_ = wxImage();
+    m_backgroundColor = color;
+    m_backgroundImage = wxBitmap();
+    m_backgroundImageSrc = wxImage();
     Refresh();
 }
 
 void DesktopWindow::setBackgroundImage(const wxBitmap& bitmap) {
-    backgroundImage_ = bitmap;
-    backgroundImageSrc_ = bitmap.IsOk() ? bitmap.ConvertToImage() : wxImage();
+    m_backgroundImage = bitmap;
+    m_backgroundImageSrc = bitmap.IsOk() ? bitmap.ConvertToImage() : wxImage();
     UpdateScaledBackground();
     Refresh();
 }
@@ -236,8 +236,8 @@ void DesktopWindow::loadBackgroundSettings() {
 
     if (mode == "image") {
         std::string path = RegistryDb::getInstance().get("Desktop.Background.ImagePath", "");
-        if (!path.empty() && volumeManager_) {
-            Volume* vol = volumeManager_->getDefaultVolume();
+        if (!path.empty() && m_volumeManager) {
+            Volume* vol = m_volumeManager->getDefaultVolume();
             if (vol) {
                 try {
                     VolumeFile vf(vol, path);
@@ -246,7 +246,7 @@ void DesktopWindow::loadBackgroundSettings() {
                         wxMemoryInputStream ms(data.data(), data.size());
                         wxImage img(ms, wxBITMAP_TYPE_ANY);
                         if (img.IsOk()) {
-                            backgroundImageSrc_ = img;
+                            m_backgroundImageSrc = img;
                             UpdateScaledBackground();
                             Refresh();
                             return;
@@ -257,8 +257,8 @@ void DesktopWindow::loadBackgroundSettings() {
             }
         }
         // Fallback to color if image can't be loaded.
-        backgroundImage_ = wxBitmap();
-        backgroundImageSrc_ = wxImage();
+        m_backgroundImage = wxBitmap();
+        m_backgroundImageSrc = wxImage();
         mode = "color";
     }
 
@@ -268,27 +268,27 @@ void DesktopWindow::loadBackgroundSettings() {
             long r = std::strtol(hex.substr(1, 2).c_str(), nullptr, 16);
             long g = std::strtol(hex.substr(3, 2).c_str(), nullptr, 16);
             long b = std::strtol(hex.substr(5, 2).c_str(), nullptr, 16);
-            backgroundColor_ = wxColour((unsigned char)r, (unsigned char)g, (unsigned char)b);
+            m_backgroundColor = wxColour((unsigned char)r, (unsigned char)g, (unsigned char)b);
         } else {
-            backgroundColor_ = *wxLIGHT_GREY;
+            m_backgroundColor = *wxLIGHT_GREY;
         }
-        backgroundImage_ = wxBitmap();
-        backgroundImageSrc_ = wxImage();
+        m_backgroundImage = wxBitmap();
+        m_backgroundImageSrc = wxImage();
         Refresh();
     }
 }
 
 void DesktopWindow::UpdateScaledBackground() {
-    if (!backgroundImageSrc_.IsOk()) {
-        backgroundImage_ = wxBitmap();
+    if (!m_backgroundImageSrc.IsOk()) {
+        m_backgroundImage = wxBitmap();
         return;
     }
     wxSize sz = GetClientSize();
     if (sz.GetWidth() <= 0 || sz.GetHeight() <= 0)
         return;
-    wxImage scaled = backgroundImageSrc_.Scale(sz.GetWidth(), sz.GetHeight(), wxIMAGE_QUALITY_HIGH);
+    wxImage scaled = m_backgroundImageSrc.Scale(sz.GetWidth(), sz.GetHeight(), wxIMAGE_QUALITY_HIGH);
     if (scaled.IsOk()) {
-        backgroundImage_ = wxBitmap(scaled);
+        m_backgroundImage = wxBitmap(scaled);
     }
 }
 
@@ -322,14 +322,14 @@ void DesktopWindow::saveLayout() const {
 
     // Modules
     out << "  \"modules\": [\n";
-    for (size_t i = 0; i < icons_.size(); ++i) {
-        const auto& icon = icons_[i];
+    for (size_t i = 0; i < m_icons.size(); ++i) {
+        const auto& icon = m_icons[i];
         if (!icon.module)
             continue;
         out << "    {\"uri\": \"" << escapeJson(icon.module->getFullUri()) << "\", "
             << "\"x\": " << icon.position.x << ", "
             << "\"y\": " << icon.position.y << "}";
-        if (i + 1 < icons_.size())
+        if (i + 1 < m_icons.size())
             out << ",";
         out << "\n";
     }
@@ -337,14 +337,14 @@ void DesktopWindow::saveLayout() const {
 
     // Volumes
     out << "  \"volumes\": [\n";
-    for (size_t i = 0; i < volumeIcons_.size(); ++i) {
-        const auto& icon = volumeIcons_[i];
+    for (size_t i = 0; i < m_volumeIcons.size(); ++i) {
+        const auto& icon = m_volumeIcons[i];
         if (!icon.volume)
             continue;
         out << "    {\"id\": \"" << escapeJson(icon.volume->getId()) << "\", "
             << "\"x\": " << icon.position.x << ", "
             << "\"y\": " << icon.position.y << "}";
-        if (i + 1 < volumeIcons_.size())
+        if (i + 1 < m_volumeIcons.size())
             out << ",";
         out << "\n";
     }
@@ -413,7 +413,7 @@ void DesktopWindow::loadLayout() {
 
     // Apply to modules
     parseEntries("modules", "uri", [this](const std::string& uri, const wxPoint& pt) {
-        for (auto& icon : icons_) {
+        for (auto& icon : m_icons) {
             if (icon.module && icon.module->getFullUri() == uri) {
                 icon.position = pt;
                 if (icon.widget) {
@@ -426,7 +426,7 @@ void DesktopWindow::loadLayout() {
 
     // Apply to volumes
     parseEntries("volumes", "id", [this](const std::string& id, const wxPoint& pt) {
-        for (auto& icon : volumeIcons_) {
+        for (auto& icon : m_volumeIcons) {
             if (icon.volume && icon.volume->getId() == id) {
                 icon.position = pt;
                 if (icon.widget) {
@@ -444,11 +444,11 @@ void DesktopWindow::OnPaint(wxPaintEvent& event) {
     wxSize size = GetClientSize();
 
     // Draw background
-    if (backgroundImage_.IsOk()) {
+    if (m_backgroundImage.IsOk()) {
         // Tile or stretch background image
-        dc.DrawBitmap(backgroundImage_, 0, 0, false);
+        dc.DrawBitmap(m_backgroundImage, 0, 0, false);
     } else {
-        dc.SetBackground(wxBrush(backgroundColor_));
+        dc.SetBackground(wxBrush(m_backgroundColor));
         dc.Clear();
     }
 
@@ -530,7 +530,7 @@ void DesktopWindow::CreateIconControls(DesktopIcon& icon) {
     }
 
     icon.widget = new LabeledIcon(this, wxID_ANY, bitmap, //
-                                  moduleIcon->module->label, icon.position, iconSize_);
+                                  moduleIcon->module->label, icon.position, m_iconSize);
 
     // Bind events on the composite widget
     icon.widget->onLeftDClick([this](wxMouseEvent& event) { OnIconLeftDoubleClick(event); });
@@ -601,8 +601,8 @@ void DesktopWindow::OnIconLeftDown(wxMouseEvent& event) {
         return;
     }
 
-    isDragging_ = true;
-    draggingIcon_ = icon;
+    m_isDragging = true;
+    m_draggingIcon = icon;
 
     // Mouse position in desktop coordinates (regardless of which child generated the event).
     // Use global mouse position to avoid inconsistencies between icon panel and its children.
@@ -611,7 +611,7 @@ void DesktopWindow::OnIconLeftDown(wxMouseEvent& event) {
     // Remember offset from icon's top-left to the mouse position so we can keep
     // that relative position stable while dragging, independent of which child
     // (icon or label) was clicked.
-    dragOffset_ = desktopPos - icon->position;
+    m_dragOffset = desktopPos - icon->position;
 
     if (!icon->widget->HasCapture()) {
         icon->widget->CaptureMouse();
@@ -624,13 +624,13 @@ void DesktopWindow::OnIconLeftUp(wxMouseEvent& event) {
     wxWindow* window = dynamic_cast<wxWindow*>(event.GetEventObject());
 
     // Handle end of drag
-    if (isDragging_ && draggingIcon_) {
-        if (draggingIcon_->widget && draggingIcon_->widget->HasCapture()) {
-            draggingIcon_->widget->ReleaseMouse();
+    if (m_isDragging && m_draggingIcon) {
+        if (m_draggingIcon->widget && m_draggingIcon->widget->HasCapture()) {
+            m_draggingIcon->widget->ReleaseMouse();
         }
 
-        isDragging_ = false;
-        draggingIcon_ = nullptr;
+        m_isDragging = false;
+        m_draggingIcon = nullptr;
 
         // Persist new layout after drag ends
         saveLayout();
@@ -657,7 +657,7 @@ void DesktopWindow::OnIconLeftUp(wxMouseEvent& event) {
 }
 
 void DesktopWindow::OnIconMouseMove(wxMouseEvent& event) {
-    if (!isDragging_ || !draggingIcon_ || !event.Dragging() || !event.LeftIsDown()) {
+    if (!m_isDragging || !m_draggingIcon || !event.Dragging() || !event.LeftIsDown()) {
         event.Skip();
         return;
     }
@@ -666,7 +666,7 @@ void DesktopWindow::OnIconMouseMove(wxMouseEvent& event) {
     // so dragging works the same whether the user clicks on the icon image, label, or padding.
     wxPoint screenPos = wxGetMousePosition();
     wxPoint desktopPos = ScreenToClient(screenPos);
-    wxPoint newPos = desktopPos - dragOffset_;
+    wxPoint newPos = desktopPos - m_dragOffset;
 
     // Optional: clamp to desktop bounds
     wxSize clientSize = GetClientSize();
@@ -674,20 +674,20 @@ void DesktopWindow::OnIconMouseMove(wxMouseEvent& event) {
         newPos.x = 0;
     if (newPos.y < 0)
         newPos.y = 0;
-    if (newPos.x + iconSize_.GetWidth() > clientSize.GetWidth())
-        newPos.x = clientSize.GetWidth() - iconSize_.GetWidth();
-    if (newPos.y + iconSize_.GetHeight() > clientSize.GetHeight())
-        newPos.y = clientSize.GetHeight() - iconSize_.GetHeight();
+    if (newPos.x + m_iconSize.GetWidth() > clientSize.GetWidth())
+        newPos.x = clientSize.GetWidth() - m_iconSize.GetWidth();
+    if (newPos.y + m_iconSize.GetHeight() > clientSize.GetHeight())
+        newPos.y = clientSize.GetHeight() - m_iconSize.GetHeight();
 
-    draggingIcon_->position = newPos;
-    draggingIcon_->widget->SetPosition(newPos);
+    m_draggingIcon->position = newPos;
+    m_draggingIcon->widget->SetPosition(newPos);
 
     Refresh();
     event.Skip();
 }
 
 DesktopIcon* DesktopWindow::FindIconAt(const wxPoint& pos) {
-    for (auto& icon : icons_) {
+    for (auto& icon : m_icons) {
         if (icon.widget) {
             wxRect rect = icon.widget->GetRect();
             if (rect.Contains(pos)) {
@@ -695,7 +695,7 @@ DesktopIcon* DesktopWindow::FindIconAt(const wxPoint& pos) {
             }
         }
     }
-    for (auto& icon : volumeIcons_) {
+    for (auto& icon : m_volumeIcons) {
         if (icon.widget) {
             wxRect rect = icon.widget->GetRect();
             if (rect.Contains(pos)) {
@@ -707,7 +707,7 @@ DesktopIcon* DesktopWindow::FindIconAt(const wxPoint& pos) {
 }
 
 DesktopModuleIcon* DesktopWindow::FindIconByModule(const std::string& uri) {
-    for (auto& icon : icons_) {
+    for (auto& icon : m_icons) {
         if (icon.module && icon.module->getFullUri() == uri) {
             return &icon;
         }
@@ -720,14 +720,14 @@ DesktopIcon* DesktopWindow::FindIconByWindow(wxWindow* window) {
         return nullptr;
     }
 
-    for (auto& icon : icons_) {
+    for (auto& icon : m_icons) {
         if (!icon.widget)
             continue;
         if (icon.widget == window || window->GetParent() == icon.widget) {
             return &icon;
         }
     }
-    for (auto& icon : volumeIcons_) {
+    for (auto& icon : m_volumeIcons) {
         if (!icon.widget)
             continue;
         if (icon.widget == window || window->GetParent() == icon.widget) {

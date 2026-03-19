@@ -27,13 +27,13 @@ class ShellApp : public uiApp {
 
     static ShellApp* getInstance();
 
-    const std::string& getName() const { return name_; }
+    const std::string& getName() const { return m_name; }
 
-    VolumeManager* getVolumeManager() const { return volumeManager_; }
-    ModuleRegistry* getModuleRegistry() const { return moduleRegistry_; }
-    DesktopWindow* getDesktopWindow() const { return desktop_; }
-    Taskbar* getTaskbar() const { return taskbar_; }
-    StartMenu* getStartMenu() const { return startMenu_; }
+    VolumeManager* getVolumeManager() const { return m_volumeManager; }
+    ModuleRegistry* getModuleRegistry() const { return m_moduleRegistry; }
+    DesktopWindow* getDesktopWindow() const { return m_desktop; }
+    Taskbar* getTaskbar() const { return m_taskbar; }
+    StartMenu* getStartMenu() const { return m_startMenu; }
 
     void openExplorerAt(const std::string& dir);
 
@@ -48,15 +48,15 @@ class ShellApp : public uiApp {
     void setupEventHandlers();
     void positionStartMenu();
 
-    std::string name_;
-    VolumeManager* volumeManager_;
-    ModuleRegistry* moduleRegistry_;
-    wxFrame* mainWindow_;
-    DesktopWindow* desktop_;
-    Taskbar* taskbar_;
-    StartMenu* startMenu_;
+    std::string m_name;
+    VolumeManager* m_volumeManager;
+    ModuleRegistry* m_moduleRegistry;
+    wxFrame* m_mainWindow;
+    DesktopWindow* m_desktop;
+    Taskbar* m_taskbar;
+    StartMenu* m_startMenu;
 
-    static ShellApp* instance_;
+    static ShellApp* m_instance;
 };
 
 } // namespace os

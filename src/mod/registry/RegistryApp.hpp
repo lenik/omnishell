@@ -24,7 +24,7 @@ public:
     void initializeMetadata();
 
 private:
-    RegistryCore core_;
+    RegistryCore m_core;
 };
 
 } // namespace os

@@ -64,26 +64,26 @@ protected:
     void BuildSubMenuContent(RowKind kind, CategoryId categoryId);
     void PositionSubMenuNearRow(wxWindow* row);
 
-    wxTextCtrl* searchBox_;
-    wxPanel* scrollArea_;
-    wxPanel* categoryPanel_;
+    wxTextCtrl* m_searchBox;
+    wxPanel* m_scrollArea;
+    wxPanel* m_categoryPanel;
 
-    std::vector<ModulePtr> allModules_;
-    std::vector<ModulePtr> filteredModules_;
-    std::vector<MenuRow> menuRows_;
-    LaunchCallback launchCallback_;
+    std::vector<ModulePtr> m_allModules;
+    std::vector<ModulePtr> m_filteredModules;
+    std::vector<MenuRow> m_menuRows;
+    LaunchCallback m_launchCallback;
 
-    CategoryId activeCategoryId_;
+    CategoryId m_activeCategoryId;
     // Submenu (right-side) overlay for "folder" rows.
-    wxPanel* subMenu_;
-    wxPanel* subScrollArea_;
-    wxSizer* subSizer_;
-    RowKind subMenuKind_;
-    CategoryId subMenuCategoryId_;
-    std::vector<ModulePtr> subMenuModules_;
+    wxPanel* m_subMenu;
+    wxPanel* m_subScrollArea;
+    wxSizer* m_subSizer;
+    RowKind m_subMenuKind;
+    CategoryId m_subMenuCategoryId;
+    std::vector<ModulePtr> m_subMenuModules;
 
-    int menuWidth_;
-    int menuHeight_;
+    int m_menuWidth;
+    int m_menuHeight;
 };
 
 } // namespace os

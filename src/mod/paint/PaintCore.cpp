@@ -60,22 +60,22 @@ public:
         Bind(wxEVT_SIZE, &PaintCanvas::OnSize, this);
     }
 
-    void setPrimaryColor(const wxColour& c) { primary_ = c; }
-    void setWidth(int w) { width_ = std::max(1, w); }
-    void setTool(Tool t) { tool_ = t; }
+    void setPrimaryColor(const wxColour& c) { m_primary = c; }
+    void setWidth(int w) { m_width = std::max(1, w); }
+    void setTool(Tool t) { m_tool = t; }
 
     void clear() {
         ensureBuffer();
-        wxMemoryDC dc(buffer_);
+        wxMemoryDC dc(m_buffer);
         dc.SetBackground(wxBrush(*wxWHITE));
         dc.Clear();
-        previewActive_ = false;
+        m_previewActive = false;
         Refresh();
     }
 
     bool savePng(const wxString& path) {
         ensureBuffer();
-        wxImage img = buffer_.ConvertToImage();
+        wxImage img = m_buffer.ConvertToImage();
         return img.IsOk() && img.SaveFile(path, wxBITMAP_TYPE_PNG);
     }
 
@@ -87,8 +87,8 @@ public:
         if (sz.GetWidth() > 0 && sz.GetHeight() > 0) {
             scaled = img.Scale(sz.GetWidth(), sz.GetHeight(), wxIMAGE_QUALITY_HIGH);
         }
-        buffer_ = wxBitmap(scaled);
-        previewActive_ = false;
+        m_buffer = wxBitmap(scaled);
+        m_previewActive = false;
         Refresh();
     }
 
@@ -97,21 +97,21 @@ private:
         wxSize sz = GetClientSize();
         if (sz.GetWidth() <= 0 || sz.GetHeight() <= 0)
             return;
-        if (!buffer_.IsOk() || buffer_.GetWidth() != sz.GetWidth() || buffer_.GetHeight() != sz.GetHeight()) {
+        if (!m_buffer.IsOk() || m_buffer.GetWidth() != sz.GetWidth() || m_buffer.GetHeight() != sz.GetHeight()) {
             wxBitmap newBuf(sz.GetWidth(), sz.GetHeight());
             wxMemoryDC dc(newBuf);
             dc.SetBackground(wxBrush(*wxWHITE));
             dc.Clear();
-            if (buffer_.IsOk()) {
-                wxMemoryDC old(buffer_);
-                dc.Blit(0, 0, buffer_.GetWidth(), buffer_.GetHeight(), &old, 0, 0);
+            if (m_buffer.IsOk()) {
+                wxMemoryDC old(m_buffer);
+                dc.Blit(0, 0, m_buffer.GetWidth(), m_buffer.GetHeight(), &old, 0, 0);
             }
-            buffer_ = newBuf;
+            m_buffer = newBuf;
         }
     }
 
     wxPen makePen(bool erasing) const {
-        wxPen pen(erasing ? *wxWHITE : primary_, width_, wxPENSTYLE_SOLID);
+        wxPen pen(erasing ? *wxWHITE : m_primary, m_width, wxPENSTYLE_SOLID);
         pen.SetCap(wxCAP_ROUND);
         pen.SetJoin(wxJOIN_ROUND);
         return pen;
@@ -119,7 +119,7 @@ private:
 
     void drawStroke(const wxPoint& a, const wxPoint& b, bool erasing) {
         ensureBuffer();
-        wxMemoryDC dc(buffer_);
+        wxMemoryDC dc(m_buffer);
         dc.SetPen(makePen(erasing));
         dc.DrawLine(a, b);
     }
@@ -149,9 +149,9 @@ private:
 
     void floodFill(const wxPoint& pt, const wxColour& fillColor) {
         ensureBuffer();
-        if (!buffer_.IsOk())
+        if (!m_buffer.IsOk())
             return;
-        wxImage img = buffer_.ConvertToImage();
+        wxImage img = m_buffer.ConvertToImage();
         if (!img.IsOk())
             return;
         const int w = img.GetWidth();
@@ -184,8 +184,8 @@ private:
             stack.push_back(wxPoint(p.x, p.y + 1));
             stack.push_back(wxPoint(p.x, p.y - 1));
         }
-        buffer_ = wxBitmap(img);
-        previewActive_ = false;
+        m_buffer = wxBitmap(img);
+        m_previewActive = false;
         Refresh(false);
     }
 
@@ -193,95 +193,95 @@ private:
         wxAutoBufferedPaintDC dc(this);
         dc.SetBackground(wxBrush(*wxWHITE));
         dc.Clear();
-        if (buffer_.IsOk()) {
-            dc.DrawBitmap(buffer_, 0, 0, false);
+        if (m_buffer.IsOk()) {
+            dc.DrawBitmap(m_buffer, 0, 0, false);
         }
-        if (previewActive_ && (tool_ == Tool::Line || tool_ == Tool::Rect || tool_ == Tool::Ellipse)) {
-            drawShapeTo(dc, tool_, dragStart_, last_);
+        if (m_previewActive && (m_tool == Tool::Line || m_tool == Tool::Rect || m_tool == Tool::Ellipse)) {
+            drawShapeTo(dc, m_tool, m_dragStart, m_last);
         }
     }
 
     void OnLeftDown(wxMouseEvent& e) {
         ensureBuffer();
         CaptureMouse();
-        dragging_ = true;
-        dragStart_ = e.GetPosition();
-        last_ = dragStart_;
+        m_dragging = true;
+        m_dragStart = e.GetPosition();
+        m_last = m_dragStart;
 
-        if (tool_ == Tool::Picker) {
-            if (buffer_.IsOk()) {
-                wxImage img = buffer_.ConvertToImage();
-                if (img.IsOk() && dragStart_.x >= 0 && dragStart_.y >= 0 &&
-                    dragStart_.x < img.GetWidth() && dragStart_.y < img.GetHeight()) {
-                    primary_ = wxColour(img.GetRed(dragStart_.x, dragStart_.y),
-                                        img.GetGreen(dragStart_.x, dragStart_.y),
-                                        img.GetBlue(dragStart_.x, dragStart_.y));
+        if (m_tool == Tool::Picker) {
+            if (m_buffer.IsOk()) {
+                wxImage img = m_buffer.ConvertToImage();
+                if (img.IsOk() && m_dragStart.x >= 0 && m_dragStart.y >= 0 &&
+                    m_dragStart.x < img.GetWidth() && m_dragStart.y < img.GetHeight()) {
+                    m_primary = wxColour(img.GetRed(m_dragStart.x, m_dragStart.y),
+                                        img.GetGreen(m_dragStart.x, m_dragStart.y),
+                                        img.GetBlue(m_dragStart.x, m_dragStart.y));
                 }
             }
-            dragging_ = false;
+            m_dragging = false;
             if (HasCapture())
                 ReleaseMouse();
             return;
         }
 
-        if (tool_ == Tool::Fill) {
-            floodFill(dragStart_, primary_);
-            dragging_ = false;
+        if (m_tool == Tool::Fill) {
+            floodFill(m_dragStart, m_primary);
+            m_dragging = false;
             if (HasCapture())
                 ReleaseMouse();
             return;
         }
 
-        if (tool_ == Tool::Text) {
+        if (m_tool == Tool::Text) {
             wxTextEntryDialog dlg(this, "Text:", "Paint");
             if (dlg.ShowModal() == wxID_OK) {
                 wxString text = dlg.GetValue();
                 if (!text.IsEmpty()) {
-                    wxMemoryDC dc(buffer_);
-                    dc.SetTextForeground(primary_);
-                    dc.DrawText(text, dragStart_);
+                    wxMemoryDC dc(m_buffer);
+                    dc.SetTextForeground(m_primary);
+                    dc.DrawText(text, m_dragStart);
                     Refresh(false);
                 }
             }
-            dragging_ = false;
+            m_dragging = false;
             if (HasCapture())
                 ReleaseMouse();
             return;
         }
 
-        previewActive_ = (tool_ == Tool::Line || tool_ == Tool::Rect || tool_ == Tool::Ellipse);
+        m_previewActive = (m_tool == Tool::Line || m_tool == Tool::Rect || m_tool == Tool::Ellipse);
     }
 
     void OnLeftUp(wxMouseEvent&) {
-        if (previewActive_ && (tool_ == Tool::Line || tool_ == Tool::Rect || tool_ == Tool::Ellipse)) {
+        if (m_previewActive && (m_tool == Tool::Line || m_tool == Tool::Rect || m_tool == Tool::Ellipse)) {
             ensureBuffer();
-            wxMemoryDC dc(buffer_);
-            drawShapeTo(dc, tool_, dragStart_, last_);
-            previewActive_ = false;
+            wxMemoryDC dc(m_buffer);
+            drawShapeTo(dc, m_tool, m_dragStart, m_last);
+            m_previewActive = false;
             Refresh(false);
         }
-        dragging_ = false;
+        m_dragging = false;
         if (HasCapture())
             ReleaseMouse();
     }
 
     void OnMove(wxMouseEvent& e) {
-        if (!dragging_ || !e.LeftIsDown())
+        if (!m_dragging || !e.LeftIsDown())
             return;
         wxPoint p = e.GetPosition();
-        if (tool_ == Tool::Pencil) {
-            drawStroke(last_, p, false);
-        } else if (tool_ == Tool::Brush) {
-            int oldW = width_;
-            width_ = std::max(width_, 6);
-            drawStroke(last_, p, false);
-            width_ = oldW;
-        } else if (tool_ == Tool::Eraser) {
-            drawStroke(last_, p, true);
-        } else if (tool_ == Tool::Line || tool_ == Tool::Rect || tool_ == Tool::Ellipse) {
-            previewActive_ = true;
+        if (m_tool == Tool::Pencil) {
+            drawStroke(m_last, p, false);
+        } else if (m_tool == Tool::Brush) {
+            int oldW = m_width;
+            m_width = std::max(m_width, 6);
+            drawStroke(m_last, p, false);
+            m_width = oldW;
+        } else if (m_tool == Tool::Eraser) {
+            drawStroke(m_last, p, true);
+        } else if (m_tool == Tool::Line || m_tool == Tool::Rect || m_tool == Tool::Ellipse) {
+            m_previewActive = true;
         }
-        last_ = p;
+        m_last = p;
         Refresh(false);
     }
 
@@ -291,14 +291,14 @@ private:
         Refresh();
     }
 
-    wxBitmap buffer_;
-    wxColour primary_{0, 0, 0};
-    int width_{3};
-    Tool tool_{Tool::Pencil};
-    bool dragging_{false};
-    wxPoint last_{0, 0};
-    wxPoint dragStart_{0, 0};
-    bool previewActive_{false};
+    wxBitmap m_buffer;
+    wxColour m_primary{0, 0, 0};
+    int m_width{3};
+    Tool m_tool{Tool::Pencil};
+    bool m_dragging{false};
+    wxPoint m_last{0, 0};
+    wxPoint m_dragStart{0, 0};
+    bool m_previewActive{false};
 };
 
 PaintCore::PaintCore() {
@@ -363,11 +363,11 @@ PaintCore::PaintCore() {
 }
 
 void PaintCore::loadImage(const wxImage& img) {
-    if (canvas_) {
-        canvas_->loadImage(img);
+    if (m_canvas) {
+        m_canvas->loadImage(img);
         return;
     }
-    pendingImage_ = img;
+    m_pendingImage = img;
 }
 
 void PaintCore::createFragmentView(CreateViewContext* ctx) {
@@ -375,12 +375,12 @@ void PaintCore::createFragmentView(CreateViewContext* ctx) {
     uiFrame* frame = dynamic_cast<uiFrame*>(parent);
     if (!frame)
         return;
-    frame_ = frame;
+    m_frame = frame;
 
-    root_ = new wxPanel(parent, wxID_ANY, ctx->getPos(), ctx->getSize());
+    m_root = new wxPanel(parent, wxID_ANY, ctx->getPos(), ctx->getSize());
     wxBoxSizer* rootSizer = new wxBoxSizer(wxHORIZONTAL);
 
-    wxPanel* toolsPanel = new wxPanel(root_, wxID_ANY);
+    wxPanel* toolsPanel = new wxPanel(m_root, wxID_ANY);
     toolsPanel->SetMinSize(wxSize(140, -1));
     wxBoxSizer* toolsSizer = new wxBoxSizer(wxVERTICAL);
     toolsSizer->Add(new wxStaticText(toolsPanel, wxID_ANY, "Tools"), 0, wxLEFT | wxTOP | wxBOTTOM, 8);
@@ -420,12 +420,12 @@ void PaintCore::createFragmentView(CreateViewContext* ctx) {
     toolsSizer->Add(saveBtn, 0, wxLEFT | wxRIGHT | wxBOTTOM, 10);
     toolsPanel->SetSizer(toolsSizer);
 
-    wxPanel* rightPanel = new wxPanel(root_, wxID_ANY);
+    wxPanel* rightPanel = new wxPanel(m_root, wxID_ANY);
     wxBoxSizer* rightSizer = new wxBoxSizer(wxVERTICAL);
-    canvas_ = new PaintCanvas(rightPanel);
-    if (pendingImage_.IsOk()) {
-        canvas_->loadImage(pendingImage_);
-        pendingImage_ = wxImage();
+    m_canvas = new PaintCanvas(rightPanel);
+    if (m_pendingImage.IsOk()) {
+        m_canvas->loadImage(m_pendingImage);
+        m_pendingImage = wxImage();
     }
 
     wxPanel* palettePanel = new wxPanel(rightPanel, wxID_ANY);
@@ -438,8 +438,8 @@ void PaintCore::createFragmentView(CreateViewContext* ctx) {
         wxButton* b = new wxButton(palettePanel, wxID_ANY, "", wxDefaultPosition, wxSize(22, 22));
         b->SetBackgroundColour(c);
         b->Bind(wxEVT_BUTTON, [this, c](wxCommandEvent&) {
-            if (canvas_)
-                canvas_->setPrimaryColor(c);
+            if (m_canvas)
+                m_canvas->setPrimaryColor(c);
         });
         paletteSizer->Add(b, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, 6);
     };
@@ -457,17 +457,17 @@ void PaintCore::createFragmentView(CreateViewContext* ctx) {
     paletteSizer->AddStretchSpacer();
     palettePanel->SetSizer(paletteSizer);
 
-    rightSizer->Add(canvas_, 1, wxEXPAND | wxALL, 6);
+    rightSizer->Add(m_canvas, 1, wxEXPAND | wxALL, 6);
     rightSizer->Add(palettePanel, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, 6);
     rightPanel->SetSizer(rightSizer);
 
     rootSizer->Add(toolsPanel, 0, wxEXPAND);
     rootSizer->Add(rightPanel, 1, wxEXPAND);
-    root_->SetSizer(rootSizer);
+    m_root->SetSizer(rootSizer);
 
     auto setToolSelected = [this, &toolButtons](Tool t) {
-        if (canvas_)
-            canvas_->setTool(t);
+        if (m_canvas)
+            m_canvas->setTool(t);
         for (auto& [btn, tool] : toolButtons) {
             btn->SetValue(tool == t);
         }
@@ -479,8 +479,8 @@ void PaintCore::createFragmentView(CreateViewContext* ctx) {
     }
 
     width->Bind(wxEVT_SLIDER, [this, width](wxCommandEvent&) {
-        if (canvas_)
-            canvas_->setWidth(width->GetValue());
+        if (m_canvas)
+            m_canvas->setWidth(width->GetValue());
     });
     clearBtn->Bind(wxEVT_BUTTON, [this](wxCommandEvent& e) {
         auto ctx2 = toPerformContext(e);
@@ -493,33 +493,33 @@ void PaintCore::createFragmentView(CreateViewContext* ctx) {
 }
 
 wxEvtHandler* PaintCore::getEventHandler() {
-    return root_ ? root_->GetEventHandler() : nullptr;
+    return m_root ? m_root->GetEventHandler() : nullptr;
 }
 
 void PaintCore::onSavePng(PerformContext*) {
-    if (!frame_ || !canvas_)
+    if (!m_frame || !m_canvas)
         return;
-    wxFileDialog dlg(frame_, "Save image", "", "paint.png", "PNG files (*.png)|*.png",
+    wxFileDialog dlg(m_frame, "Save image", "", "paint.png", "PNG files (*.png)|*.png",
                      wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
     if (dlg.ShowModal() == wxID_OK) {
-        canvas_->savePng(dlg.GetPath());
+        m_canvas->savePng(dlg.GetPath());
     }
 }
 
 void PaintCore::onClear(PerformContext*) {
-    if (canvas_)
-        canvas_->clear();
+    if (m_canvas)
+        m_canvas->clear();
 }
 
-void PaintCore::onToolPencil(PerformContext*) { if (canvas_) canvas_->setTool(Tool::Pencil); }
-void PaintCore::onToolBrush(PerformContext*) { if (canvas_) canvas_->setTool(Tool::Brush); }
-void PaintCore::onToolEraser(PerformContext*) { if (canvas_) canvas_->setTool(Tool::Eraser); }
-void PaintCore::onToolLine(PerformContext*) { if (canvas_) canvas_->setTool(Tool::Line); }
-void PaintCore::onToolRect(PerformContext*) { if (canvas_) canvas_->setTool(Tool::Rect); }
-void PaintCore::onToolEllipse(PerformContext*) { if (canvas_) canvas_->setTool(Tool::Ellipse); }
-void PaintCore::onToolFill(PerformContext*) { if (canvas_) canvas_->setTool(Tool::Fill); }
-void PaintCore::onToolPicker(PerformContext*) { if (canvas_) canvas_->setTool(Tool::Picker); }
-void PaintCore::onToolText(PerformContext*) { if (canvas_) canvas_->setTool(Tool::Text); }
+void PaintCore::onToolPencil(PerformContext*) { if (m_canvas) m_canvas->setTool(Tool::Pencil); }
+void PaintCore::onToolBrush(PerformContext*) { if (m_canvas) m_canvas->setTool(Tool::Brush); }
+void PaintCore::onToolEraser(PerformContext*) { if (m_canvas) m_canvas->setTool(Tool::Eraser); }
+void PaintCore::onToolLine(PerformContext*) { if (m_canvas) m_canvas->setTool(Tool::Line); }
+void PaintCore::onToolRect(PerformContext*) { if (m_canvas) m_canvas->setTool(Tool::Rect); }
+void PaintCore::onToolEllipse(PerformContext*) { if (m_canvas) m_canvas->setTool(Tool::Ellipse); }
+void PaintCore::onToolFill(PerformContext*) { if (m_canvas) m_canvas->setTool(Tool::Fill); }
+void PaintCore::onToolPicker(PerformContext*) { if (m_canvas) m_canvas->setTool(Tool::Picker); }
+void PaintCore::onToolText(PerformContext*) { if (m_canvas) m_canvas->setTool(Tool::Text); }
 
 } // namespace os
 

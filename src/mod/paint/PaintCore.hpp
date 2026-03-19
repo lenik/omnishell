@@ -23,10 +23,10 @@ public:
 private:
     class PaintCanvas;
 
-    uiFrame* frame_{nullptr};
-    wxPanel* root_{nullptr};
-    PaintCanvas* canvas_{nullptr};
-    wxImage pendingImage_;
+    uiFrame* m_frame{nullptr};
+    wxPanel* m_root{nullptr};
+    PaintCanvas* m_canvas{nullptr};
+    wxImage m_pendingImage;
 
     void onSavePng(PerformContext* ctx);
     void onClear(PerformContext* ctx);

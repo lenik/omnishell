@@ -18,10 +18,10 @@ public:
     wxEvtHandler* getEventHandler() override;
 
 private:
-    uiFrame* frame_{nullptr};
-    wxPanel* root_{nullptr};
-    wxColourPickerCtrl* picker_{nullptr};
-    std::string selectedImagePath_;
+    uiFrame* m_frame{nullptr};
+    wxPanel* m_root{nullptr};
+    wxColourPickerCtrl* m_picker{nullptr};
+    std::string m_selectedImagePath;
 
     void onChooseImage(PerformContext* ctx);
     void onApplyColor(PerformContext* ctx);

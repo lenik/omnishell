@@ -70,12 +70,12 @@ static wxBitmap ChevronBitmap(bool hover) {
 
 StartMenu::StartMenu(wxWindow* parent)
     : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxSize(kMenuWidth, kMenuHeight)),
-      searchBox_(nullptr), scrollArea_(nullptr), categoryPanel_(nullptr), launchCallback_(nullptr),
-      activeCategoryId_(ID_CATEGORY_NONE), subMenu_(nullptr), subScrollArea_(nullptr),
-      subSizer_(nullptr), subMenuKind_(ROW_LEAF), subMenuCategoryId_(ID_CATEGORY_NONE),
-      menuWidth_(kMenuWidth), menuHeight_(kMenuHeight) {
+      m_searchBox(nullptr), m_scrollArea(nullptr), m_categoryPanel(nullptr), m_launchCallback(nullptr),
+      m_activeCategoryId(ID_CATEGORY_NONE), m_subMenu(nullptr), m_subScrollArea(nullptr),
+      m_subSizer(nullptr), m_subMenuKind(ROW_LEAF), m_subMenuCategoryId(ID_CATEGORY_NONE),
+      m_menuWidth(kMenuWidth), m_menuHeight(kMenuHeight) {
     SetBackgroundColour(kMenuBg);
-    SetMinSize(wxSize(menuWidth_, 200));
+    SetMinSize(wxSize(m_menuWidth, 200));
 
     // Root layout: left branding strip + right content with padding.
     wxBoxSizer* rootSizer = new wxBoxSizer(wxHORIZONTAL);
@@ -111,31 +111,31 @@ StartMenu::StartMenu(wxWindow* parent)
     // Always keep a top padding even when search box is hidden.
     mainSizer->AddSpacer(10);
 
-    searchBox_ = new wxTextCtrl(contentPanel, wxID_ANY, "Search programs...", wxDefaultPosition,
+    m_searchBox = new wxTextCtrl(contentPanel, wxID_ANY, "Search programs...", wxDefaultPosition,
                                 wxSize(-1, 28), wxTE_PROCESS_ENTER);
-    searchBox_->Bind(wxEVT_TEXT, &StartMenu::OnSearch, this);
-    searchBox_->Bind(wxEVT_TEXT_ENTER, [this](wxCommandEvent&) {
-        if (!filteredModules_.empty() && launchCallback_) {
-            launchCallback_(filteredModules_[0]);
+    m_searchBox->Bind(wxEVT_TEXT, &StartMenu::OnSearch, this);
+    m_searchBox->Bind(wxEVT_TEXT_ENTER, [this](wxCommandEvent&) {
+        if (!m_filteredModules.empty() && m_launchCallback) {
+            m_launchCallback(m_filteredModules[0]);
         }
         HideMenu();
     });
-    searchBox_->Bind(wxEVT_KEY_DOWN, &StartMenu::OnKeyDown, this);
-    mainSizer->Add(searchBox_, 0, wxEXPAND | wxALL, 10);
+    m_searchBox->Bind(wxEVT_KEY_DOWN, &StartMenu::OnKeyDown, this);
+    mainSizer->Add(m_searchBox, 0, wxEXPAND | wxALL, 10);
     // Start hidden; it will appear on first key press via HandleGlobalKey.
-    searchBox_->Show(false);
+    m_searchBox->Show(false);
 
-    scrollArea_ = new wxPanel(contentPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize,
+    m_scrollArea = new wxPanel(contentPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize,
                               wxBORDER_NONE);
-    scrollArea_->SetBackgroundColour(kMenuBg);
+    m_scrollArea->SetBackgroundColour(kMenuBg);
     // Stretch the list area so the category strip stays pinned to the bottom.
     // (The empty space, if any, lives inside the list area.)
-    mainSizer->Add(scrollArea_, 1, wxEXPAND | wxLEFT | wxRIGHT, 10);
+    mainSizer->Add(m_scrollArea, 1, wxEXPAND | wxLEFT | wxRIGHT, 10);
 
-    categoryPanel_ = new wxPanel(contentPanel, wxID_ANY);
+    m_categoryPanel = new wxPanel(contentPanel, wxID_ANY);
     wxBoxSizer* catSizer = new wxBoxSizer(wxHORIZONTAL);
     // Top category strip: icon-only buttons with tooltips.
-    wxButton* allBtn = new wxButton(categoryPanel_, wxID_ANY, "",
+    wxButton* allBtn = new wxButton(m_categoryPanel, wxID_ANY, "",
                                     wxDefaultPosition, wxDefaultSize, wxBORDER_NONE);
     allBtn->SetMinSize(wxSize(44, -1));
     {
@@ -149,8 +149,8 @@ StartMenu::StartMenu(wxWindow* parent)
     }
     allBtn->SetToolTip("All programs");
     allBtn->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) {
-        activeCategoryId_ = ID_CATEGORY_NONE;
-        wxString t = searchBox_ ? searchBox_->GetValue() : "";
+        m_activeCategoryId = ID_CATEGORY_NONE;
+        wxString t = m_searchBox ? m_searchBox->GetValue() : "";
         FilterModules(t.ToStdString());
         CreateMenuContent();
     });
@@ -166,7 +166,7 @@ StartMenu::StartMenu(wxWindow* parent)
     });
     catSizer->Add(allBtn, 1, wxEXPAND | wxALL, 2);
     for (const auto& cat : getAllCategories()) {
-        wxButton* btn = new wxButton(categoryPanel_, wxID_ANY, "",
+        wxButton* btn = new wxButton(m_categoryPanel, wxID_ANY, "",
                                      wxDefaultPosition, wxDefaultSize, wxBORDER_NONE);
         btn->SetMinSize(wxSize(44, -1));
         // Show the same icon as used for category rows in the main list, but scaled down a bit.
@@ -178,8 +178,8 @@ StartMenu::StartMenu(wxWindow* parent)
         btn->SetToolTip(cat.label);
         CategoryId id = cat.id;
         btn->Bind(wxEVT_BUTTON, [this, id](wxCommandEvent&) {
-            activeCategoryId_ = id;
-            wxString t = searchBox_ ? searchBox_->GetValue() : "";
+            m_activeCategoryId = id;
+            wxString t = m_searchBox ? m_searchBox->GetValue() : "";
             FilterModules(t.ToStdString());
             CreateMenuContent();
         });
@@ -195,9 +195,9 @@ StartMenu::StartMenu(wxWindow* parent)
         });
         catSizer->Add(btn, 1, wxEXPAND | wxALL, 2);
     }
-    categoryPanel_->SetSizer(catSizer);
+    m_categoryPanel->SetSizer(catSizer);
     // Keep the category strip close to the bottom edge.
-    mainSizer->Add(categoryPanel_, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, 10);
+    mainSizer->Add(m_categoryPanel, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, 10);
 
     contentPanel->SetSizer(mainSizer);
 
@@ -209,17 +209,17 @@ StartMenu::StartMenu(wxWindow* parent)
     Bind(wxEVT_LEAVE_WINDOW, &StartMenu::OnLeaveWindow, this);
 
     // Right-side submenu overlay (sibling overlay, like the start menu itself).
-    subMenu_ = new wxPanel(parent, wxID_ANY, wxDefaultPosition, wxSize(kSubMenuWidth, 200),
+    m_subMenu = new wxPanel(parent, wxID_ANY, wxDefaultPosition, wxSize(kSubMenuWidth, 200),
                            wxBORDER_SIMPLE);
-    subMenu_->SetBackgroundColour(kMenuBg);
-    subMenu_->Hide();
-    subMenu_->Bind(wxEVT_LEAVE_WINDOW, &StartMenu::OnSubMenuLeaveWindow, this);
-    subScrollArea_ = new wxPanel(subMenu_, wxID_ANY, wxDefaultPosition, wxDefaultSize,
+    m_subMenu->SetBackgroundColour(kMenuBg);
+    m_subMenu->Hide();
+    m_subMenu->Bind(wxEVT_LEAVE_WINDOW, &StartMenu::OnSubMenuLeaveWindow, this);
+    m_subScrollArea = new wxPanel(m_subMenu, wxID_ANY, wxDefaultPosition, wxDefaultSize,
                                  wxBORDER_NONE);
-    subScrollArea_->SetBackgroundColour(kMenuBg);
+    m_subScrollArea->SetBackgroundColour(kMenuBg);
     wxBoxSizer* subRoot = new wxBoxSizer(wxVERTICAL);
-    subRoot->Add(subScrollArea_, 1, wxEXPAND | wxALL, 4);
-    subMenu_->SetSizer(subRoot);
+    subRoot->Add(m_subScrollArea, 1, wxEXPAND | wxALL, 4);
+    m_subMenu->SetSizer(subRoot);
 }
 
 StartMenu::~StartMenu() {}
@@ -228,9 +228,9 @@ void StartMenu::ShowMenu() {
     Show(true);
     Raise();
     HideSubMenu();
-    if (searchBox_) {
-        searchBox_->Clear();
-        searchBox_->Show(false);
+    if (m_searchBox) {
+        m_searchBox->Clear();
+        m_searchBox->Show(false);
         InvalidateBestSize();
         Layout();
     }
@@ -239,9 +239,9 @@ void StartMenu::ShowMenu() {
 void StartMenu::HideMenu() {
     Show(false);
     HideSubMenu();
-    if (searchBox_) {
-        searchBox_->Clear();
-        searchBox_->Show(false);
+    if (m_searchBox) {
+        m_searchBox->Clear();
+        m_searchBox->Show(false);
         InvalidateBestSize();
     }
 }
@@ -249,31 +249,31 @@ void StartMenu::HideMenu() {
 bool StartMenu::ContainsScreenPoint(const wxPoint& screenPt) const {
     if (IsShown() && GetScreenRect().Contains(screenPt))
         return true;
-    if (subMenu_ && subMenu_->IsShown() && subMenu_->GetScreenRect().Contains(screenPt))
+    if (m_subMenu && m_subMenu->IsShown() && m_subMenu->GetScreenRect().Contains(screenPt))
         return true;
     return false;
 }
 
 void StartMenu::populateModules(const std::vector<ModulePtr>& modules) {
-    allModules_ = modules;
-    filteredModules_ = modules;
+    m_allModules = modules;
+    m_filteredModules = modules;
     CreateMenuContent();
 }
 
 void StartMenu::clearModules() {
-    allModules_.clear();
-    filteredModules_.clear();
-    menuRows_.clear();
-    if (scrollArea_) {
-        scrollArea_->DestroyChildren();
-        scrollArea_->GetSizer()->Clear(true);
+    m_allModules.clear();
+    m_filteredModules.clear();
+    m_menuRows.clear();
+    if (m_scrollArea) {
+        m_scrollArea->DestroyChildren();
+        m_scrollArea->GetSizer()->Clear(true);
     }
 }
 
-void StartMenu::setLaunchCallback(LaunchCallback callback) { launchCallback_ = callback; }
+void StartMenu::setLaunchCallback(LaunchCallback callback) { m_launchCallback = callback; }
 
 void StartMenu::OnSearch(wxCommandEvent& event) {
-    FilterModules(searchBox_ ? searchBox_->GetValue().ToStdString() : "");
+    FilterModules(m_searchBox ? m_searchBox->GetValue().ToStdString() : "");
     CreateMenuContent();
     event.Skip();
 }
@@ -313,21 +313,21 @@ bool StartMenu::HandleGlobalKey(wxKeyEvent& event) {
     if (!ch)
         return false;
 
-    if (!searchBox_)
+    if (!m_searchBox)
         return false;
 
     // First key press: show the search box and start the query with that character.
-    if (!searchBox_->IsShown()) {
-        searchBox_->Show(true);
+    if (!m_searchBox->IsShown()) {
+        m_searchBox->Show(true);
         InvalidateBestSize();
         Layout();
         wxString initial;
         initial.Append(ch);
-        searchBox_->ChangeValue(initial);
-        searchBox_->SetInsertionPointEnd();
+        m_searchBox->ChangeValue(initial);
+        m_searchBox->SetInsertionPointEnd();
         FilterModules(initial.ToStdString());
         CreateMenuContent();
-        searchBox_->SetFocus();
+        m_searchBox->SetFocus();
         return true;
     }
 
@@ -344,14 +344,14 @@ void StartMenu::OnSubMenuLeaveWindow(wxMouseEvent& event) {
 }
 
 void StartMenu::FilterModules(const std::string& searchText) {
-    filteredModules_.clear();
+    m_filteredModules.clear();
     std::string lowerSearch = searchText;
     std::transform(lowerSearch.begin(), lowerSearch.end(), lowerSearch.begin(), ::tolower);
 
-    for (const auto& module : allModules_) {
+    for (const auto& module : m_allModules) {
         if (!module->isVisible())
             continue;
-        if (activeCategoryId_ != ID_CATEGORY_NONE && module->categoryId != activeCategoryId_)
+        if (m_activeCategoryId != ID_CATEGORY_NONE && module->categoryId != m_activeCategoryId)
             continue;
         std::string name = module->name, label = module->label, desc = module->description;
         std::transform(name.begin(), name.end(), name.begin(), ::tolower);
@@ -360,7 +360,7 @@ void StartMenu::FilterModules(const std::string& searchText) {
         if (name.find(lowerSearch) != std::string::npos ||
             label.find(lowerSearch) != std::string::npos ||
             desc.find(lowerSearch) != std::string::npos) {
-            filteredModules_.push_back(module);
+            m_filteredModules.push_back(module);
         }
     }
 }
@@ -397,7 +397,7 @@ void StartMenu::AddMenuItem(wxWindow* parent, wxSizer* sizer, const wxString& la
     }
     row->SetSizer(rowSizer);
 
-    menuRows_.push_back({row, module, rowKind, categoryId});
+    m_menuRows.push_back({row, module, rowKind, categoryId});
 
     row->Bind(wxEVT_LEFT_UP, &StartMenu::OnMenuItemClick, this);
     row->Bind(wxEVT_ENTER_WINDOW, &StartMenu::OnMenuItemEnter, this);
@@ -420,14 +420,14 @@ void StartMenu::OnMenuItemClick(wxMouseEvent& event) {
     if (!win)
         return;
     wxWindow* row = win;
-    while (row && (row->GetParent() != scrollArea_ && row->GetParent() != subScrollArea_))
+    while (row && (row->GetParent() != m_scrollArea && row->GetParent() != m_subScrollArea))
         row = row->GetParent();
     if (!row)
         return;
 
     // If this row belongs to the right-hand submenu, map it to the submenu's module list.
-    if (row->GetParent() == subScrollArea_ && subScrollArea_) {
-        wxSizer* s = subScrollArea_->GetSizer();
+    if (row->GetParent() == m_subScrollArea && m_subScrollArea) {
+        wxSizer* s = m_subScrollArea->GetSizer();
         if (s) {
             const size_t count = s->GetItemCount();
             for (size_t i = 0; i < count; ++i) {
@@ -435,10 +435,10 @@ void StartMenu::OnMenuItemClick(wxMouseEvent& event) {
                 if (!item)
                     continue;
                 if (item->GetWindow() == row) {
-                    if (i < subMenuModules_.size()) {
-                        ModulePtr m = subMenuModules_[i];
-                        if (m && launchCallback_) {
-                            launchCallback_(m);
+                    if (i < m_subMenuModules.size()) {
+                        ModulePtr m = m_subMenuModules[i];
+                        if (m && m_launchCallback) {
+                            m_launchCallback(m);
                             HideMenu();
                         }
                     }
@@ -448,7 +448,7 @@ void StartMenu::OnMenuItemClick(wxMouseEvent& event) {
         }
     }
 
-    for (const auto& mr : menuRows_) {
+    for (const auto& mr : m_menuRows) {
         if (mr.row != row)
             continue;
         if (mr.kind == ROW_CATEGORY_FOLDER || mr.kind == ROW_RECENT_FOLDER) {
@@ -456,8 +456,8 @@ void StartMenu::OnMenuItemClick(wxMouseEvent& event) {
             return;
         }
         if (mr.module) {
-            if (launchCallback_)
-                launchCallback_(mr.module);
+            if (m_launchCallback)
+                m_launchCallback(mr.module);
             HideMenu();
             return;
         }
@@ -522,7 +522,7 @@ void StartMenu::OnMenuItemEnter(wxMouseEvent& event) {
     if (!w)
         return;
     wxWindow* row = w;
-    while (row && (row->GetParent() != scrollArea_ && row->GetParent() != subScrollArea_))
+    while (row && (row->GetParent() != m_scrollArea && row->GetParent() != m_subScrollArea))
         row = row->GetParent();
     if (row) {
         row->SetBackgroundColour(kItemHover);
@@ -539,7 +539,7 @@ void StartMenu::OnMenuItemEnter(wxMouseEvent& event) {
         row->Refresh();
     }
     if (row) {
-        for (const auto& mr : menuRows_) {
+        for (const auto& mr : m_menuRows) {
             if (mr.row == row && (mr.kind == ROW_CATEGORY_FOLDER || mr.kind == ROW_RECENT_FOLDER)) {
                 ShowSubMenuForRow(row);
                 break;
@@ -554,7 +554,7 @@ void StartMenu::OnMenuItemLeave(wxMouseEvent& event) {
     if (!w)
         return;
     wxWindow* row = w;
-    while (row && (row->GetParent() != scrollArea_ && row->GetParent() != subScrollArea_))
+    while (row && (row->GetParent() != m_scrollArea && row->GetParent() != m_subScrollArea))
         row = row->GetParent();
     if (row) {
         row->SetBackgroundColour(kMenuBg);
@@ -574,40 +574,40 @@ void StartMenu::OnMenuItemLeave(wxMouseEvent& event) {
 }
 
 void StartMenu::ShowSubMenuForRow(wxWindow* row) {
-    if (!row || !subMenu_ || !subScrollArea_)
+    if (!row || !m_subMenu || !m_subScrollArea)
         return;
-    for (const auto& mr : menuRows_) {
+    for (const auto& mr : m_menuRows) {
         if (mr.row != row)
             continue;
         if (mr.kind != ROW_CATEGORY_FOLDER && mr.kind != ROW_RECENT_FOLDER)
             return;
-        if (subMenu_->IsShown() && subMenuKind_ == mr.kind && subMenuCategoryId_ == mr.categoryId) {
+        if (m_subMenu->IsShown() && m_subMenuKind == mr.kind && m_subMenuCategoryId == mr.categoryId) {
             PositionSubMenuNearRow(row);
             return;
         }
         BuildSubMenuContent(mr.kind, mr.categoryId);
         PositionSubMenuNearRow(row);
-        subMenu_->Show(true);
-        subMenu_->Raise();
+        m_subMenu->Show(true);
+        m_subMenu->Raise();
         return;
     }
 }
 
 void StartMenu::HideSubMenu() {
-    if (subMenu_)
-        subMenu_->Show(false);
-    subMenuKind_ = ROW_LEAF;
-    subMenuCategoryId_ = ID_CATEGORY_NONE;
+    if (m_subMenu)
+        m_subMenu->Show(false);
+    m_subMenuKind = ROW_LEAF;
+    m_subMenuCategoryId = ID_CATEGORY_NONE;
 }
 
 void StartMenu::BuildSubMenuContent(RowKind kind, CategoryId categoryId) {
-    if (!subScrollArea_)
+    if (!m_subScrollArea)
         return;
 
-    subScrollArea_->DestroyChildren();
-    subMenuKind_ = kind;
-    subMenuCategoryId_ = categoryId;
-    subMenuModules_.clear();
+    m_subScrollArea->DestroyChildren();
+    m_subMenuKind = kind;
+    m_subMenuCategoryId = categoryId;
+    m_subMenuModules.clear();
 
     wxBoxSizer* sizer = new wxBoxSizer(wxVERTICAL);
 
@@ -615,24 +615,24 @@ void StartMenu::BuildSubMenuContent(RowKind kind, CategoryId categoryId) {
         if (!m)
             return;
         auto b = m->image.toBitmap1(kIconSize, kIconSize);
-        AddMenuItem(subScrollArea_, sizer, m->label, m, false, b.IsOk() ? &b : nullptr, ROW_LEAF,
+        AddMenuItem(m_subScrollArea, sizer, m->label, m, false, b.IsOk() ? &b : nullptr, ROW_LEAF,
                     ID_CATEGORY_NONE);
-        subMenuModules_.push_back(m);
+        m_subMenuModules.push_back(m);
     };
 
     if (kind == ROW_CATEGORY_FOLDER) {
-        for (const auto& m : filteredModules_) {
+        for (const auto& m : m_filteredModules) {
             if (m && m->categoryId == categoryId)
                 addLeaf(m);
         }
         if (sizer->IsEmpty()) {
-            AddMenuItem(subScrollArea_, sizer, "  (empty)", nullptr, false, nullptr, ROW_LEAF,
+            AddMenuItem(m_subScrollArea, sizer, "  (empty)", nullptr, false, nullptr, ROW_LEAF,
                         ID_CATEGORY_NONE);
-            subMenuModules_.push_back(nullptr);
+            m_subMenuModules.push_back(nullptr);
         }
     } else if (kind == ROW_RECENT_FOLDER) {
         // Real recent list: show most recently run visible modules.
-        std::vector<ModulePtr> mods = allModules_;
+        std::vector<ModulePtr> mods = m_allModules;
         mods.erase(std::remove_if(mods.begin(), mods.end(),
                                   [](const ModulePtr& m) {
                                       return !m || !m->isVisible() || !m->isEnabled() ||
@@ -652,19 +652,19 @@ void StartMenu::BuildSubMenuContent(RowKind kind, CategoryId categoryId) {
             ++shown;
         }
         if (shown == 0) {
-            AddMenuItem(subScrollArea_, sizer, "  (no recent items)", nullptr, false, nullptr,
+            AddMenuItem(m_subScrollArea, sizer, "  (no recent items)", nullptr, false, nullptr,
                         ROW_LEAF, ID_CATEGORY_NONE);
-            subMenuModules_.push_back(nullptr);
+            m_subMenuModules.push_back(nullptr);
         }
     }
 
-    subScrollArea_->SetSizer(sizer);
-    subScrollArea_->Layout();
-    subSizer_ = sizer;
+    m_subScrollArea->SetSizer(sizer);
+    m_subScrollArea->Layout();
+    m_subSizer = sizer;
 }
 
 void StartMenu::PositionSubMenuNearRow(wxWindow* row) {
-    if (!row || !subMenu_ || !GetParent())
+    if (!row || !m_subMenu || !GetParent())
         return;
 
     wxRect menuRect = GetScreenRect();
@@ -679,9 +679,9 @@ void StartMenu::PositionSubMenuNearRow(wxWindow* row) {
 
     // Fit submenu height to content, but clamp so it stays usable.
     int contentH = 0;
-    if (subSizer_) {
+    if (m_subSizer) {
         // Add a small padding to avoid tight clipping on some themes.
-        contentH = subSizer_->GetMinSize().GetHeight() + 8;
+        contentH = m_subSizer->GetMinSize().GetHeight() + 8;
     }
     int h = contentH > 0 ? contentH : 200;
     h = std::min(h, std::min(kSubMenuMaxHeight, topClient.GetHeight()));
@@ -702,13 +702,13 @@ void StartMenu::PositionSubMenuNearRow(wxWindow* row) {
     if (y + h > topClient.GetHeight())
         y = std::max(0, topClient.GetHeight() - h);
 
-    subMenu_->SetSize(wxSize(w, h));
-    subMenu_->SetPosition(wxPoint(x, y));
+    m_subMenu->SetSize(wxSize(w, h));
+    m_subMenu->SetPosition(wxPoint(x, y));
 }
 
 void StartMenu::CreateMenuContent() {
-    scrollArea_->DestroyChildren();
-    menuRows_.clear();
+    m_scrollArea->DestroyChildren();
+    m_menuRows.clear();
     HideSubMenu();
 
     wxBoxSizer* sizer = new wxBoxSizer(wxVERTICAL);
@@ -729,25 +729,25 @@ void StartMenu::CreateMenuContent() {
             return;
         usedUris.insert(m->getFullUri());
         auto b = m->image.toBitmap1(kIconSize, kIconSize);
-        AddMenuItem(scrollArea_, sizer, m->label, m, false, b.IsOk() ? &b : nullptr, ROW_LEAF,
+        AddMenuItem(m_scrollArea, sizer, m->label, m, false, b.IsOk() ? &b : nullptr, ROW_LEAF,
                     ID_CATEGORY_NONE);
     };
     auto addPseudo = [&](const wxString& text, const wxBitmap* icon, RowKind kind) {
-        AddMenuItem(scrollArea_, sizer, text, nullptr, false, icon, kind, ID_CATEGORY_NONE);
+        AddMenuItem(m_scrollArea, sizer, text, nullptr, false, icon, kind, ID_CATEGORY_NONE);
     };
     auto addSep = [&]() {
-        AddMenuItem(scrollArea_, sizer, "", nullptr, true, nullptr, ROW_LEAF, ID_CATEGORY_NONE);
+        AddMenuItem(m_scrollArea, sizer, "", nullptr, true, nullptr, ROW_LEAF, ID_CATEGORY_NONE);
     };
     auto findByName = [&](const std::string& name) -> ModulePtr {
-        for (const auto& m : filteredModules_)
+        for (const auto& m : m_filteredModules)
             if (m && m->name == name)
                 return m;
         return nullptr;
     };
 
-    if (filteredModules_.empty()) {
-        scrollArea_->SetSizer(sizer);
-        scrollArea_->Layout();
+    if (m_filteredModules.empty()) {
+        m_scrollArea->SetSizer(sizer);
+        m_scrollArea->Layout();
         return;
     }
 
@@ -758,7 +758,7 @@ void StartMenu::CreateMenuContent() {
     }
     for (const auto& cat : getAllCategories()) {
         bool any = false;
-        for (const auto& m : filteredModules_)
+        for (const auto& m : m_filteredModules)
             if (m && m->categoryId == cat.id && !usedUris.count(m->getFullUri())) {
                 any = true;
                 break;
@@ -766,7 +766,7 @@ void StartMenu::CreateMenuContent() {
         if (!any)
             continue;
         auto catIcon = cat.icon.toBitmap1(kIconSize, kIconSize);
-        AddMenuItem(scrollArea_, sizer, cat.label, nullptr, false,
+        AddMenuItem(m_scrollArea, sizer, cat.label, nullptr, false,
                     catIcon.IsOk() ? &catIcon : nullptr, ROW_CATEGORY_FOLDER, cat.id);
     }
     addSep();
@@ -779,8 +779,8 @@ void StartMenu::CreateMenuContent() {
     addSep();
     addPseudo("Exit", iconExit.IsOk() ? &iconExit : nullptr, ROW_LEAF);
 
-    scrollArea_->SetSizer(sizer);
-    scrollArea_->Layout();
+    m_scrollArea->SetSizer(sizer);
+    m_scrollArea->Layout();
 }
 
 } // namespace os

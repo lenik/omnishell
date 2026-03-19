@@ -49,25 +49,25 @@ namespace os {
 LabeledIcon::LabeledIcon(wxWindow* parent, wxWindowID id, const wxBitmap& bitmap,
                          const wxString& label, const wxPoint& pos, const wxSize& size,
                          long style)
-    : wxPanel(parent, id, pos, wxDefaultSize, style), bitmap_(nullptr), label_(nullptr) {
+    : wxPanel(parent, id, pos, wxDefaultSize, style), m_bitmap(nullptr), m_label(nullptr) {
     SetBackgroundStyle(wxBG_STYLE_PAINT);
 
     wxBoxSizer* sizer = new wxBoxSizer(wxVERTICAL);
 
-    bitmap_ = new wxStaticBitmap(this, wxID_ANY, bitmap);
-    label_ = new wxStaticText(this, wxID_ANY, label, wxDefaultPosition, wxDefaultSize,
+    m_bitmap = new wxStaticBitmap(this, wxID_ANY, bitmap);
+    m_label = new wxStaticText(this, wxID_ANY, label, wxDefaultPosition, wxDefaultSize,
                               wxALIGN_CENTRE);
 
     // Fixed wrapping width; allow height to grow naturally.
     const int wrapWidth = 80;
-    label_->SetLabel(label);
-    label_->Wrap(wrapWidth);
+    m_label->SetLabel(label);
+    m_label->Wrap(wrapWidth);
 
     // Padding inside icon: 8px vertical, 12px horizontal, 5px between image & label
     sizer->AddSpacer(8); // top padding
-    sizer->Add(bitmap_, 0, wxALIGN_CENTER_HORIZONTAL | wxLEFT | wxRIGHT, 12);
+    sizer->Add(m_bitmap, 0, wxALIGN_CENTER_HORIZONTAL | wxLEFT | wxRIGHT, 12);
     sizer->AddSpacer(5); // gap between image and label
-    sizer->Add(label_, 0, wxALIGN_CENTER_HORIZONTAL | wxLEFT | wxRIGHT, 12);
+    sizer->Add(m_label, 0, wxALIGN_CENTER_HORIZONTAL | wxLEFT | wxRIGHT, 12);
     sizer->AddSpacer(8); // bottom padding
 
     SetSizerAndFit(sizer);
@@ -86,10 +86,10 @@ LabeledIcon::LabeledIcon(wxWindow* parent, wxWindowID id, const wxBitmap& bitmap
         e.Skip();
     };
 
-    bitmap_->Bind(wxEVT_LEFT_DCLICK, forwardLeftDClick);
-    label_->Bind(wxEVT_LEFT_DCLICK, forwardLeftDClick);
-    bitmap_->Bind(wxEVT_RIGHT_DOWN, forwardRightDown);
-    label_->Bind(wxEVT_RIGHT_DOWN, forwardRightDown);
+    m_bitmap->Bind(wxEVT_LEFT_DCLICK, forwardLeftDClick);
+    m_label->Bind(wxEVT_LEFT_DCLICK, forwardLeftDClick);
+    m_bitmap->Bind(wxEVT_RIGHT_DOWN, forwardRightDown);
+    m_label->Bind(wxEVT_RIGHT_DOWN, forwardRightDown);
 
     // Forward drag-related mouse events from children as well
     auto forwardLeftDown = [this](wxMouseEvent& e) {
@@ -111,12 +111,12 @@ LabeledIcon::LabeledIcon(wxWindow* parent, wxWindowID id, const wxBitmap& bitmap
         e.Skip();
     };
 
-    bitmap_->Bind(wxEVT_LEFT_DOWN, forwardLeftDown);
-    label_->Bind(wxEVT_LEFT_DOWN, forwardLeftDown);
-    bitmap_->Bind(wxEVT_LEFT_UP, forwardLeftUp);
-    label_->Bind(wxEVT_LEFT_UP, forwardLeftUp);
-    bitmap_->Bind(wxEVT_MOTION, forwardMotion);
-    label_->Bind(wxEVT_MOTION, forwardMotion);
+    m_bitmap->Bind(wxEVT_LEFT_DOWN, forwardLeftDown);
+    m_label->Bind(wxEVT_LEFT_DOWN, forwardLeftDown);
+    m_bitmap->Bind(wxEVT_LEFT_UP, forwardLeftUp);
+    m_label->Bind(wxEVT_LEFT_UP, forwardLeftUp);
+    m_bitmap->Bind(wxEVT_MOTION, forwardMotion);
+    m_label->Bind(wxEVT_MOTION, forwardMotion);
 
     // Hover / pressed tracking on panel
     Bind(wxEVT_ENTER_WINDOW, &LabeledIcon::OnMouseEnter, this);
@@ -127,39 +127,39 @@ LabeledIcon::LabeledIcon(wxWindow* parent, wxWindowID id, const wxBitmap& bitmap
 
     // Also update hover state when moving over children
     auto childEnter = [this](wxMouseEvent& e) {
-        hover_ = true;
+        m_hover = true;
         Refresh();
         e.Skip();
     };
     auto childLeave = [this](wxMouseEvent& e) {
         wxPoint screenPos = wxGetMousePosition();
         wxPoint clientPos = ScreenToClient(screenPos);
-        hover_ = GetClientRect().Contains(clientPos);
-        if (!hover_) {
-            pressed_ = false;
+        m_hover = GetClientRect().Contains(clientPos);
+        if (!m_hover) {
+            m_pressed = false;
         }
         Refresh();
         e.Skip();
     };
 
-    bitmap_->Bind(wxEVT_ENTER_WINDOW, childEnter);
-    label_->Bind(wxEVT_ENTER_WINDOW, childEnter);
-    bitmap_->Bind(wxEVT_LEAVE_WINDOW, childLeave);
-    label_->Bind(wxEVT_LEAVE_WINDOW, childLeave);
+    m_bitmap->Bind(wxEVT_ENTER_WINDOW, childEnter);
+    m_label->Bind(wxEVT_ENTER_WINDOW, childEnter);
+    m_bitmap->Bind(wxEVT_LEAVE_WINDOW, childLeave);
+    m_label->Bind(wxEVT_LEAVE_WINDOW, childLeave);
 }
 
 void LabeledIcon::setBitmap(const wxBitmap& bitmap) {
-    if (bitmap_) {
-        bitmap_->SetBitmap(bitmap);
+    if (m_bitmap) {
+        m_bitmap->SetBitmap(bitmap);
         Layout();
         Refresh();
     }
 }
 
 void LabeledIcon::setLabel(const wxString& text) {
-    if (label_) {
-        label_->SetLabel(text);
-        label_->Wrap(80);
+    if (m_label) {
+        m_label->SetLabel(text);
+        m_label->Wrap(80);
         Layout();
         Refresh();
     }
@@ -167,7 +167,7 @@ void LabeledIcon::setLabel(const wxString& text) {
 
 void LabeledIcon::OnPaint(wxPaintEvent& event) {
     // Transparent background by default; only draw our highlight when needed.
-    if (!hover_ && !pressed_) {
+    if (!m_hover && !m_pressed) {
         event.Skip();
         return;
     }
@@ -180,7 +180,7 @@ void LabeledIcon::OnPaint(wxPaintEvent& event) {
 
     wxColour borderColor(200, 200, 200); // light gray border
     wxColour fillColor;
-    if (pressed_) {
+    if (m_pressed) {
         fillColor = wxColour(200, 220, 245); // pressed background
     } else {
         fillColor = wxColour(220, 235, 250); // hover background
@@ -195,7 +195,7 @@ void LabeledIcon::OnPaint(wxPaintEvent& event) {
 }
 
 void LabeledIcon::OnMouseEnter(wxMouseEvent& event) {
-    hover_ = true;
+    m_hover = true;
     Refresh();
     event.Skip();
 }
@@ -203,16 +203,16 @@ void LabeledIcon::OnMouseEnter(wxMouseEvent& event) {
 void LabeledIcon::OnMouseLeave(wxMouseEvent& event) {
     wxPoint screenPos = wxGetMousePosition();
     wxPoint clientPos = ScreenToClient(screenPos);
-    hover_ = GetClientRect().Contains(clientPos);
-    if (!hover_) {
-        pressed_ = false;
+    m_hover = GetClientRect().Contains(clientPos);
+    if (!m_hover) {
+        m_pressed = false;
     }
     Refresh();
     event.Skip();
 }
 
 void LabeledIcon::OnMouseDown(wxMouseEvent& event) {
-    pressed_ = true;
+    m_pressed = true;
     if (!HasCapture()) {
         CaptureMouse();
     }
@@ -221,7 +221,7 @@ void LabeledIcon::OnMouseDown(wxMouseEvent& event) {
 }
 
 void LabeledIcon::OnMouseUp(wxMouseEvent& event) {
-    pressed_ = false;
+    m_pressed = false;
     if (HasCapture()) {
         ReleaseMouse();
     }

@@ -12,14 +12,14 @@ BEGIN_EVENT_TABLE(TrayIcon, wxTaskBarIcon)
 END_EVENT_TABLE()
 
 TrayIcon::TrayIcon() 
-    : contextMenu_(nullptr)
+    : m_contextMenu(nullptr)
 {
 }
 
 TrayIcon::~TrayIcon() {
     RemoveIcon();
-    if (contextMenu_) {
-        delete contextMenu_;
+    if (m_contextMenu) {
+        delete m_contextMenu;
     }
 }
 
@@ -40,18 +40,18 @@ void TrayIcon::setTooltip(const std::string& tooltip) {
 }
 
 void TrayIcon::onClick(ClickHandler handler) {
-    onClickHandler_ = handler;
+    m_onClickHandler = handler;
 }
 
 void TrayIcon::onRightClick(RightClickHandler handler) {
-    onRightClickHandler_ = handler;
+    m_onRightClickHandler = handler;
 }
 
 void TrayIcon::setContextMenu(wxMenu* menu) {
-    if (contextMenu_) {
-        delete contextMenu_;
+    if (m_contextMenu) {
+        delete m_contextMenu;
     }
-    contextMenu_ = menu;
+    m_contextMenu = menu;
 }
 
 void TrayIcon::showNotification(const std::string& title, const std::string& text, int timeout) {
@@ -71,11 +71,11 @@ void TrayIcon::remove() {
 }
 
 wxMenu* TrayIcon::CreatePopupMenu() {
-    if (contextMenu_) {
+    if (m_contextMenu) {
         // Create a copy of the menu
         wxMenu* copy = new wxMenu();
         // Copy menu items (simplified - just create a new menu)
-        for (wxMenuItem* item : contextMenu_->GetMenuItems()) {
+        for (wxMenuItem* item : m_contextMenu->GetMenuItems()) {
             if (item->IsSeparator()) {
                 copy->AppendSeparator();
             } else {
@@ -88,23 +88,23 @@ wxMenu* TrayIcon::CreatePopupMenu() {
 }
 
 void TrayIcon::OnTrayIconLeftClick(wxTaskBarIconEvent& event) {
-    if (onClickHandler_) {
-        onClickHandler_();
+    if (m_onClickHandler) {
+        m_onClickHandler();
     }
     event.Skip();
 }
 
 void TrayIcon::OnTrayIconRightClick(wxTaskBarIconEvent& event) {
-    if (onRightClickHandler_) {
-        onRightClickHandler_();
+    if (m_onRightClickHandler) {
+        m_onRightClickHandler();
     }
     event.Skip();
 }
 
 void TrayIcon::OnTrayIconDoubleClick(wxTaskBarIconEvent& event) {
     // Double click treated as left click
-    if (onClickHandler_) {
-        onClickHandler_();
+    if (m_onClickHandler) {
+        m_onClickHandler();
     }
     event.Skip();
 }

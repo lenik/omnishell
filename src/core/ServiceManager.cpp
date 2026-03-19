@@ -27,13 +27,13 @@ void ServiceManager::startService(ModulePtr module, bool autoRestart) {
         return;
     }
     
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::lock_guard<std::mutex> lock(m_mutex);
     
     const std::string uri = module->getFullUri();
     
     // Check if already running
-    auto it = services_.find(uri);
-    if (it != services_.end() && it->second->running) {
+    auto it = m_services.find(uri);
+    if (it != m_services.end() && it->second->running) {
         wxLogWarning("Service %s is already running", uri);
         return;
     }
@@ -69,14 +69,14 @@ void ServiceManager::startService(ModulePtr module, bool autoRestart) {
         state->lastStopTime = wxDateTime::Now();
     }
     
-    services_[uri] = std::move(state);
+    m_services[uri] = std::move(state);
 }
 
 void ServiceManager::stopService(const std::string& uri, bool wait) {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::lock_guard<std::mutex> lock(m_mutex);
     
-    auto it = services_.find(uri);
-    if (it == services_.end()) {
+    auto it = m_services.find(uri);
+    if (it == m_services.end()) {
         wxLogWarning("Service %s not found", uri);
         return;
     }
@@ -106,7 +106,7 @@ void ServiceManager::stopService(const std::string& uri, bool wait) {
     state.lastStopTime = wxDateTime::Now();
     
     if (!wait) {
-        services_.erase(it);
+        m_services.erase(it);
     }
 }
 
@@ -114,8 +114,8 @@ void ServiceManager::stopAllServices(bool wait) {
     std::vector<std::string> uris;
     
     {
-        std::lock_guard<std::mutex> lock(mutex_);
-        for (const auto& pair : services_) {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        for (const auto& pair : m_services) {
             if (pair.second->running) {
                 uris.push_back(pair.first);
             }
@@ -130,10 +130,10 @@ void ServiceManager::stopAllServices(bool wait) {
 }
 
 bool ServiceManager::isServiceRunning(const std::string& uri) const {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::lock_guard<std::mutex> lock(m_mutex);
     
-    auto it = services_.find(uri);
-    if (it == services_.end()) {
+    auto it = m_services.find(uri);
+    if (it == m_services.end()) {
         return false;
     }
     
@@ -141,10 +141,10 @@ bool ServiceManager::isServiceRunning(const std::string& uri) const {
 }
 
 std::vector<std::string> ServiceManager::getRunningServices() const {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::lock_guard<std::mutex> lock(m_mutex);
     
     std::vector<std::string> result;
-    for (const auto& pair : services_) {
+    for (const auto& pair : m_services) {
         if (pair.second->running) {
             result.push_back(pair.first);
         }
@@ -154,10 +154,10 @@ std::vector<std::string> ServiceManager::getRunningServices() const {
 }
 
 ServiceManager::ServiceState* ServiceManager::getServiceState(const std::string& uri) {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::lock_guard<std::mutex> lock(m_mutex);
     
-    auto it = services_.find(uri);
-    if (it == services_.end()) {
+    auto it = m_services.find(uri);
+    if (it == m_services.end()) {
         return nullptr;
     }
     
@@ -165,7 +165,7 @@ ServiceManager::ServiceState* ServiceManager::getServiceState(const std::string&
 }
 
 void ServiceManager::setMaxRestarts(int maxRestarts) {
-    maxRestarts_ = maxRestarts;
+    m_maxRestarts = maxRestarts;
 }
 
 void ServiceManager::startAllServices(ModuleRegistry& registry) {
@@ -211,15 +211,15 @@ void ServiceManager::runServiceThread(ServiceState& state) {
 void ServiceManager::handleServiceFailure(ServiceState& state) {
     state.restartCount++;
     
-    if (state.restartCount >= maxRestarts_) {
+    if (state.restartCount >= m_maxRestarts) {
         wxLogError("Service %s exceeded max restart attempts (%d), stopping", 
-                   state.module->getFullUri(), maxRestarts_);
+                   state.module->getFullUri(), m_maxRestarts);
         state.running = false;
         return;
     }
     
     wxLogWarning("Service %s restarting (attempt %d/%d)", 
-                 state.module->getFullUri(), state.restartCount, maxRestarts_);
+                 state.module->getFullUri(), state.restartCount, m_maxRestarts);
     
     // Brief delay before restart
     wxThread::Sleep(1000);

@@ -18,7 +18,7 @@ OMNISHELL_REGISTER_MODULE("omnishell.notepad", NotepadApp)
 
 NotepadApp::NotepadApp(CreateModuleContext* ctx)
     : Module(ctx)
-    , core_(ctx->getVolumeManager()) //
+    , m_core(ctx->getVolumeManager()) //
 {
     initializeMetadata();
 }
@@ -46,7 +46,7 @@ ProcessPtr NotepadApp::run() {
     proc->icon = image;
 
     uiFrame* frame = new uiFrame("Notepad");
-    frame->addFragment(&core_);
+    frame->addFragment(&m_core);
     frame->createView();
     // createMenuBar();
     // editor_ = new wxTextCtrl(frame_, wxID_ANY, "", wxDefaultPosition, wxDefaultSize,

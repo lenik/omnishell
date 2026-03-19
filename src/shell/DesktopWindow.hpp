@@ -108,7 +108,7 @@ class DesktopWindow : public wxPanel {
     /**
      * Get all desktop module icons
      */
-    const std::vector<DesktopModuleIcon>& getIcons() const { return icons_; }
+    const std::vector<DesktopModuleIcon>& getIcons() const { return m_icons; }
 
     /**
      * Launch a module
@@ -142,22 +142,22 @@ class DesktopWindow : public wxPanel {
   private:
     DECLARE_EVENT_TABLE()
 
-    VolumeManager* volumeManager_;
-    std::vector<DesktopModuleIcon> icons_;
-    std::vector<VolumeDesktopIcon> volumeIcons_;
-    wxColour backgroundColor_;
-    wxBitmap backgroundImage_;
-    wxImage backgroundImageSrc_;
+    VolumeManager* m_volumeManager;
+    std::vector<DesktopModuleIcon> m_icons;
+    std::vector<VolumeDesktopIcon> m_volumeIcons;
+    wxColour m_backgroundColor;
+    wxBitmap m_backgroundImage;
+    wxImage m_backgroundImageSrc;
 
     void UpdateScaledBackground();
-    wxSize iconSize_;
-    int iconSpacing_;
-    int margin_;
+    wxSize m_iconSize;
+    int m_iconSpacing;
+    int m_margin;
 
-    bool isDragging_ = false;
-    DesktopIcon* draggingIcon_ = nullptr;
+    bool m_isDragging = false;
+    DesktopIcon* m_draggingIcon = nullptr;
     // Offset from icon's top-left to the mouse position at drag start.
-    wxPoint dragOffset_;
+    wxPoint m_dragOffset;
 };
 
 } // namespace os

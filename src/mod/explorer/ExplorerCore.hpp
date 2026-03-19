@@ -28,7 +28,7 @@ public:
     wxEvtHandler* getEventHandler() override;
 
     void setDir(std::string dir);
-    const std::string& dir() const { return dir_; }
+    const std::string& dir() const { return m_dir; }
 
 private:
     class TreeData : public wxTreeItemData {
@@ -39,29 +39,29 @@ private:
         bool loaded{false};
     };
 
-    VolumeManager* vm_{nullptr};
-    Volume* volume_{nullptr};
-    std::string dir_;
+    VolumeManager* m_vm{nullptr};
+    Volume* m_volume{nullptr};
+    std::string m_dir;
 
-    uiFrame* frame_{nullptr};
-    wxStaticText* pathLabel_{nullptr};
-    wxTreeCtrl* tree_{nullptr};
-    wxListCtrl* list_{nullptr};
+    uiFrame* m_frame{nullptr};
+    wxStaticText* m_pathLabel{nullptr};
+    wxTreeCtrl* m_tree{nullptr};
+    wxListCtrl* m_list{nullptr};
 
     // Icons for tree and list
-    wxImageList* treeImages_{nullptr};
-    wxImageList* listImages_{nullptr};
-    int volIcon_[static_cast<int>(VolumeType::OTHER) + 1] = {};
-    int iconFolder_{-1};
-    int iconFileText_{-1};
-    int iconFileImage_{-1};
-    int iconFileAudio_{-1};
-    int iconFileVideo_{-1};
-    int iconFilePdf_{-1};
-    int iconFileCode_{-1};
-    int iconFileArchive_{-1};
-    int iconFileSheet_{-1};
-    int iconFileGeneric_{-1};
+    wxImageList* m_treeImages{nullptr};
+    wxImageList* m_listImages{nullptr};
+    int m_volIcon[static_cast<int>(VolumeType::OTHER) + 1] = {};
+    int m_iconFolder{-1};
+    int m_iconFileText{-1};
+    int m_iconFileImage{-1};
+    int m_iconFileAudio{-1};
+    int m_iconFileVideo{-1};
+    int m_iconFilePdf{-1};
+    int m_iconFileCode{-1};
+    int m_iconFileArchive{-1};
+    int m_iconFileSheet{-1};
+    int m_iconFileGeneric{-1};
 
     int listIconForExtension(const std::string& ext) const;
 

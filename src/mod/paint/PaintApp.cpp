@@ -13,7 +13,7 @@ OMNISHELL_REGISTER_MODULE("omnishell.paint", PaintApp)
 
 PaintApp::PaintApp(CreateModuleContext* ctx)
     : Module(ctx)
-    , core_() {
+    , m_core() {
     initializeMetadata();
 }
 
@@ -40,7 +40,7 @@ ProcessPtr PaintApp::run() {
     proc->icon = image;
 
     uiFrame* frame = new uiFrame("Paint");
-    frame->addFragment(&core_);
+    frame->addFragment(&m_core);
     frame->createView();
     frame->Centre();
     frame->Show(true);

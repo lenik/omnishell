@@ -24,7 +24,7 @@ public:
     bool has(const std::string& key) const;
     void remove(const std::string& key);
 
-    const std::map<std::string, std::string>& data() const { return data_; }
+    const std::map<std::string, std::string>& data() const { return m_data; }
 
 private:
     RegistryDb();
@@ -32,7 +32,7 @@ private:
     std::string getAppName() const;
     std::string getConfigPath() const;
 
-    std::map<std::string, std::string> data_;
+    std::map<std::string, std::string> m_data;
 };
 
 } // namespace os

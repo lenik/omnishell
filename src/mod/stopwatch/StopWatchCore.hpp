@@ -18,10 +18,10 @@ public:
     wxEvtHandler* getEventHandler() override;
 
 private:
-    uiFrame* frame_{nullptr};
-    wxStaticText* display_{nullptr};
-    wxTimer timer_;
-    int elapsedMs_{0};
+    uiFrame* m_frame{nullptr};
+    wxStaticText* m_display{nullptr};
+    wxTimer m_timer;
+    int m_elapsedMs{0};
 
     void onStart(PerformContext* ctx);
     void onStop(PerformContext* ctx);

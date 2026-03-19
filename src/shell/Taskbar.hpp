@@ -81,17 +81,17 @@ public:
     /**
      * Get start button
      */
-    wxButton* getStartButton() const { return startButton_; }
+    wxButton* getStartButton() const { return m_startButton; }
     
     /**
      * Get application list panel
      */
-    wxPanel* getAppListPanel() const { return appListPanel_; }
+    wxPanel* getAppListPanel() const { return m_appListPanel; }
     
     /**
      * Get tray panel
      */
-    wxPanel* getTrayPanel() const { return trayPanel_; }
+    wxPanel* getTrayPanel() const { return m_trayPanel; }
 
 protected:
     void OnStartButtonClick(wxCommandEvent& event);
@@ -108,17 +108,17 @@ protected:
 private:
     DECLARE_EVENT_TABLE()
     
-    wxButton* startButton_;
-    wxPanel* appListPanel_;
-    wxPanel* trayPanel_;
-    wxStaticText* clock_;
+    wxButton* m_startButton;
+    wxPanel* m_appListPanel;
+    wxPanel* m_trayPanel;
+    wxStaticText* m_clock;
     
-    std::vector<TaskbarButton> applications_;
-    wxMenu* startMenu_;
+    std::vector<TaskbarButton> m_applications;
+    wxMenu* m_startMenu;
     
-    int buttonWidth_;
-    int buttonSpacing_;
-    int margin_;
+    int m_buttonWidth;
+    int m_buttonSpacing;
+    int m_margin;
 };
 
 } // namespace os

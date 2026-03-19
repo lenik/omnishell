@@ -12,12 +12,12 @@ ChoosePrinterDialog::ChoosePrinterDialog(
     : wxDialog(parent, wxID_ANY, title,
                 wxDefaultPosition, wxSize(500, 400),
                 wxDEFAULT_DIALOG_STYLE)
-    , selectedIndex_(-1)
+    , m_selectedIndex(-1)
 {
     CreateControls();
     
     if (!message.IsEmpty()) {
-        messageText_->SetLabel(message);
+        m_messageText->SetLabel(message);
     }
     
     // Add some default printers for demo
@@ -36,30 +36,30 @@ void ChoosePrinterDialog::CreateControls() {
     wxBoxSizer* mainSizer = new wxBoxSizer(wxVERTICAL);
     
     // Message
-    messageText_ = new wxStaticText(this, wxID_ANY, "Choose a printer:");
-    mainSizer->Add(messageText_, 0, wxALL, 5);
+    m_messageText = new wxStaticText(this, wxID_ANY, "Choose a printer:");
+    mainSizer->Add(m_messageText, 0, wxALL, 5);
     
     // Printer list
-    printerList_ = new wxListCtrl(this, wxID_ANY,
+    m_printerList = new wxListCtrl(this, wxID_ANY,
                                    wxDefaultPosition, wxSize(-1, 200),
                                    wxLC_REPORT | wxLC_SINGLE_SEL);
     
     // Add columns
-    printerList_->InsertColumn(0, "Printer Name", wxLIST_FORMAT_LEFT, 200);
-    printerList_->InsertColumn(1, "Description", wxLIST_FORMAT_LEFT, 150);
-    printerList_->InsertColumn(2, "Location", wxLIST_FORMAT_LEFT, 100);
-    printerList_->InsertColumn(3, "Status", wxLIST_FORMAT_LEFT, 80);
+    m_printerList->InsertColumn(0, "Printer Name", wxLIST_FORMAT_LEFT, 200);
+    m_printerList->InsertColumn(1, "Description", wxLIST_FORMAT_LEFT, 150);
+    m_printerList->InsertColumn(2, "Location", wxLIST_FORMAT_LEFT, 100);
+    m_printerList->InsertColumn(3, "Status", wxLIST_FORMAT_LEFT, 80);
     
-    printerList_->Bind(wxEVT_LIST_ITEM_SELECTED, &ChoosePrinterDialog::OnPrinterSelected, this);
-    printerList_->Bind(wxEVT_LIST_ITEM_ACTIVATED, &ChoosePrinterDialog::OnPrinterDoubleClicked, this);
+    m_printerList->Bind(wxEVT_LIST_ITEM_SELECTED, &ChoosePrinterDialog::OnPrinterSelected, this);
+    m_printerList->Bind(wxEVT_LIST_ITEM_ACTIVATED, &ChoosePrinterDialog::OnPrinterDoubleClicked, this);
     
-    mainSizer->Add(printerList_, 1, wxEXPAND | wxALL, 5);
+    mainSizer->Add(m_printerList, 1, wxEXPAND | wxALL, 5);
     
     // Status area
     wxBoxSizer* statusSizer = new wxBoxSizer(wxHORIZONTAL);
     
-    statusText_ = new wxStaticText(this, wxID_ANY, "");
-    statusSizer->Add(statusText_, 1, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+    m_statusText = new wxStaticText(this, wxID_ANY, "");
+    statusSizer->Add(m_statusText, 1, wxALL | wxALIGN_CENTER_VERTICAL, 5);
     
     mainSizer->Add(statusSizer, 0, wxEXPAND | wxLEFT | wxRIGHT, 5);
     
@@ -73,9 +73,9 @@ void ChoosePrinterDialog::CreateControls() {
     wxButton* cancelButton = new wxButton(this, wxID_CANCEL, "Cancel");
     cancelButton->Bind(wxEVT_BUTTON, &ChoosePrinterDialog::OnCancel, this);
     
-    setDefaultButton_ = new wxButton(this, wxID_ANY, "Set as Default");
-    setDefaultButton_->Bind(wxEVT_BUTTON, &ChoosePrinterDialog::OnSetDefault, this);
-    setDefaultButton_->Enable(false);
+    m_setDefaultButton = new wxButton(this, wxID_ANY, "Set as Default");
+    m_setDefaultButton->Bind(wxEVT_BUTTON, &ChoosePrinterDialog::OnSetDefault, this);
+    m_setDefaultButton->Enable(false);
     
     wxButton* propsButton = new wxButton(this, wxID_ANY, "Properties");
     propsButton->Bind(wxEVT_BUTTON, &ChoosePrinterDialog::OnProperties, this);
@@ -84,7 +84,7 @@ void ChoosePrinterDialog::CreateControls() {
     buttonSizer->Add(okButton, 0, wxALL, 5);
     buttonSizer->Add(cancelButton, 0, wxALL, 5);
     buttonSizer->AddStretchSpacer();
-    buttonSizer->Add(setDefaultButton_, 0, wxALL, 5);
+    buttonSizer->Add(m_setDefaultButton, 0, wxALL, 5);
     buttonSizer->Add(propsButton, 0, wxALL, 5);
     
     mainSizer->Add(buttonSizer, 0, wxEXPAND | wxALL, 5);
@@ -107,31 +107,31 @@ void ChoosePrinterDialog::addPrinter(
     info.isOnline = true;  // Assume online by default
     info.isLocal = true;   // Assume local by default
     
-    printers_.push_back(info);
+    m_printers.push_back(info);
     
     if (isDefault) {
-        defaultPrinter_ = name;
+        m_defaultPrinter = name;
     }
 }
 
 wxString ChoosePrinterDialog::getSelectedPrinter() const {
-    if (selectedIndex_ >= 0 && selectedIndex_ < (int)printers_.size()) {
-        return printers_[selectedIndex_].name;
+    if (m_selectedIndex >= 0 && m_selectedIndex < (int)m_printers.size()) {
+        return m_printers[m_selectedIndex].name;
     }
     return wxString();
 }
 
 PrinterInfo ChoosePrinterDialog::getPrinterInfo() const {
-    if (selectedIndex_ >= 0 && selectedIndex_ < (int)printers_.size()) {
-        return printers_[selectedIndex_];
+    if (m_selectedIndex >= 0 && m_selectedIndex < (int)m_printers.size()) {
+        return m_printers[m_selectedIndex];
     }
     return PrinterInfo();
 }
 
 void ChoosePrinterDialog::setDefaultPrinter(const wxString& name) {
-    defaultPrinter_ = name;
+    m_defaultPrinter = name;
     
-    for (auto& printer : printers_) {
+    for (auto& printer : m_printers) {
         printer.isDefault = (printer.name == name);
     }
     
@@ -139,18 +139,18 @@ void ChoosePrinterDialog::setDefaultPrinter(const wxString& name) {
 }
 
 std::vector<PrinterInfo> ChoosePrinterDialog::getPrinters() const {
-    return printers_;
+    return m_printers;
 }
 
 void ChoosePrinterDialog::UpdatePrinterList() {
-    printerList_->DeleteAllItems();
+    m_printerList->DeleteAllItems();
     
-    for (size_t i = 0; i < printers_.size(); i++) {
-        const auto& printer = printers_[i];
+    for (size_t i = 0; i < m_printers.size(); i++) {
+        const auto& printer = m_printers[i];
         
-        long index = printerList_->InsertItem(i, printer.name);
-        printerList_->SetItem(index, 1, printer.description);
-        printerList_->SetItem(index, 2, printer.location);
+        long index = m_printerList->InsertItem(i, printer.name);
+        m_printerList->SetItem(index, 1, printer.description);
+        m_printerList->SetItem(index, 2, printer.location);
         
         wxString status;
         if (!printer.isOnline) {
@@ -161,7 +161,7 @@ void ChoosePrinterDialog::UpdatePrinterList() {
             status = "Ready";
         }
         
-        printerList_->SetItem(index, 3, status);
+        m_printerList->SetItem(index, 3, status);
         
         // Highlight default printer
         if (printer.isDefault) {
@@ -170,11 +170,11 @@ void ChoosePrinterDialog::UpdatePrinterList() {
     }
     
     // Select default printer if exists
-    if (!defaultPrinter_.IsEmpty() && selectedIndex_ == -1) {
-        for (size_t i = 0; i < printers_.size(); i++) {
-            if (printers_[i].name == defaultPrinter_) {
-                printerList_->SetItemState(i, wxLIST_STATE_SELECTED, wxLIST_STATE_SELECTED);
-                selectedIndex_ = i;
+    if (!m_defaultPrinter.IsEmpty() && m_selectedIndex == -1) {
+        for (size_t i = 0; i < m_printers.size(); i++) {
+            if (m_printers[i].name == m_defaultPrinter) {
+                m_printerList->SetItemState(i, wxLIST_STATE_SELECTED, wxLIST_STATE_SELECTED);
+                m_selectedIndex = i;
                 break;
             }
         }
@@ -182,7 +182,7 @@ void ChoosePrinterDialog::UpdatePrinterList() {
 }
 
 void ChoosePrinterDialog::OnOK(wxCommandEvent& event) {
-    if (selectedIndex_ < 0) {
+    if (m_selectedIndex < 0) {
         wxMessageBox("Please select a printer", "Error", wxOK | wxICON_ERROR);
         return;
     }
@@ -195,7 +195,7 @@ void ChoosePrinterDialog::OnCancel(wxCommandEvent& event) {
 }
 
 void ChoosePrinterDialog::OnPrinterSelected(wxListEvent& event) {
-    selectedIndex_ = event.GetIndex();
+    m_selectedIndex = event.GetIndex();
     
     // Enable buttons
     wxWindow* okButton = FindWindowById(wxID_OK, this);
@@ -203,7 +203,7 @@ void ChoosePrinterDialog::OnPrinterSelected(wxListEvent& event) {
         okButton->Enable(true);
     }
     
-    setDefaultButton_->Enable(true);
+    m_setDefaultButton->Enable(true);
     
     UpdateStatus();
     
@@ -215,8 +215,8 @@ void ChoosePrinterDialog::OnPrinterDoubleClicked(wxListEvent& event) {
 }
 
 void ChoosePrinterDialog::OnSetDefault(wxCommandEvent& event) {
-    if (selectedIndex_ >= 0) {
-        wxString name = printers_[selectedIndex_].name;
+    if (m_selectedIndex >= 0) {
+        wxString name = m_printers[m_selectedIndex].name;
         setDefaultPrinter(name);
         UpdateStatus();
         
@@ -226,8 +226,8 @@ void ChoosePrinterDialog::OnSetDefault(wxCommandEvent& event) {
 }
 
 void ChoosePrinterDialog::OnProperties(wxCommandEvent& event) {
-    if (selectedIndex_ >= 0) {
-        const auto& printer = printers_[selectedIndex_];
+    if (m_selectedIndex >= 0) {
+        const auto& printer = m_printers[m_selectedIndex];
         
         wxString msg = wxString::Format(
             "Printer: %s\n"
@@ -247,17 +247,17 @@ void ChoosePrinterDialog::OnProperties(wxCommandEvent& event) {
 }
 
 void ChoosePrinterDialog::UpdateStatus() {
-    if (selectedIndex_ >= 0) {
-        const auto& printer = printers_[selectedIndex_];
+    if (m_selectedIndex >= 0) {
+        const auto& printer = m_printers[m_selectedIndex];
         wxString status = wxString::Format(
             "%s - %s (%s)",
             printer.name,
             printer.description,
             printer.isOnline ? "Ready" : "Offline"
         );
-        statusText_->SetLabel(status);
+        m_statusText->SetLabel(status);
     } else {
-        statusText_->SetLabel("");
+        m_statusText->SetLabel("");
     }
 }
 

@@ -31,8 +31,8 @@ class NotepadApp : public Module {
     // wxEvtHandler* getEventHandler() override;
 
   private:
-    VolumeManager* volumeManager_;
-    NotepadCore core_;
+    VolumeManager* m_volumeManager;
+    NotepadCore m_core;
 
     // wxTextCtrl* editor_;
     // wxStatusBar* statusBar_;

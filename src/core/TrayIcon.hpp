@@ -82,9 +82,9 @@ protected:
 private:
     DECLARE_EVENT_TABLE()
     
-    ClickHandler onClickHandler_;
-    RightClickHandler onRightClickHandler_;
-    wxMenu* contextMenu_;
+    ClickHandler m_onClickHandler;
+    RightClickHandler m_onRightClickHandler;
+    wxMenu* m_contextMenu;
 };
 
 } // namespace os

@@ -16,9 +16,9 @@ MinesweeperApp::MinesweeperApp(CreateModuleContext* ctx)
 }
 
 MinesweeperApp::~MinesweeperApp() {
-    if (frame_) {
-        frame_->Destroy();
-        frame_ = nullptr;
+    if (m_frame) {
+        m_frame->Destroy();
+        m_frame = nullptr;
     }
 }
 
@@ -35,97 +35,97 @@ void MinesweeperApp::initializeMetadata() {
 }
 
 ProcessPtr MinesweeperApp::run() {
-    if (frame_) {
-        frame_->Raise();
-        frame_->SetFocus();
+    if (m_frame) {
+        m_frame->Raise();
+        m_frame->SetFocus();
         auto p = std::make_shared<Process>();
         p->uri = uri;
         p->name = name;
         p->label = label;
         p->icon = image;
-        p->addWindow(frame_);
+        p->addWindow(m_frame);
         return p;
     }
 
     createMainWindow();
     resetGame();
-    frame_->Show(true);
+    m_frame->Show(true);
     auto p = std::make_shared<Process>();
     p->uri = uri;
     p->name = name;
     p->label = label;
     p->icon = image;
-    p->addWindow(frame_);
+    p->addWindow(m_frame);
     return p;
 }
 
 void MinesweeperApp::createMainWindow() {
-    frame_ = new wxFrame(nullptr, wxID_ANY, "Minesweeper", wxDefaultPosition, wxSize(500, 550));
+    m_frame = new wxFrame(nullptr, wxID_ANY, "Minesweeper", wxDefaultPosition, wxSize(500, 550));
 
     wxBoxSizer* mainSizer = new wxBoxSizer(wxVERTICAL);
 
-    statusText_ = new wxStaticText(frame_, wxID_ANY, "Left click: reveal, Right click: flag");
-    mainSizer->Add(statusText_, 0, wxEXPAND | wxALL, 5);
+    m_statusText = new wxStaticText(m_frame, wxID_ANY, "Left click: reveal, Right click: flag");
+    mainSizer->Add(m_statusText, 0, wxEXPAND | wxALL, 5);
 
-    gridPanel_ = new wxPanel(frame_, wxID_ANY);
-    mainSizer->Add(gridPanel_, 1, wxEXPAND | wxALL, 5);
+    m_gridPanel = new wxPanel(m_frame, wxID_ANY);
+    mainSizer->Add(m_gridPanel, 1, wxEXPAND | wxALL, 5);
 
-    wxButton* resetBtn = new wxButton(frame_, wxID_ANY, "Reset");
+    wxButton* resetBtn = new wxButton(m_frame, wxID_ANY, "Reset");
     resetBtn->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) { resetGame(); });
     mainSizer->Add(resetBtn, 0, wxALIGN_RIGHT | wxALL, 5);
 
-    frame_->SetSizer(mainSizer);
-    frame_->Centre();
+    m_frame->SetSizer(mainSizer);
+    m_frame->Centre();
 }
 
 void MinesweeperApp::resetGame() {
-    gameOver_ = false;
+    m_gameOver = false;
 
-    grid_.assign(rows_, std::vector<Cell>(cols_));
+    m_grid.assign(m_rows, std::vector<Cell>(m_cols));
 
     // Place mines randomly
     int placed = 0;
     std::random_device rd;
     std::mt19937 gen(rd());
-    std::uniform_int_distribution<> dr(0, rows_ - 1);
-    std::uniform_int_distribution<> dc(0, cols_ - 1);
+    std::uniform_int_distribution<> dr(0, m_rows - 1);
+    std::uniform_int_distribution<> dc(0, m_cols - 1);
 
-    while (placed < mineCount_) {
+    while (placed < m_mineCount) {
         int r = dr(gen);
         int c = dc(gen);
-        if (!grid_[r][c].hasMine) {
-            grid_[r][c].hasMine = true;
+        if (!m_grid[r][c].hasMine) {
+            m_grid[r][c].hasMine = true;
             placed++;
         }
     }
 
     // Precompute adjacent mine counts
-    for (int r = 0; r < rows_; ++r) {
-        for (int c = 0; c < cols_; ++c) {
-            grid_[r][c].adjacentMines = countAdjacentMines(r, c);
+    for (int r = 0; r < m_rows; ++r) {
+        for (int c = 0; c < m_cols; ++c) {
+            m_grid[r][c].adjacentMines = countAdjacentMines(r, c);
         }
     }
 
     layoutGrid();
 
-    if (statusText_) {
-        statusText_->SetLabel("Left click: reveal, Right click: flag");
+    if (m_statusText) {
+        m_statusText->SetLabel("Left click: reveal, Right click: flag");
     }
 }
 
 void MinesweeperApp::layoutGrid() {
-    if (!gridPanel_)
+    if (!m_gridPanel)
         return;
 
-    gridPanel_->DestroyChildren();
+    m_gridPanel->DestroyChildren();
 
-    wxGridSizer* sizer = new wxGridSizer(rows_, cols_, 0, 0);
+    wxGridSizer* sizer = new wxGridSizer(m_rows, m_cols, 0, 0);
 
-    for (int r = 0; r < rows_; ++r) {
-        for (int c = 0; c < cols_; ++c) {
-            wxButton* btn = new wxButton(gridPanel_, wxID_ANY, "",
+    for (int r = 0; r < m_rows; ++r) {
+        for (int c = 0; c < m_cols; ++c) {
+            wxButton* btn = new wxButton(m_gridPanel, wxID_ANY, "",
                                          wxDefaultPosition, wxSize(32, 32));
-            grid_[r][c].button = btn;
+            m_grid[r][c].button = btn;
             btn->SetBackgroundColour(*wxLIGHT_GREY);
 
             btn->Bind(wxEVT_BUTTON, &MinesweeperApp::OnCellLeftClick, this);
@@ -135,13 +135,13 @@ void MinesweeperApp::layoutGrid() {
         }
     }
 
-    gridPanel_->SetSizer(sizer);
-    gridPanel_->Layout();
-    gridPanel_->Refresh();
+    m_gridPanel->SetSizer(sizer);
+    m_gridPanel->Layout();
+    m_gridPanel->Refresh();
 }
 
 void MinesweeperApp::OnCellLeftClick(wxCommandEvent& event) {
-    if (gameOver_)
+    if (m_gameOver)
         return;
 
     wxObject* obj = event.GetEventObject();
@@ -150,9 +150,9 @@ void MinesweeperApp::OnCellLeftClick(wxCommandEvent& event) {
         return;
 
     int r = -1, c = -1;
-    for (int i = 0; i < rows_; ++i) {
-        for (int j = 0; j < cols_; ++j) {
-            if (grid_[i][j].button == btn) {
+    for (int i = 0; i < m_rows; ++i) {
+        for (int j = 0; j < m_cols; ++j) {
+            if (m_grid[i][j].button == btn) {
                 r = i;
                 c = j;
                 break;
@@ -165,14 +165,14 @@ void MinesweeperApp::OnCellLeftClick(wxCommandEvent& event) {
     if (r == -1 || c == -1)
         return;
 
-    if (grid_[r][c].flagged || grid_[r][c].revealed)
+    if (m_grid[r][c].flagged || m_grid[r][c].revealed)
         return;
 
     revealCell(r, c);
 }
 
 void MinesweeperApp::OnCellRightClick(wxMouseEvent& event) {
-    if (gameOver_)
+    if (m_gameOver)
         return;
 
     wxObject* obj = event.GetEventObject();
@@ -181,9 +181,9 @@ void MinesweeperApp::OnCellRightClick(wxMouseEvent& event) {
         return;
 
     int r = -1, c = -1;
-    for (int i = 0; i < rows_; ++i) {
-        for (int j = 0; j < cols_; ++j) {
-            if (grid_[i][j].button == btn) {
+    for (int i = 0; i < m_rows; ++i) {
+        for (int j = 0; j < m_cols; ++j) {
+            if (m_grid[i][j].button == btn) {
                 r = i;
                 c = j;
                 break;
@@ -196,7 +196,7 @@ void MinesweeperApp::OnCellRightClick(wxMouseEvent& event) {
     if (r == -1 || c == -1)
         return;
 
-    Cell& cell = grid_[r][c];
+    Cell& cell = m_grid[r][c];
     if (cell.revealed)
         return;
 
@@ -211,10 +211,10 @@ void MinesweeperApp::OnCellRightClick(wxMouseEvent& event) {
 }
 
 void MinesweeperApp::revealCell(int row, int col) {
-    if (row < 0 || row >= rows_ || col < 0 || col >= cols_)
+    if (row < 0 || row >= m_rows || col < 0 || col >= m_cols)
         return;
 
-    Cell& cell = grid_[row][col];
+    Cell& cell = m_grid[row][col];
     if (cell.revealed || cell.flagged)
         return;
 
@@ -250,9 +250,9 @@ void MinesweeperApp::revealEmptyNeighbors(int row, int col) {
                 continue;
             int nr = row + dr;
             int nc = col + dc;
-            if (nr < 0 || nr >= rows_ || nc < 0 || nc >= cols_)
+            if (nr < 0 || nr >= m_rows || nc < 0 || nc >= m_cols)
                 continue;
-            Cell& neighbor = grid_[nr][nc];
+            Cell& neighbor = m_grid[nr][nc];
             if (!neighbor.revealed && !neighbor.hasMine) {
                 revealCell(nr, nc);
             }
@@ -261,7 +261,7 @@ void MinesweeperApp::revealEmptyNeighbors(int row, int col) {
 }
 
 int MinesweeperApp::countAdjacentMines(int row, int col) const {
-    if (grid_[row][col].hasMine)
+    if (m_grid[row][col].hasMine)
         return 0;
 
     int count = 0;
@@ -271,9 +271,9 @@ int MinesweeperApp::countAdjacentMines(int row, int col) const {
                 continue;
             int nr = row + dr;
             int nc = col + dc;
-            if (nr < 0 || nr >= rows_ || nc < 0 || nc >= cols_)
+            if (nr < 0 || nr >= m_rows || nc < 0 || nc >= m_cols)
                 continue;
-            if (grid_[nr][nc].hasMine)
+            if (m_grid[nr][nc].hasMine)
                 ++count;
         }
     }
@@ -281,29 +281,29 @@ int MinesweeperApp::countAdjacentMines(int row, int col) const {
 }
 
 void MinesweeperApp::checkWinCondition() {
-    if (gameOver_)
+    if (m_gameOver)
         return;
 
     int unrevealed = 0;
-    for (int r = 0; r < rows_; ++r) {
-        for (int c = 0; c < cols_; ++c) {
-            if (!grid_[r][c].revealed)
+    for (int r = 0; r < m_rows; ++r) {
+        for (int c = 0; c < m_cols; ++c) {
+            if (!m_grid[r][c].revealed)
                 ++unrevealed;
         }
     }
 
-    if (unrevealed == mineCount_) {
+    if (unrevealed == m_mineCount) {
         gameOver(true);
     }
 }
 
 void MinesweeperApp::gameOver(bool won) {
-    gameOver_ = true;
+    m_gameOver = true;
 
     // Reveal all mines
-    for (int r = 0; r < rows_; ++r) {
-        for (int c = 0; c < cols_; ++c) {
-            Cell& cell = grid_[r][c];
+    for (int r = 0; r < m_rows; ++r) {
+        for (int c = 0; c < m_cols; ++c) {
+            Cell& cell = m_grid[r][c];
             if (cell.hasMine && cell.button) {
                 cell.button->SetLabel("X");
                 cell.button->SetBackgroundColour(*wxRED);
@@ -311,8 +311,8 @@ void MinesweeperApp::gameOver(bool won) {
         }
     }
 
-    if (statusText_) {
-        statusText_->SetLabel(won ? "You win! Click Reset to play again."
+    if (m_statusText) {
+        m_statusText->SetLabel(won ? "You win! Click Reset to play again."
                                   : "Boom! You lost. Click Reset to try again.");
     }
 }

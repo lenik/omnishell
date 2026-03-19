@@ -40,16 +40,16 @@ private:
     void checkWinCondition();
     void gameOver(bool won);
 
-    wxFrame* frame_{nullptr};
-    wxPanel* gridPanel_{nullptr};
-    wxStaticText* statusText_{nullptr};
+    wxFrame* m_frame{nullptr};
+    wxPanel* m_gridPanel{nullptr};
+    wxStaticText* m_statusText{nullptr};
 
-    int rows_{9};
-    int cols_{9};
-    int mineCount_{10};
-    bool gameOver_{false};
+    int m_rows{9};
+    int m_cols{9};
+    int m_mineCount{10};
+    bool m_gameOver{false};
 
-    std::vector<std::vector<Cell>> grid_;
+    std::vector<std::vector<Cell>> m_grid;
 };
 
 } // namespace os

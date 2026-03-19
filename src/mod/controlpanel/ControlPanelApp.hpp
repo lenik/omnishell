@@ -43,9 +43,9 @@ private:
     void showDisplaySettings();
     void showAbout();
     
-    wxFrame* frame_;
-    wxListView* categoryList_;
-    wxPanel* contentPanel_;
+    wxFrame* m_frame;
+    wxListView* m_categoryList;
+    wxPanel* m_contentPanel;
     
     struct Category {
         wxString name;
@@ -53,7 +53,7 @@ private:
         int imageIndex;
     };
     
-    std::vector<Category> categories_;
+    std::vector<Category> m_categories;
 };
 
 } // namespace os

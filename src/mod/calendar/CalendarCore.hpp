@@ -17,8 +17,8 @@ public:
     wxEvtHandler* getEventHandler() override;
 
 private:
-    uiFrame* frame_{nullptr};
-    wxCalendarCtrl* cal_{nullptr};
+    uiFrame* m_frame{nullptr};
+    wxCalendarCtrl* m_cal{nullptr};
 
     void onToday(PerformContext* ctx);
     void onPrevMonth(PerformContext* ctx);

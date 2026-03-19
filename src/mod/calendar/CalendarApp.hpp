@@ -20,7 +20,7 @@ public:
     void initializeMetadata();
 
 private:
-    CalendarCore core_;
+    CalendarCore m_core;
 };
 
 } // namespace os

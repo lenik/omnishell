@@ -32,13 +32,13 @@ public:
     Process();
 
     void addWindow(wxWindow* w);
-    void setOnWindowAdded(std::function<void(ProcessPtr, wxWindow*)> cb) { onWindowAdded_ = std::move(cb); }
-    const std::vector<wxWindow*>& windows() const { return windows_; }
-    wxWindow* primaryWindow() const { return windows_.empty() ? nullptr : windows_.front(); }
+    void setOnWindowAdded(std::function<void(ProcessPtr, wxWindow*)> cb) { m_onWindowAdded = std::move(cb); }
+    const std::vector<wxWindow*>& windows() const { return m_windows; }
+    wxWindow* primaryWindow() const { return m_windows.empty() ? nullptr : m_windows.front(); }
 
 private:
-    std::vector<wxWindow*> windows_;
-    std::function<void(ProcessPtr, wxWindow*)> onWindowAdded_;
+    std::vector<wxWindow*> m_windows;
+    std::function<void(ProcessPtr, wxWindow*)> m_onWindowAdded;
 };
 
 } // namespace os

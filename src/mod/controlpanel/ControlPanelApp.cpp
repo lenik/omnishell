@@ -12,15 +12,15 @@ OMNISHELL_REGISTER_MODULE("omnishell.controlpanel", ControlPanelApp)
 
 ControlPanelApp::ControlPanelApp(CreateModuleContext* ctx)
     : Module(ctx)
-    , frame_(nullptr)
-    , categoryList_(nullptr)
-    , contentPanel_(nullptr) {
+    , m_frame(nullptr)
+    , m_categoryList(nullptr)
+    , m_contentPanel(nullptr) {
     initializeMetadata();
 }
 
 ControlPanelApp::~ControlPanelApp() {
-    if (frame_) {
-        frame_->Destroy();
+    if (m_frame) {
+        m_frame->Destroy();
     }
 }
 
@@ -37,79 +37,79 @@ void ControlPanelApp::initializeMetadata() {
 }
 
 ProcessPtr ControlPanelApp::run() {
-    if (frame_) {
-        frame_->Raise();
-        frame_->SetFocus();
+    if (m_frame) {
+        m_frame->Raise();
+        m_frame->SetFocus();
         auto p = std::make_shared<Process>();
         p->uri = uri;
         p->name = name;
         p->label = label;
         p->icon = image;
-        p->addWindow(frame_);
+        p->addWindow(m_frame);
         return p;
     }
 
     createMainWindow();
-    frame_->Show(true);
+    m_frame->Show(true);
     auto p = std::make_shared<Process>();
     p->uri = uri;
     p->name = name;
     p->label = label;
     p->icon = image;
-    p->addWindow(frame_);
+    p->addWindow(m_frame);
     return p;
 }
 
 void ControlPanelApp::createMainWindow() {
-    frame_ = new wxFrame(nullptr, wxID_ANY, "Control Panel", wxDefaultPosition, wxSize(900, 600));
+    m_frame = new wxFrame(nullptr, wxID_ANY, "Control Panel", wxDefaultPosition, wxSize(900, 600));
 
     wxBoxSizer* mainSizer = new wxBoxSizer(wxHORIZONTAL);
 
     // Left panel - Category list
-    wxPanel* leftPanel = new wxPanel(frame_, wxID_ANY);
+    wxPanel* leftPanel = new wxPanel(m_frame, wxID_ANY);
     wxBoxSizer* leftSizer = new wxBoxSizer(wxVERTICAL);
 
     wxStaticText* label = new wxStaticText(leftPanel, wxID_ANY, "Categories:");
     leftSizer->Add(label, 0, wxALL, 5);
 
-    categoryList_ = new wxListView(leftPanel, wxID_ANY, wxDefaultPosition, wxSize(200, 400),
+    m_categoryList = new wxListView(leftPanel, wxID_ANY, wxDefaultPosition, wxSize(200, 400),
                                    wxLC_LIST | wxLC_SINGLE_SEL);
 
     // Add categories
-    categories_ = {{"Module Manager", "Manage installed modules", 0},
+    m_categories = {{"Module Manager", "Manage installed modules", 0},
                    {"System Settings", "Configure system options", 1},
                    {"User Configuration", "User preferences", 2},
                    {"Desktop", "Desktop appearance", 3},
                    {"Display", "Screen settings", 4},
                    {"About", "System information", 5}};
 
-    for (size_t i = 0; i < categories_.size(); i++) {
-        categoryList_->InsertItem(i, categories_[i].name);
+    for (size_t i = 0; i < m_categories.size(); i++) {
+        m_categoryList->InsertItem(i, m_categories[i].name);
     }
 
-    categoryList_->Bind(wxEVT_LIST_ITEM_SELECTED, &ControlPanelApp::OnCategorySelected, this);
-    categoryList_->Bind(wxEVT_LIST_ITEM_ACTIVATED, &ControlPanelApp::OnModuleDoubleClicked, this);
+    m_categoryList->Bind(wxEVT_LIST_ITEM_SELECTED, &ControlPanelApp::OnCategorySelected, this);
+    m_categoryList->Bind(wxEVT_LIST_ITEM_ACTIVATED, &ControlPanelApp::OnModuleDoubleClicked, this);
 
-    leftSizer->Add(categoryList_, 1, wxEXPAND | wxALL, 5);
+    leftSizer->Add(m_categoryList, 1, wxEXPAND | wxALL, 5);
     leftPanel->SetSizer(leftSizer);
 
     // Right panel - Content
-    contentPanel_ = new wxPanel(frame_, wxID_ANY);
+    m_contentPanel = new wxPanel(m_frame, wxID_ANY);
     wxBoxSizer* contentSizer = new wxBoxSizer(wxVERTICAL);
 
     wxStaticText* contentLabel =
-        new wxStaticText(contentPanel_, wxID_ANY, "Select a category to view options");
+        new wxStaticText(m_contentPanel, wxID_ANY, "Select a category to view options");
     contentLabel->SetFont(wxFont(12, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD));
     contentLabel->Wrap(560);
     contentSizer->Add(contentLabel, 0, wxALL | wxEXPAND, 20);
 
-    contentPanel_->SetSizer(contentSizer);
+    m_contentPanel->SetSizer(contentSizer);
 
     mainSizer->Add(leftPanel, 0, wxEXPAND);
-    mainSizer->Add(contentPanel_, 1, wxEXPAND);
+    mainSizer->Add(m_contentPanel, 1, wxEXPAND);
 
-    frame_->SetSizer(mainSizer);
-    frame_->Centre();
+    m_frame->SetSizer(mainSizer);
+    m_frame->Centre();
 }
 
 void ControlPanelApp::createCategoryList() {
@@ -121,19 +121,19 @@ void ControlPanelApp::createContentPanel() {
 }
 
 void ControlPanelApp::OnCategorySelected(wxCommandEvent& event) {
-    int selection = categoryList_->GetSelectedItemCount();
+    int selection = m_categoryList->GetSelectedItemCount();
     if (selection == wxNOT_FOUND)
         return;
 
     // Get selected item
     long item = -1;
-    item = categoryList_->GetNextItem(item, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED);
+    item = m_categoryList->GetNextItem(item, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED);
 
-    if (item != -1 && item < (long)categories_.size()) {
-        wxString category = categories_[item].name;
+    if (item != -1 && item < (long)m_categories.size()) {
+        wxString category = m_categories[item].name;
 
         // Clear content panel
-        contentPanel_->GetSizer()->Clear(true);
+        m_contentPanel->GetSizer()->Clear(true);
 
         // Show appropriate content
         if (category == "Module Manager") {
@@ -150,7 +150,7 @@ void ControlPanelApp::OnCategorySelected(wxCommandEvent& event) {
             showAbout();
         }
 
-        contentPanel_->Layout();
+        m_contentPanel->Layout();
     }
 
     event.Skip();
@@ -161,12 +161,12 @@ void ControlPanelApp::OnModuleDoubleClicked(wxCommandEvent& event) { OnCategoryS
 void ControlPanelApp::showModuleManager() {
     wxBoxSizer* sizer = new wxBoxSizer(wxVERTICAL);
 
-    wxStaticText* label = new wxStaticText(contentPanel_, wxID_ANY, "Installed Modules:");
+    wxStaticText* label = new wxStaticText(m_contentPanel, wxID_ANY, "Installed Modules:");
     label->Wrap(560);
     sizer->Add(label, 0, wxALL, 5);
 
     // List all modules
-    wxListView* moduleList = new wxListView(contentPanel_, wxID_ANY, wxDefaultPosition,
+    wxListView* moduleList = new wxListView(m_contentPanel, wxID_ANY, wxDefaultPosition,
                                             wxSize(400, 300), wxLC_REPORT | wxLC_SINGLE_SEL);
 
     moduleList->InsertColumn(0, "Name", wxLIST_FORMAT_LEFT, 150);
@@ -193,9 +193,9 @@ void ControlPanelApp::showModuleManager() {
     // Buttons
     wxBoxSizer* buttonSizer = new wxBoxSizer(wxHORIZONTAL);
 
-    wxButton* enableBtn = new wxButton(contentPanel_, wxID_ANY, "Enable");
-    wxButton* disableBtn = new wxButton(contentPanel_, wxID_ANY, "Disable");
-    wxButton* closeBtn = new wxButton(contentPanel_, wxID_CLOSE, "Close");
+    wxButton* enableBtn = new wxButton(m_contentPanel, wxID_ANY, "Enable");
+    wxButton* disableBtn = new wxButton(m_contentPanel, wxID_ANY, "Disable");
+    wxButton* closeBtn = new wxButton(m_contentPanel, wxID_CLOSE, "Close");
 
     auto refreshStatus = [moduleList, modules]() {
         for (int i = 0; i < (int)modules.size(); ++i) {
@@ -230,7 +230,7 @@ void ControlPanelApp::showModuleManager() {
         refreshStatus();
     });
 
-    closeBtn->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) { frame_->Close(); });
+    closeBtn->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) { m_frame->Close(); });
 
     buttonSizer->Add(enableBtn, 0, wxALL, 5);
     buttonSizer->Add(disableBtn, 0, wxALL, 5);
@@ -239,8 +239,8 @@ void ControlPanelApp::showModuleManager() {
 
     sizer->Add(buttonSizer, 0, wxEXPAND);
 
-    contentPanel_->GetSizer()->Clear(true);
-    contentPanel_->SetSizer(sizer);
+    m_contentPanel->GetSizer()->Clear(true);
+    m_contentPanel->SetSizer(sizer);
 }
 
 void ControlPanelApp::showSystemSettings() {
@@ -251,16 +251,16 @@ void ControlPanelApp::showSystemSettings() {
     wxString osName = reg.get("System.OS.Name", "Omnishell");
     wxString osVer = reg.get("System.OS.Version", "1.1.1");
 
-    wxStaticText* title = new wxStaticText(contentPanel_, wxID_ANY, "System");
+    wxStaticText* title = new wxStaticText(m_contentPanel, wxID_ANY, "System");
     title->SetFont(wxFont(12, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD));
     title->Wrap(560);
     sizer->Add(title, 0, wxALL | wxEXPAND, 10);
 
-    sizer->Add(new wxStaticText(contentPanel_, wxID_ANY, "OS Name: " + osName), 0, wxLEFT | wxRIGHT | wxBOTTOM, 10);
-    sizer->Add(new wxStaticText(contentPanel_, wxID_ANY, "OS Version: " + osVer), 0, wxLEFT | wxRIGHT | wxBOTTOM, 10);
+    sizer->Add(new wxStaticText(m_contentPanel, wxID_ANY, "OS Name: " + osName), 0, wxLEFT | wxRIGHT | wxBOTTOM, 10);
+    sizer->Add(new wxStaticText(m_contentPanel, wxID_ANY, "OS Version: " + osVer), 0, wxLEFT | wxRIGHT | wxBOTTOM, 10);
 
-    contentPanel_->GetSizer()->Clear(true);
-    contentPanel_->SetSizer(sizer);
+    m_contentPanel->GetSizer()->Clear(true);
+    m_contentPanel->SetSizer(sizer);
 }
 
 void ControlPanelApp::showUserConfiguration() {
@@ -271,26 +271,26 @@ void ControlPanelApp::showUserConfiguration() {
     wxString userName = reg.get("User.Name", "Guest");
     wxString userRole = reg.get("User.Role", "Guest");
 
-    wxStaticText* title = new wxStaticText(contentPanel_, wxID_ANY, "User");
+    wxStaticText* title = new wxStaticText(m_contentPanel, wxID_ANY, "User");
     title->SetFont(wxFont(12, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD));
     title->Wrap(560);
     sizer->Add(title, 0, wxALL | wxEXPAND, 10);
 
-    sizer->Add(new wxStaticText(contentPanel_, wxID_ANY, "Name: " + userName), 0, wxLEFT | wxRIGHT | wxBOTTOM, 10);
-    sizer->Add(new wxStaticText(contentPanel_, wxID_ANY, "Role: " + userRole), 0, wxLEFT | wxRIGHT | wxBOTTOM, 10);
+    sizer->Add(new wxStaticText(m_contentPanel, wxID_ANY, "Name: " + userName), 0, wxLEFT | wxRIGHT | wxBOTTOM, 10);
+    sizer->Add(new wxStaticText(m_contentPanel, wxID_ANY, "Role: " + userRole), 0, wxLEFT | wxRIGHT | wxBOTTOM, 10);
 
-    contentPanel_->GetSizer()->Clear(true);
-    contentPanel_->SetSizer(sizer);
+    m_contentPanel->GetSizer()->Clear(true);
+    m_contentPanel->SetSizer(sizer);
 }
 
 void ControlPanelApp::showDesktopSettings() {
     wxBoxSizer* sizer = new wxBoxSizer(wxVERTICAL);
-    wxStaticText* title = new wxStaticText(contentPanel_, wxID_ANY, "Desktop");
+    wxStaticText* title = new wxStaticText(m_contentPanel, wxID_ANY, "Desktop");
     title->SetFont(wxFont(12, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD));
     title->Wrap(560);
     sizer->Add(title, 0, wxALL | wxEXPAND, 10);
 
-    wxButton* bgBtn = new wxButton(contentPanel_, wxID_ANY, "Background Settings");
+    wxButton* bgBtn = new wxButton(m_contentPanel, wxID_ANY, "Background Settings");
     bgBtn->Bind(wxEVT_BUTTON, [](wxCommandEvent&) {
         auto shell = ShellApp::getInstance();
         if (!shell || !shell->getModuleRegistry())
@@ -305,7 +305,7 @@ void ControlPanelApp::showDesktopSettings() {
     });
     sizer->Add(bgBtn, 0, wxLEFT | wxRIGHT | wxBOTTOM, 10);
 
-    wxButton* arrangeBtn = new wxButton(contentPanel_, wxID_ANY, "Arrange Desktop Icons");
+    wxButton* arrangeBtn = new wxButton(m_contentPanel, wxID_ANY, "Arrange Desktop Icons");
     arrangeBtn->Bind(wxEVT_BUTTON, [](wxCommandEvent&) {
         auto shell = ShellApp::getInstance();
         if (shell && shell->getDesktopWindow())
@@ -313,38 +313,38 @@ void ControlPanelApp::showDesktopSettings() {
     });
     sizer->Add(arrangeBtn, 0, wxLEFT | wxRIGHT | wxBOTTOM, 10);
 
-    contentPanel_->GetSizer()->Clear(true);
-    contentPanel_->SetSizer(sizer);
+    m_contentPanel->GetSizer()->Clear(true);
+    m_contentPanel->SetSizer(sizer);
 }
 
 void ControlPanelApp::showDisplaySettings() {
     wxBoxSizer* sizer = new wxBoxSizer(wxVERTICAL);
-    wxStaticText* title = new wxStaticText(contentPanel_, wxID_ANY, "Display");
+    wxStaticText* title = new wxStaticText(m_contentPanel, wxID_ANY, "Display");
     title->SetFont(wxFont(12, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD));
     title->Wrap(560);
     sizer->Add(title, 0, wxALL | wxEXPAND, 10);
 
     wxSize sz = wxGetDisplaySize();
-    sizer->Add(new wxStaticText(contentPanel_, wxID_ANY,
+    sizer->Add(new wxStaticText(m_contentPanel, wxID_ANY,
                                 wxString::Format("Resolution: %d x %d", sz.GetWidth(), sz.GetHeight())),
               0, wxLEFT | wxRIGHT | wxBOTTOM, 10);
 
-    contentPanel_->GetSizer()->Clear(true);
-    contentPanel_->SetSizer(sizer);
+    m_contentPanel->GetSizer()->Clear(true);
+    m_contentPanel->SetSizer(sizer);
 }
 
 void ControlPanelApp::showAbout() {
     wxBoxSizer* sizer = new wxBoxSizer(wxVERTICAL);
-    wxStaticText* title = new wxStaticText(contentPanel_, wxID_ANY, "About OmniShell");
+    wxStaticText* title = new wxStaticText(m_contentPanel, wxID_ANY, "About OmniShell");
     title->SetFont(wxFont(12, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD));
     title->Wrap(560);
     sizer->Add(title, 0, wxALL | wxEXPAND, 10);
 
-    sizer->Add(new wxStaticText(contentPanel_, wxID_ANY, "OmniShell Desktop Environment"), 0, wxLEFT | wxRIGHT | wxBOTTOM, 10);
-    sizer->Add(new wxStaticText(contentPanel_, wxID_ANY, "Version: 1.1.1"), 0, wxLEFT | wxRIGHT | wxBOTTOM, 10);
+    sizer->Add(new wxStaticText(m_contentPanel, wxID_ANY, "OmniShell Desktop Environment"), 0, wxLEFT | wxRIGHT | wxBOTTOM, 10);
+    sizer->Add(new wxStaticText(m_contentPanel, wxID_ANY, "Version: 1.1.1"), 0, wxLEFT | wxRIGHT | wxBOTTOM, 10);
 
-    contentPanel_->GetSizer()->Clear(true);
-    contentPanel_->SetSizer(sizer);
+    m_contentPanel->GetSizer()->Clear(true);
+    m_contentPanel->SetSizer(sizer);
 }
 
 } // namespace os

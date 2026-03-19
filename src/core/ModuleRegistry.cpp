@@ -39,7 +39,7 @@ ModuleRegistry::ModuleRegistry(VolumeManager* volumeManager)
         info.factory = pair.second;
         info.instance = nullptr;
         info.isInstalled = false;
-        modules_[pair.first] = info;
+        m_modules[pair.first] = info;
     }
 }
 
@@ -56,27 +56,27 @@ void ModuleRegistry::registerModuleFactory(const std::string& uri, ModuleFactory
 }
 
 void ModuleRegistry::unregisterModule(const std::string& uri) {
-    auto it = modules_.find(uri);
-    if (it != modules_.end()) {
+    auto it = m_modules.find(uri);
+    if (it != m_modules.end()) {
         if (it->second.isInstalled && it->second.instance) {
             it->second.instance->uninstall();
         }
-        modules_.erase(it);
+        m_modules.erase(it);
         wxLogInfo("Module unregistered: %s", uri);
     }
 }
 
 ModulePtr ModuleRegistry::getModule(const std::string& uri) {
-    auto it = modules_.find(uri);
-    if (it != modules_.end()) {
+    auto it = m_modules.find(uri);
+    if (it != m_modules.end()) {
         return it->second.instance;
     }
     return nullptr;
 }
 
 ModulePtr ModuleRegistry::getOrCreateModule(const std::string& uri) {
-    auto it = modules_.find(uri);
-    if (it == modules_.end()) {
+    auto it = m_modules.find(uri);
+    if (it == m_modules.end()) {
         return nullptr;
     }
 
@@ -94,9 +94,9 @@ ModulePtr ModuleRegistry::getOrCreateModule(const std::string& uri) {
 
 std::vector<ModulePtr> ModuleRegistry::getAllModules() const {
     std::vector<ModulePtr> result;
-    result.reserve(modules_.size());
+    result.reserve(m_modules.size());
 
-    for (const auto& pair : modules_) {
+    for (const auto& pair : m_modules) {
         if (pair.second.instance) {
             result.push_back(pair.second.instance);
         }
@@ -108,7 +108,7 @@ std::vector<ModulePtr> ModuleRegistry::getAllModules() const {
 std::vector<ModulePtr> ModuleRegistry::getVisibleModules() const {
     std::vector<ModulePtr> result;
 
-    for (const auto& pair : modules_) {
+    for (const auto& pair : m_modules) {
         if (pair.second.instance && pair.second.instance->isVisible()) {
             result.push_back(pair.second.instance);
         }
@@ -120,7 +120,7 @@ std::vector<ModulePtr> ModuleRegistry::getVisibleModules() const {
 std::vector<ModulePtr> ModuleRegistry::getEnabledModules() const {
     std::vector<ModulePtr> result;
 
-    for (const auto& pair : modules_) {
+    for (const auto& pair : m_modules) {
         if (pair.second.instance && pair.second.instance->isEnabled()) {
             result.push_back(pair.second.instance);
         }
@@ -132,7 +132,7 @@ std::vector<ModulePtr> ModuleRegistry::getEnabledModules() const {
 std::vector<ModulePtr> ModuleRegistry::getServiceModules() const {
     std::vector<ModulePtr> result;
 
-    for (const auto& pair : modules_) {
+    for (const auto& pair : m_modules) {
         if (pair.second.instance && pair.second.instance->isService()) {
             result.push_back(pair.second.instance);
         }
@@ -146,7 +146,7 @@ std::vector<ModulePtr> ModuleRegistry::searchModules(const std::string& query) c
     std::string lowerQuery = query;
     std::transform(lowerQuery.begin(), lowerQuery.end(), lowerQuery.begin(), ::tolower);
 
-    for (const auto& pair : modules_) {
+    for (const auto& pair : m_modules) {
         if (!pair.second.instance)
             continue;
 
@@ -174,11 +174,11 @@ std::vector<ModulePtr> ModuleRegistry::searchModules(const std::string& query) c
 }
 
 bool ModuleRegistry::hasModule(const std::string& uri) const {
-    return modules_.find(uri) != modules_.end();
+    return m_modules.find(uri) != m_modules.end();
 }
 
 void ModuleRegistry::installAll() {
-    for (auto& pair : modules_) {
+    for (auto& pair : m_modules) {
         if (!pair.second.isInstalled) {
             auto module = getOrCreateModule(pair.first);
             if (module) {
@@ -191,7 +191,7 @@ void ModuleRegistry::installAll() {
 }
 
 void ModuleRegistry::uninstallAll() {
-    for (auto& pair : modules_) {
+    for (auto& pair : m_modules) {
         if (pair.second.isInstalled && pair.second.instance) {
             pair.second.instance->uninstall();
             pair.second.isInstalled = false;
@@ -201,7 +201,7 @@ void ModuleRegistry::uninstallAll() {
 }
 
 void ModuleRegistry::startServices() {
-    for (const auto& pair : modules_) {
+    for (const auto& pair : m_modules) {
         if (pair.second.instance && pair.second.instance->isService()) {
             wxLogInfo("Starting service: %s", pair.first);
             // Services may run in separate threads based on isThreadOwned()
@@ -221,7 +221,7 @@ void ModuleRegistry::startServices() {
 }
 
 void ModuleRegistry::stopServices() {
-    for (const auto& pair : modules_) {
+    for (const auto& pair : m_modules) {
         if (pair.second.instance && pair.second.instance->isService()) {
             wxLogInfo("Stopping service: %s", pair.first);
             // Services should handle cleanup in their run loop

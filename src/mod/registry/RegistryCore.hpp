@@ -25,10 +25,10 @@ public:
     wxEvtHandler* getEventHandler() override;
 
 private:
-    uiFrame* frame_{nullptr};
-    wxTreeCtrl* tree_{nullptr};
-    wxListCtrl* list_{nullptr};
-    std::string selectedPath_;
+    uiFrame* m_frame{nullptr};
+    wxTreeCtrl* m_tree{nullptr};
+    wxListCtrl* m_list{nullptr};
+    std::string m_selectedPath;
 
     void buildTree();
     void populateProperties(const std::string& nodePath);

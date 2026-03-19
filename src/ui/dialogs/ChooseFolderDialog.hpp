@@ -48,17 +48,17 @@ protected:
     void SetCurrentPath(const std::string& path);
 
 private:
-    VolumeManager* volumeManager_;
-    wxStaticText* messageText_;
-    wxComboBox* volumeCombo_;
-    wxTextCtrl* pathText_;
-    wxListCtrl* listCtrl_;
-    wxButton* newFolderButton_;
+    VolumeManager* m_volumeManager;
+    wxStaticText* m_messageText;
+    wxComboBox* m_volumeCombo;
+    wxTextCtrl* m_pathText;
+    wxListCtrl* m_listCtrl;
+    wxButton* m_newFolderButton;
 
-    int selectedVolumeIndex_;
-    std::string currentPath_;
-    bool showNewFolder_;
-    bool mustExist_;
+    int m_selectedVolumeIndex;
+    std::string m_currentPath;
+    bool m_showNewFolder;
+    bool m_mustExist;
 };
 
 } // namespace os

@@ -19,7 +19,7 @@ public:
     void initializeMetadata();
 
 private:
-    BackgroundSettingsCore core_;
+    BackgroundSettingsCore m_core;
 };
 
 } // namespace os

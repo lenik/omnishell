@@ -101,9 +101,9 @@ private:
     void runServiceThread(ServiceState& state);
     void handleServiceFailure(ServiceState& state);
     
-    std::map<std::string, std::unique_ptr<ServiceState>> services_;
-    mutable std::mutex mutex_;
-    int maxRestarts_ = 3;
+    std::map<std::string, std::unique_ptr<ServiceState>> m_services;
+    mutable std::mutex m_mutex;
+    int m_maxRestarts = 3;
 };
 
 } // namespace os

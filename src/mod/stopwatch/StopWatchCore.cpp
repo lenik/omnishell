@@ -36,8 +36,8 @@ StopWatchCore::StopWatchCore() {
 }
 
 StopWatchCore::~StopWatchCore() {
-    if (timer_.IsRunning())
-        timer_.Stop();
+    if (m_timer.IsRunning())
+        m_timer.Stop();
 }
 
 void StopWatchCore::createFragmentView(CreateViewContext* ctx) {
@@ -45,17 +45,17 @@ void StopWatchCore::createFragmentView(CreateViewContext* ctx) {
     uiFrame* frame = dynamic_cast<uiFrame*>(parent);
     if (!frame)
         return;
-    frame_ = frame;
+    m_frame = frame;
 
-    frame_->Bind(wxEVT_CLOSE_WINDOW, &StopWatchCore::onClose, this);
+    m_frame->Bind(wxEVT_CLOSE_WINDOW, &StopWatchCore::onClose, this);
 
     wxPanel* root = new wxPanel(parent, wxID_ANY, ctx->getPos(), ctx->getSize());
     wxBoxSizer* sizer = new wxBoxSizer(wxVERTICAL);
 
-    display_ = new wxStaticText(root, wxID_ANY, "00:00.0", wxDefaultPosition, wxDefaultSize,
+    m_display = new wxStaticText(root, wxID_ANY, "00:00.0", wxDefaultPosition, wxDefaultSize,
                                 wxALIGN_CENTRE_HORIZONTAL);
     wxFont font(18, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD);
-    display_->SetFont(font);
+    m_display->SetFont(font);
 
     wxBoxSizer* buttonSizer = new wxBoxSizer(wxHORIZONTAL);
     wxButton* startBtn = new wxButton(root, wxID_ANY, "Start");
@@ -75,67 +75,67 @@ void StopWatchCore::createFragmentView(CreateViewContext* ctx) {
         onReset(&pc);
     });
 
-    timer_.SetOwner(frame_);
-    frame_->Bind(wxEVT_TIMER, &StopWatchCore::onTimer, this, timer_.GetId());
+    m_timer.SetOwner(m_frame);
+    m_frame->Bind(wxEVT_TIMER, &StopWatchCore::onTimer, this, m_timer.GetId());
 
     buttonSizer->Add(startBtn, 1, wxALL, 5);
     buttonSizer->Add(stopBtn, 1, wxALL, 5);
     buttonSizer->Add(resetBtn, 1, wxALL, 5);
 
-    sizer->Add(display_, 1, wxEXPAND | wxALL | wxALIGN_CENTER, 10);
+    sizer->Add(m_display, 1, wxEXPAND | wxALL | wxALIGN_CENTER, 10);
     sizer->Add(buttonSizer, 0, wxEXPAND | wxALL, 5);
     root->SetSizer(sizer);
 }
 
 wxEvtHandler* StopWatchCore::getEventHandler() {
-    return frame_ ? frame_->GetEventHandler() : nullptr;
+    return m_frame ? m_frame->GetEventHandler() : nullptr;
 }
 
 void StopWatchCore::onStart(PerformContext*) {
-    if (!timer_.IsRunning()) {
-        timer_.Start(100);
+    if (!m_timer.IsRunning()) {
+        m_timer.Start(100);
     }
 }
 
 void StopWatchCore::onStop(PerformContext*) {
-    if (timer_.IsRunning()) {
-        timer_.Stop();
+    if (m_timer.IsRunning()) {
+        m_timer.Stop();
     }
 }
 
 void StopWatchCore::onReset(PerformContext*) {
-    elapsedMs_ = 0;
-    if (display_) {
-        display_->SetLabel("00:00.0");
+    m_elapsedMs = 0;
+    if (m_display) {
+        m_display->SetLabel("00:00.0");
     }
 }
 
 void StopWatchCore::onTimer(wxTimerEvent&) {
-    if (!frame_ || !display_) {
-        if (timer_.IsRunning())
-            timer_.Stop();
+    if (!m_frame || !m_display) {
+        if (m_timer.IsRunning())
+            m_timer.Stop();
         return;
     }
-    elapsedMs_ += 100;
-    int totalSeconds = elapsedMs_ / 1000;
+    m_elapsedMs += 100;
+    int totalSeconds = m_elapsedMs / 1000;
     int minutes = totalSeconds / 60;
     int seconds = totalSeconds % 60;
-    int tenths = (elapsedMs_ % 1000) / 100;
+    int tenths = (m_elapsedMs % 1000) / 100;
 
     wxString text;
     text.Printf("%02d:%02d.%d", minutes, seconds, tenths);
-    display_->SetLabel(text);
+    m_display->SetLabel(text);
 }
 
 void StopWatchCore::onClose(wxCloseEvent& event) {
-    if (timer_.IsRunning())
-        timer_.Stop();
-    if (frame_) {
-        frame_->Unbind(wxEVT_TIMER, &StopWatchCore::onTimer, this, timer_.GetId());
-        frame_->Unbind(wxEVT_CLOSE_WINDOW, &StopWatchCore::onClose, this);
+    if (m_timer.IsRunning())
+        m_timer.Stop();
+    if (m_frame) {
+        m_frame->Unbind(wxEVT_TIMER, &StopWatchCore::onTimer, this, m_timer.GetId());
+        m_frame->Unbind(wxEVT_CLOSE_WINDOW, &StopWatchCore::onClose, this);
     }
-    display_ = nullptr;
-    frame_ = nullptr;
+    m_display = nullptr;
+    m_frame = nullptr;
     event.Skip();
 }
 

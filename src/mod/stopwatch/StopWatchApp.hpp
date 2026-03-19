@@ -20,7 +20,7 @@ public:
     void initializeMetadata();
 
 private:
-    StopWatchCore core_;
+    StopWatchCore m_core;
 };
 
 } // namespace os

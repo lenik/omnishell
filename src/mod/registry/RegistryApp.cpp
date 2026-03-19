@@ -10,7 +10,7 @@ OMNISHELL_REGISTER_MODULE("omnishell.registry", RegistryApp)
 
 RegistryApp::RegistryApp(CreateModuleContext* ctx)
     : Module(ctx)
-    , core_() {
+    , m_core() {
     initializeMetadata();
 }
 
@@ -36,7 +36,7 @@ ProcessPtr RegistryApp::run() {
     proc->icon = image;
 
     uiFrame* frame = new uiFrame("Registry");
-    frame->addFragment(&core_);
+    frame->addFragment(&m_core);
     frame->createView();
     frame->Centre();
     frame->Show(true);

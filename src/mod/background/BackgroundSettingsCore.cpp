@@ -47,36 +47,36 @@ void BackgroundSettingsCore::createFragmentView(CreateViewContext* ctx) {
     uiFrame* frame = dynamic_cast<uiFrame*>(parent);
     if (!frame)
         return;
-    frame_ = frame;
+    m_frame = frame;
 
-    root_ = new wxPanel(parent, wxID_ANY, ctx->getPos(), ctx->getSize());
+    m_root = new wxPanel(parent, wxID_ANY, ctx->getPos(), ctx->getSize());
     wxBoxSizer* sizer = new wxBoxSizer(wxVERTICAL);
 
-    wxStaticText* title = new wxStaticText(root_, wxID_ANY, "Desktop background");
+    wxStaticText* title = new wxStaticText(m_root, wxID_ANY, "Desktop background");
     title->SetFont(wxFont(12, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD));
     sizer->Add(title, 0, wxALL, 12);
 
     wxBoxSizer* row1 = new wxBoxSizer(wxHORIZONTAL);
-    row1->Add(new wxStaticText(root_, wxID_ANY, "Color:"), 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, 8);
-    picker_ = new wxColourPickerCtrl(root_, wxID_ANY, *wxLIGHT_GREY);
-    row1->Add(picker_, 0, wxALIGN_CENTER_VERTICAL);
+    row1->Add(new wxStaticText(m_root, wxID_ANY, "Color:"), 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, 8);
+    m_picker = new wxColourPickerCtrl(m_root, wxID_ANY, *wxLIGHT_GREY);
+    row1->Add(m_picker, 0, wxALIGN_CENTER_VERTICAL);
     row1->AddStretchSpacer();
-    wxButton* applyColorBtn = new wxButton(root_, wxID_ANY, "Apply Color");
+    wxButton* applyColorBtn = new wxButton(m_root, wxID_ANY, "Apply Color");
     row1->Add(applyColorBtn, 0, wxALIGN_CENTER_VERTICAL);
     sizer->Add(row1, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, 10);
 
     wxBoxSizer* row2 = new wxBoxSizer(wxHORIZONTAL);
-    row2->Add(new wxStaticText(root_, wxID_ANY, "Image:"), 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, 8);
-    wxButton* chooseBtn = new wxButton(root_, wxID_ANY, "Choose...");
+    row2->Add(new wxStaticText(m_root, wxID_ANY, "Image:"), 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, 8);
+    wxButton* chooseBtn = new wxButton(m_root, wxID_ANY, "Choose...");
     row2->Add(chooseBtn, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, 8);
-    wxButton* applyImageBtn = new wxButton(root_, wxID_ANY, "Apply Image");
+    wxButton* applyImageBtn = new wxButton(m_root, wxID_ANY, "Apply Image");
     applyImageBtn->Disable();
     row2->Add(applyImageBtn, 0, wxALIGN_CENTER_VERTICAL);
     row2->AddStretchSpacer();
     sizer->Add(row2, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, 12);
 
     wxStaticText* hint = new wxStaticText(
-        root_, wxID_ANY,
+        m_root, wxID_ANY,
         "Tip: image uses default volume. Settings are saved and auto-loaded on startup.");
     hint->Wrap(520);
     sizer->Add(hint, 0, wxLEFT | wxRIGHT | wxBOTTOM, 12);
@@ -88,26 +88,26 @@ void BackgroundSettingsCore::createFragmentView(CreateViewContext* ctx) {
     chooseBtn->Bind(wxEVT_BUTTON, [this, applyImageBtn](wxCommandEvent& e) {
         auto pc = toPerformContext(e);
         onChooseImage(&pc);
-        applyImageBtn->Enable(!selectedImagePath_.empty());
+        applyImageBtn->Enable(!m_selectedImagePath.empty());
     });
     applyImageBtn->Bind(wxEVT_BUTTON, [this](wxCommandEvent& e) {
         auto pc = toPerformContext(e);
         onApplyImage(&pc);
     });
 
-    root_->SetSizer(sizer);
+    m_root->SetSizer(sizer);
 }
 
 wxEvtHandler* BackgroundSettingsCore::getEventHandler() {
-    return root_ ? root_->GetEventHandler() : nullptr;
+    return m_root ? m_root->GetEventHandler() : nullptr;
 }
 
 void BackgroundSettingsCore::onChooseImage(PerformContext*) {
     auto shell = ShellApp::getInstance();
-    if (!shell || !shell->getVolumeManager() || !frame_)
+    if (!shell || !shell->getVolumeManager() || !m_frame)
         return;
 
-    ChooseFileDialog dlg(frame_, shell->getVolumeManager(), "Select Background Image", FileDialogMode::Open, "/");
+    ChooseFileDialog dlg(m_frame, shell->getVolumeManager(), "Select Background Image", FileDialogMode::Open, "/");
     dlg.addFilter("Images", "*.png;*.jpg;*.jpeg;*.bmp;*.gif;*.webp");
     dlg.setFileMustExist(true);
     if (dlg.ShowModal() != wxID_OK)
@@ -115,15 +115,15 @@ void BackgroundSettingsCore::onChooseImage(PerformContext*) {
     VolumeFile vf = dlg.getVolumeFile();
     if (!vf)
         return;
-    selectedImagePath_ = vf.getPath();
+    m_selectedImagePath = vf.getPath();
 }
 
 void BackgroundSettingsCore::onApplyColor(PerformContext*) {
     auto shell = ShellApp::getInstance();
-    if (!shell || !shell->getDesktopWindow() || !picker_)
+    if (!shell || !shell->getDesktopWindow() || !m_picker)
         return;
 
-    wxColour c = picker_->GetColour();
+    wxColour c = m_picker->GetColour();
     char buf[16];
     std::snprintf(buf, sizeof(buf), "#%02x%02x%02x", (int)c.Red(), (int)c.Green(), (int)c.Blue());
 
@@ -137,7 +137,7 @@ void BackgroundSettingsCore::onApplyImage(PerformContext*) {
     auto shell = ShellApp::getInstance();
     if (!shell || !shell->getDesktopWindow() || !shell->getVolumeManager())
         return;
-    if (selectedImagePath_.empty())
+    if (m_selectedImagePath.empty())
         return;
 
     Volume* vol = shell->getVolumeManager()->getDefaultVolume();
@@ -145,7 +145,7 @@ void BackgroundSettingsCore::onApplyImage(PerformContext*) {
         return;
 
     try {
-        VolumeFile vf(vol, selectedImagePath_);
+        VolumeFile vf(vol, m_selectedImagePath);
         auto data = vf.readFile();
         if (data.empty())
             return;
@@ -155,7 +155,7 @@ void BackgroundSettingsCore::onApplyImage(PerformContext*) {
             return;
 
         RegistryDb::getInstance().set("Desktop.Background.Mode", "image");
-        RegistryDb::getInstance().set("Desktop.Background.ImagePath", selectedImagePath_);
+        RegistryDb::getInstance().set("Desktop.Background.ImagePath", m_selectedImagePath);
         RegistryDb::getInstance().save();
         shell->getDesktopWindow()->setBackgroundImage(wxBitmap(img));
     } catch (...) {

@@ -38,34 +38,34 @@ void CalendarCore::createFragmentView(CreateViewContext* ctx) {
     uiFrame* frame = dynamic_cast<uiFrame*>(parent);
     if (!frame)
         return;
-    frame_ = frame;
+    m_frame = frame;
 
-    cal_ = new wxCalendarCtrl(parent, wxID_ANY, wxDefaultDateTime, ctx->getPos(), ctx->getSize());
+    m_cal = new wxCalendarCtrl(parent, wxID_ANY, wxDefaultDateTime, ctx->getPos(), ctx->getSize());
 }
 
 wxEvtHandler* CalendarCore::getEventHandler() {
-    return cal_ ? cal_->GetEventHandler() : nullptr;
+    return m_cal ? m_cal->GetEventHandler() : nullptr;
 }
 
 void CalendarCore::onToday(PerformContext*) {
-    if (cal_)
-        cal_->SetDate(wxDateTime::Today());
+    if (m_cal)
+        m_cal->SetDate(wxDateTime::Today());
 }
 
 void CalendarCore::onPrevMonth(PerformContext*) {
-    if (!cal_)
+    if (!m_cal)
         return;
-    wxDateTime d = cal_->GetDate();
+    wxDateTime d = m_cal->GetDate();
     d.SetMonth((wxDateTime::Month)((int)d.GetMonth() - 1));
-    cal_->SetDate(d);
+    m_cal->SetDate(d);
 }
 
 void CalendarCore::onNextMonth(PerformContext*) {
-    if (!cal_)
+    if (!m_cal)
         return;
-    wxDateTime d = cal_->GetDate();
+    wxDateTime d = m_cal->GetDate();
     d.SetMonth((wxDateTime::Month)((int)d.GetMonth() + 1));
-    cal_->SetDate(d);
+    m_cal->SetDate(d);
 }
 
 } // namespace os

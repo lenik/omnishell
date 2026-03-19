@@ -62,27 +62,27 @@ protected:
     bool matchesFilter(const std::string& name) const;
 
 private:
-    VolumeManager* volumeManager_;
-    wxComboBox* volumeCombo_;
-    wxTextCtrl* pathText_;
-    wxListCtrl* listCtrl_;
-    wxTextCtrl* filenameText_;
-    wxComboBox* filterCombo_;
-    wxStaticText* statusText_;
+    VolumeManager* m_volumeManager;
+    wxComboBox* m_volumeCombo;
+    wxTextCtrl* m_pathText;
+    wxListCtrl* m_listCtrl;
+    wxTextCtrl* m_filenameText;
+    wxComboBox* m_filterCombo;
+    wxStaticText* m_statusText;
 
-    FileDialogMode mode_;
-    bool multiSelect_;
-    bool fileMustExist_;
-    int selectedVolumeIndex_;
-    std::string currentPath_;
-    std::vector<int> selectedIndices_;
+    FileDialogMode m_mode;
+    bool m_multiSelect;
+    bool m_fileMustExist;
+    int m_selectedVolumeIndex;
+    std::string m_currentPath;
+    std::vector<int> m_selectedIndices;
 
     struct Filter {
         wxString description;
         wxString pattern;
     };
-    std::vector<Filter> filters_;
-    int filterIndex_;
+    std::vector<Filter> m_filters;
+    int m_filterIndex;
 };
 
 } // namespace os

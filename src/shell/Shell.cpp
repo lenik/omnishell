@@ -14,41 +14,41 @@
 
 namespace os {
 
-ShellApp* ShellApp::instance_ = nullptr;
+ShellApp* ShellApp::m_instance = nullptr;
 
 ShellApp::ShellApp(std::string name)
-    : name_(std::move(name))
-    , volumeManager_(nullptr)
-    , moduleRegistry_(nullptr)
-    , mainWindow_(nullptr)
-    , desktop_(nullptr)
-    , taskbar_(nullptr)
-    , startMenu_(nullptr) {
-    instance_ = this;
+    : m_name(std::move(name))
+    , m_volumeManager(nullptr)
+    , m_moduleRegistry(nullptr)
+    , m_mainWindow(nullptr)
+    , m_desktop(nullptr)
+    , m_taskbar(nullptr)
+    , m_startMenu(nullptr) {
+    m_instance = this;
 }
 
 ShellApp::~ShellApp() {
     ServiceManager::getInstance().stopAllServices();
-    if (moduleRegistry_) {
-        moduleRegistry_->uninstallAll();
-        delete moduleRegistry_;
-        moduleRegistry_ = nullptr;
+    if (m_moduleRegistry) {
+        m_moduleRegistry->uninstallAll();
+        delete m_moduleRegistry;
+        m_moduleRegistry = nullptr;
     }
-    instance_ = nullptr;
+    m_instance = nullptr;
 }
 
 bool ShellApp::OnUserInit() {
-    volumeManager_ = app.volumeManager.get();
-    if (!volumeManager_) {
+    m_volumeManager = app.volumeManager.get();
+    if (!m_volumeManager) {
         wxLogError("VolumeManager not initialized");
         return false;
     }
 
-    SetAppName(name_);
-    SetAppDisplayName(name_ + " Desktop Environment");
-    SetVendorName(name_ + " Project");
+    SetAppName(m_name);
+    SetAppDisplayName(m_name + " Desktop Environment");
+    SetVendorName(m_name + " Project");
 
-    moduleRegistry_ = new ModuleRegistry(volumeManager_);
+    m_moduleRegistry = new ModuleRegistry(m_volumeManager);
 
     if (!initializeModules()) {
         wxLogError("Failed to initialize modules");
@@ -57,7 +57,7 @@ bool ShellApp::OnUserInit() {
 
     createUI();
     setupEventHandlers();
-    ServiceManager::getInstance().startAllServices(*moduleRegistry_);
+    ServiceManager::getInstance().startAllServices(*m_moduleRegistry);
     refreshDesktop();
 
     return true;
@@ -68,7 +68,7 @@ int ShellApp::OnExit() {
     return wxApp::OnExit();
 }
 
-ShellApp* ShellApp::getInstance() { return instance_; }
+ShellApp* ShellApp::getInstance() { return m_instance; }
 
 void ShellApp::launchModule(ModulePtr module) {
     if (!module) {
@@ -86,10 +86,10 @@ void ShellApp::launchModule(ModulePtr module) {
         wxLogInfo("Launching module: %s", module->label);
         module->recordExecution();
         ProcessPtr p = module->run();
-        if (p && taskbar_) {
+        if (p && m_taskbar) {
             wxWindow* w = p->primaryWindow();
             if (w) {
-                taskbar_->addProcess(p);
+                m_taskbar->addProcess(p);
             }
         }
     } catch (const std::exception& e) {
@@ -100,17 +100,17 @@ void ShellApp::launchModule(ModulePtr module) {
 }
 
 void ShellApp::refreshDesktop() {
-    if (desktop_) {
-        desktop_->clearIcons();
-        desktop_->addVolumeIcons();
-        desktop_->loadBackgroundSettings();
-        if (moduleRegistry_) {
-            for (auto& module : moduleRegistry_->getVisibleModules()) {
-                desktop_->addIcon(module);
+    if (m_desktop) {
+        m_desktop->clearIcons();
+        m_desktop->addVolumeIcons();
+        m_desktop->loadBackgroundSettings();
+        if (m_moduleRegistry) {
+            for (auto& module : m_moduleRegistry->getVisibleModules()) {
+                m_desktop->addIcon(module);
             }
         }
-        desktop_->arrangeIcons();
-        desktop_->loadLayout();
+        m_desktop->arrangeIcons();
+        m_desktop->loadLayout();
     }
 }
 
@@ -118,8 +118,8 @@ bool ShellApp::initializeModules() {
     wxLogInfo("Initializing module system");
 
     // Install all registered modules
-    if (moduleRegistry_) {
-        moduleRegistry_->installAll();
+    if (m_moduleRegistry) {
+        m_moduleRegistry->installAll();
     }
 
     return true;
@@ -129,107 +129,107 @@ void ShellApp::createUI() {
     wxLogInfo("Creating shell UI");
 
     // Create main frame
-    mainWindow_ = new wxFrame(nullptr, wxID_ANY, "OmniShell", //
+    m_mainWindow = new wxFrame(nullptr, wxID_ANY, "OmniShell", //
                               wxDefaultPosition, wxSize(1024, 768));
-    mainWindow_->SetMinSize(wxSize(800, 600));
-    mainWindow_->SetBackgroundColour(*wxWHITE);
+    m_mainWindow->SetMinSize(wxSize(800, 600));
+    m_mainWindow->SetBackgroundColour(*wxWHITE);
 
     wxBoxSizer* mainSizer = new wxBoxSizer(wxVERTICAL);
 
     // Layer 1: icons layer (desktop)
-    desktop_ = new DesktopWindow(mainWindow_);
-    desktop_->setVolumeManager(volumeManager_);
-    mainSizer->Add(desktop_, 1, wxEXPAND);
+    m_desktop = new DesktopWindow(m_mainWindow);
+    m_desktop->setVolumeManager(m_volumeManager);
+    mainSizer->Add(m_desktop, 1, wxEXPAND);
 
     // Layer 2: control layer (separator + taskbar)
-    wxPanel* controlPanel = new wxPanel(mainWindow_);
+    wxPanel* controlPanel = new wxPanel(m_mainWindow);
     wxBoxSizer* controlSizer = new wxBoxSizer(wxVERTICAL);
 
     controlSizer->Add(new wxStaticLine(controlPanel, wxID_ANY), 0, wxEXPAND);
 
-    taskbar_ = new Taskbar(controlPanel);
-    controlSizer->Add(taskbar_, 0, wxEXPAND);
+    m_taskbar = new Taskbar(controlPanel);
+    controlSizer->Add(m_taskbar, 0, wxEXPAND);
 
     controlPanel->SetSizer(controlSizer);
     mainSizer->Add(controlPanel, 0, wxEXPAND);
 
     // Start menu as overlay (not sizer-managed) so it can expand without squeezing GTK widgets.
-    startMenu_ = new StartMenu(mainWindow_);
-    startMenu_->Hide();
+    m_startMenu = new StartMenu(m_mainWindow);
+    m_startMenu->Hide();
 
-    mainWindow_->SetSizer(mainSizer);
+    m_mainWindow->SetSizer(mainSizer);
 
-    if (moduleRegistry_) {
-        startMenu_->populateModules(moduleRegistry_->getVisibleModules());
+    if (m_moduleRegistry) {
+        m_startMenu->populateModules(m_moduleRegistry->getVisibleModules());
     }
 
     // Click outside start menu -> hide
     auto hideStartIfOutside = [this](wxWindow* source, wxMouseEvent& e) {
-        if (!startMenu_ || !startMenu_->IsShown()) {
+        if (!m_startMenu || !m_startMenu->IsShown()) {
             e.Skip();
             return;
         }
         wxPoint screenClick = source->ClientToScreen(e.GetPosition());
-        if (!startMenu_->ContainsScreenPoint(screenClick)) {
-            startMenu_->HideMenu();
+        if (!m_startMenu->ContainsScreenPoint(screenClick)) {
+            m_startMenu->HideMenu();
         }
         e.Skip();
     };
 
-    mainWindow_->Bind(wxEVT_LEFT_DOWN, [this, hideStartIfOutside](wxMouseEvent& e) {
-        hideStartIfOutside(mainWindow_, e);
+    m_mainWindow->Bind(wxEVT_LEFT_DOWN, [this, hideStartIfOutside](wxMouseEvent& e) {
+        hideStartIfOutside(m_mainWindow, e);
     });
-    if (desktop_) {
-        desktop_->Bind(wxEVT_LEFT_DOWN, [this, hideStartIfOutside](wxMouseEvent& e) {
-            hideStartIfOutside(desktop_, e);
+    if (m_desktop) {
+        m_desktop->Bind(wxEVT_LEFT_DOWN, [this, hideStartIfOutside](wxMouseEvent& e) {
+            hideStartIfOutside(m_desktop, e);
         });
-        desktop_->Bind(wxEVT_RIGHT_DOWN, [this, hideStartIfOutside](wxMouseEvent& e) {
-            hideStartIfOutside(desktop_, e);
+        m_desktop->Bind(wxEVT_RIGHT_DOWN, [this, hideStartIfOutside](wxMouseEvent& e) {
+            hideStartIfOutside(m_desktop, e);
         });
     }
-    if (taskbar_) {
-        taskbar_->Bind(wxEVT_LEFT_DOWN, [this, hideStartIfOutside](wxMouseEvent& e) {
-            hideStartIfOutside(taskbar_, e);
+    if (m_taskbar) {
+        m_taskbar->Bind(wxEVT_LEFT_DOWN, [this, hideStartIfOutside](wxMouseEvent& e) {
+            hideStartIfOutside(m_taskbar, e);
         });
-        taskbar_->Bind(wxEVT_RIGHT_DOWN, [this, hideStartIfOutside](wxMouseEvent& e) {
-            hideStartIfOutside(taskbar_, e);
+        m_taskbar->Bind(wxEVT_RIGHT_DOWN, [this, hideStartIfOutside](wxMouseEvent& e) {
+            hideStartIfOutside(m_taskbar, e);
         });
     }
 
     // When start menu is visible, route character input to it so typing opens the search box.
-    mainWindow_->Bind(wxEVT_CHAR_HOOK, [this](wxKeyEvent& e) {
-        if (startMenu_ && startMenu_->IsShown()) {
-            if (startMenu_->HandleGlobalKey(e))
+    m_mainWindow->Bind(wxEVT_CHAR_HOOK, [this](wxKeyEvent& e) {
+        if (m_startMenu && m_startMenu->IsShown()) {
+            if (m_startMenu->HandleGlobalKey(e))
                 return;
         }
         e.Skip();
     });
 
-    mainWindow_->Bind(wxEVT_SIZE, [this](wxSizeEvent& e) {
-        if (startMenu_ && startMenu_->IsShown())
+    m_mainWindow->Bind(wxEVT_SIZE, [this](wxSizeEvent& e) {
+        if (m_startMenu && m_startMenu->IsShown())
             positionStartMenu();
         e.Skip();
     });
 
-    mainWindow_->CenterOnScreen();
-    mainWindow_->Show(true);
+    m_mainWindow->CenterOnScreen();
+    m_mainWindow->Show(true);
 
     wxLogInfo("Shell UI created");
 }
 
 void ShellApp::setupEventHandlers() {
     // Setup start menu launch callback
-    if (startMenu_) {
-        startMenu_->setLaunchCallback([this](ModulePtr module) { launchModule(module); });
+    if (m_startMenu) {
+        m_startMenu->setLaunchCallback([this](ModulePtr module) { launchModule(module); });
     }
 }
 
 void ShellApp::openExplorerAt(const std::string& dir) {
-    ModuleRegistry* mr = moduleRegistry_;
-    if (!mr || !volumeManager_)
+    ModuleRegistry* mr = m_moduleRegistry;
+    if (!mr || !m_volumeManager)
         return;
 
-    Volume* vol = volumeManager_->getDefaultVolume();
+    Volume* vol = m_volumeManager->getDefaultVolume();
     if (!vol)
         return;
 
@@ -244,35 +244,35 @@ void ShellApp::openExplorerAt(const std::string& dir) {
 
     // Open via Explorer application helper.
     ProcessPtr p = ExplorerApp::open(vol, path);
-    if (p && taskbar_) {
-        taskbar_->addProcess(p);
+    if (p && m_taskbar) {
+        m_taskbar->addProcess(p);
     }
 }
 
 void ShellApp::toggleStartMenu() {
-    if (!startMenu_ || !mainWindow_)
+    if (!m_startMenu || !m_mainWindow)
         return;
-    if (startMenu_->IsShown()) {
-        startMenu_->HideMenu();
+    if (m_startMenu->IsShown()) {
+        m_startMenu->HideMenu();
         return;
     }
-    startMenu_->InvalidateBestSize();
-    startMenu_->Layout();
+    m_startMenu->InvalidateBestSize();
+    m_startMenu->Layout();
     positionStartMenu();
-    startMenu_->ShowMenu();
+    m_startMenu->ShowMenu();
 }
 
 void ShellApp::positionStartMenu() {
-    if (!startMenu_ || !mainWindow_ || !taskbar_)
+    if (!m_startMenu || !m_mainWindow || !m_taskbar)
         return;
 
-    const wxSize frameClient = mainWindow_->GetClientSize();
-    const int taskbarH = taskbar_->GetSize().GetHeight() > 0 ? taskbar_->GetSize().GetHeight()
+    const wxSize frameClient = m_mainWindow->GetClientSize();
+    const int taskbarH = m_taskbar->GetSize().GetHeight() > 0 ? m_taskbar->GetSize().GetHeight()
                                                              : Taskbar::GetDefaultHeight();
     // Prefer the control's best (recommended) size rather than min size.
-    startMenu_->Layout();
-    wxSize bestSize = startMenu_->GetBestSize();
-    int menuW = bestSize.GetWidth() > 0 ? bestSize.GetWidth() : startMenu_->GetSize().GetWidth();
+    m_startMenu->Layout();
+    wxSize bestSize = m_startMenu->GetBestSize();
+    int menuW = bestSize.GetWidth() > 0 ? bestSize.GetWidth() : m_startMenu->GetSize().GetWidth();
     if (menuW <= 0)
         menuW = 280;
 
@@ -280,7 +280,7 @@ void ShellApp::positionStartMenu() {
     const int maxH = std::max(0, frameClient.GetHeight() - taskbarH);
     if (maxH <= 0)
         return;
-    int desiredH = bestSize.GetHeight() > 0 ? bestSize.GetHeight() : startMenu_->GetSize().GetHeight();
+    int desiredH = bestSize.GetHeight() > 0 ? bestSize.GetHeight() : m_startMenu->GetSize().GetHeight();
     if (desiredH <= 0)
         desiredH = 420;
     int menuH = std::min(desiredH, maxH);
@@ -296,9 +296,9 @@ void ShellApp::positionStartMenu() {
     if (y < 0)
         y = 0;
 
-    startMenu_->SetSize(wxSize(menuW, menuH));
-    startMenu_->SetPosition(wxPoint(x, y));
-    startMenu_->Raise();
+    m_startMenu->SetSize(wxSize(menuW, menuH));
+    m_startMenu->SetPosition(wxPoint(x, y));
+    m_startMenu->Raise();
 }
 
 } // namespace os

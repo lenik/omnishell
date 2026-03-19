@@ -27,8 +27,8 @@ public:
     void setBitmap(const wxBitmap& bitmap);
     void setLabel(const wxString& label);
 
-    wxStaticBitmap* getBitmapCtrl() const { return bitmap_; }
-    wxStaticText* getLabelCtrl() const { return label_; }
+    wxStaticBitmap* getBitmapCtrl() const { return m_bitmap; }
+    wxStaticText* getLabelCtrl() const { return m_label; }
 
     // Convenience: forward these to child controls
     template <typename Func>
@@ -49,10 +49,10 @@ private:
     void OnMouseUp(wxMouseEvent& event);
 
 private:
-    wxStaticBitmap* bitmap_;
-    wxStaticText* label_;
-    bool hover_ = false;
-    bool pressed_ = false;
+    wxStaticBitmap* m_bitmap;
+    wxStaticText* m_label;
+    bool m_hover = false;
+    bool m_pressed = false;
 };
 
 } // namespace os

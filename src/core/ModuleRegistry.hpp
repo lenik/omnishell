@@ -121,7 +121,7 @@ class ModuleRegistry {
     ModuleRegistry(const ModuleRegistry&) = delete;
     ModuleRegistry& operator=(const ModuleRegistry&) = delete;
 
-    std::map<std::string, ModuleInfo> modules_;
+    std::map<std::string, ModuleInfo> m_modules;
 
     VolumeManager* m_volumeManager;
 };

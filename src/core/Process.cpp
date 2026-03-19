@@ -17,9 +17,9 @@ Process::Process() {
 void Process::addWindow(wxWindow* w) {
     if (!w)
         return;
-    windows_.push_back(w);
-    if (onWindowAdded_) {
-        onWindowAdded_(shared_from_this(), w);
+    m_windows.push_back(w);
+    if (m_onWindowAdded) {
+        m_onWindowAdded(shared_from_this(), w);
     }
 }
 

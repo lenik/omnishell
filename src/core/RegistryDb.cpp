@@ -67,7 +67,7 @@ std::string RegistryDb::getConfigPath() const {
 }
 
 bool RegistryDb::load() {
-    data_.clear();
+    m_data.clear();
 
     std::string path = getConfigPath();
     std::ifstream in(path);
@@ -116,11 +116,11 @@ bool RegistryDb::load() {
             break;
         std::string value = json.substr(valStart + 1, valEnd - valStart - 1);
 
-        data_[key] = value;
+        m_data[key] = value;
         pos = valEnd + 1;
     }
 
-    wxLogInfo("RegistryDb loaded %zu entries", data_.size());
+    wxLogInfo("RegistryDb loaded %zu entries", m_data.size());
     return true;
 }
 
@@ -134,9 +134,9 @@ bool RegistryDb::save() const {
 
     out << "{\n";
     size_t i = 0;
-    for (const auto& kv : data_) {
+    for (const auto& kv : m_data) {
         out << "  \"" << escapeJson(kv.first) << "\": \"" << escapeJson(kv.second) << "\"";
-        if (i + 1 < data_.size())
+        if (i + 1 < m_data.size())
             out << ",";
         out << "\n";
         ++i;
@@ -146,22 +146,22 @@ bool RegistryDb::save() const {
 }
 
 void RegistryDb::set(const std::string& key, const std::string& value) {
-    data_[key] = value;
+    m_data[key] = value;
 }
 
 std::string RegistryDb::get(const std::string& key, const std::string& defaultValue) const {
-    auto it = data_.find(key);
-    if (it == data_.end())
+    auto it = m_data.find(key);
+    if (it == m_data.end())
         return defaultValue;
     return it->second;
 }
 
 bool RegistryDb::has(const std::string& key) const {
-    return data_.find(key) != data_.end();
+    return m_data.find(key) != m_data.end();
 }
 
 void RegistryDb::remove(const std::string& key) {
-    data_.erase(key);
+    m_data.erase(key);
 }
 
 } // namespace os

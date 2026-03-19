@@ -26,7 +26,7 @@ public:
     static ProcessPtr openImage(VolumeManager* volumeManager, VolumeFile file);
 
 private:
-    PaintCore core_;
+    PaintCore m_core;
 };
 
 } // namespace os
