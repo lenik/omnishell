@@ -1,5 +1,5 @@
 project('omnishell', 'cpp',
-  version : '1.0.0',
+  version : '1.0.1',
   default_options : ['warning_level=0', 'cpp_std=c++17'])
 
 pkgdatadir = get_option('datadir') / meson.project_name()
@@ -54,6 +54,9 @@ cpp_nowarn = cpp_nowarn + wx_defines
 cpp_sources = files(
   'src/core/Module.cpp',
   'src/core/ModuleRegistry.cpp',
+  'src/core/Category.cpp',
+  'src/core/Process.cpp',
+  'src/core/RegistryDb.cpp',
   'src/core/App.cpp',
   'src/core/TrayIcon.cpp',
   'src/core/ServiceManager.cpp',
@@ -62,7 +65,21 @@ cpp_sources = files(
   'src/shell/StartMenu.cpp',
   'src/shell/Shell.cpp',
   'src/mod/notepad/NotepadApp.cpp',
+  'src/mod/notepad/NotepadCore.cpp',
   'src/mod/controlpanel/ControlPanelApp.cpp',
+  'src/mod/explorer/ExplorerApp.cpp',
+  'src/mod/explorer/ExplorerCore.cpp',
+  'src/mod/registry/RegistryCore.cpp',
+  'src/mod/registry/RegistryApp.cpp',
+  'src/mod/calendar/CalendarCore.cpp',
+  'src/mod/calendar/CalendarApp.cpp',
+  'src/mod/paint/PaintCore.cpp',
+  'src/mod/paint/PaintApp.cpp',
+  'src/mod/minesweeper/MinesweeperApp.cpp',
+  'src/mod/stopwatch/StopWatchApp.cpp',
+  'src/mod/stopwatch/StopWatchCore.cpp',
+  'src/mod/background/BackgroundSettingsApp.cpp',
+  'src/mod/background/BackgroundSettingsCore.cpp',
   'src/ui/dialogs/ChooseFileDialog.cpp',
   'src/ui/dialogs/ChooseFolderDialog.cpp',
   'src/ui/dialogs/ChoosePrinterDialog.cpp',
@@ -133,7 +150,6 @@ exe_inc = [
 
 lib_omnishell = library('omnishell',
     cpp_sources,
-    assets_o,
     'src/module.cpp',
     dependencies : exe_deps,
     include_directories : exe_inc,
@@ -254,7 +270,7 @@ foreach app_cpp : app_cpp_list
     else
         install_dir = pkgdatadir / 'app'
     endif
-    app_exe = executable(app_name,
+    executable(app_name,
         app_cpp,
         assets_o,
         'src/module.cpp',

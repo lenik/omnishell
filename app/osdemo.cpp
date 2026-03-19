@@ -8,9 +8,6 @@
 #include "core/App.hpp"
 #include "shell/Shell.hpp"
 
-#include "mod/controlpanel/ControlPanelApp.hpp"
-#include "mod/notepad/NotepadApp.hpp"
-
 #include <bas/proc/env.cpp>
 #include <bas/proc/stackdump.h>
 #include <bas/volume/LocalVolume.hpp>
@@ -18,7 +15,7 @@
 #include <bas/volume/VolumeManager.hpp>
 
 #include <bas/wx/app.hpp>
-#include <bas/wx/appframe.hpp>
+#include <bas/wx/uiframe.hpp>
 
 #include <iostream>
 
@@ -62,8 +59,9 @@ int main(int argc, char** argv) {
     }
 #endif
 
+    // Auto-discover all local volumes by default.
     if (os::app.volumeManager->getVolumeCount() == 0) {
-        os::app.volumeManager->addVolume(std::make_unique<LocalVolume>(bas::getHomePath()));
+        os::app.volumeManager->addLocalVolumes();
     }
 
     if (dump) {
@@ -82,6 +80,6 @@ int main(int argc, char** argv) {
         return false;
     }
 
-    os::ShellApp app;
+    os::ShellApp app("OmniShell");
     return app.main(argc, argv);
 }

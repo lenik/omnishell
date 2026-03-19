@@ -20,10 +20,10 @@ namespace os {
  */
 class ControlPanelApp : public Module {
 public:
-    ControlPanelApp();
+    explicit ControlPanelApp(CreateModuleContext* ctx);
     virtual ~ControlPanelApp();
     
-    virtual void run() override;
+    virtual ProcessPtr run() override;
     
     // Module metadata
     void initializeMetadata();
@@ -39,6 +39,9 @@ private:
     void showModuleManager();
     void showSystemSettings();
     void showUserConfiguration();
+    void showDesktopSettings();
+    void showDisplaySettings();
+    void showAbout();
     
     wxFrame* frame_;
     wxListView* categoryList_;

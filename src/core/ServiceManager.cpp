@@ -58,7 +58,7 @@ void ServiceManager::startService(ModulePtr module, bool autoRestart) {
     } else {
         // Run in UI thread - just call run() once
         try {
-            module->run();
+            (void)module->run();
         } catch (const std::exception& e) {
             wxLogError("Service %s threw exception: %s", uri, e.what());
             if (autoRestart) {
@@ -168,8 +168,7 @@ void ServiceManager::setMaxRestarts(int maxRestarts) {
     maxRestarts_ = maxRestarts;
 }
 
-void ServiceManager::startAllServices() {
-    auto& registry = ModuleRegistry::getInstance();
+void ServiceManager::startAllServices(ModuleRegistry& registry) {
     auto services = registry.getServiceModules();
     
     wxLogInfo("Starting %zu service modules", services.size());
@@ -185,7 +184,7 @@ void ServiceManager::runServiceThread(ServiceState& state) {
     
     while (!state.shouldStop && state.running) {
         try {
-            state.module->run();
+            (void)state.module->run();
         } catch (const std::exception& e) {
             wxLogError("Service %s threw exception: %s", uri, e.what());
             

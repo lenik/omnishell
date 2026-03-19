@@ -11,6 +11,8 @@
 
 namespace os {
 
+class ModuleRegistry;
+
 /**
  * Service Manager
  * 
@@ -86,7 +88,7 @@ public:
     /**
      * Initialize and start all registered service modules
      */
-    void startAllServices();
+    void startAllServices(ModuleRegistry& registry);
 
 private:
     ServiceManager() = default;

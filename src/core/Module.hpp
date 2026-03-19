@@ -2,6 +2,10 @@
 #define OMNISHELL_CORE_MODULE_HPP
 
 #include <bas/ui/arch/ImageSet.hpp>
+#include <bas/volume/VolumeManager.hpp>
+
+#include "Category.hpp"
+#include "Process.hpp"
 
 #include <wx/datetime.h>
 
@@ -9,6 +13,11 @@
 #include <string>
 
 namespace os {
+
+class CreateModuleContext {
+  public:
+    virtual VolumeManager* getVolumeManager() const = 0;
+};
 
 /**
  * Base class for all OmniShell modules (applications, services, tools)
@@ -28,6 +37,7 @@ public:
     std::string label;         // Display name
     std::string description;   // Short description
     std::string doc;           // Documentation/help text
+    CategoryId categoryId;     // Logical category id (e.g., ID_CATEGORY_GAME)
     ImageSet image;            // Icon set
     
     // Runtime tracking fields (persisted to .cache/<app>/)
@@ -35,7 +45,7 @@ public:
     wxDateTime lastRunTime;    // Last execution time
     int runCount;              // Total run count
     
-    Module();
+    Module(CreateModuleContext* ctx);
     virtual ~Module();
     
     // === Visibility and State ===
@@ -99,7 +109,7 @@ public:
      * - Open main window (applications)
      * - Start service loop (services)
      */
-    virtual void run() = 0;
+    virtual ProcessPtr run() = 0;
     
     // === Utility Methods ===
     
