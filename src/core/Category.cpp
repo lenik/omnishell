@@ -1,10 +1,11 @@
 #include "Category.hpp"
 
+#include "../ui/ThemeStyles.hpp"
+using namespace ThemeStyles;
+
 namespace os {
 
 namespace {
-
-static const char* kIconDir = "streamline-vectors/core/pop/interface-essential";
 
 std::vector<Category> makeDefaultCategories() {
     std::vector<Category> cats;
@@ -15,7 +16,7 @@ std::vector<Category> makeDefaultCategories() {
         c.name = "system";
         c.label = "System & Settings";
         c.description = "Core system utilities, configuration, and background settings.";
-        c.icon = ImageSet(Path(kIconDir, "cog-1.svg"));
+        c.icon = ImageSet(Path(slv_core_pop, "interface-essential/cog-1.svg"));
         cats.push_back(c);
     }
 
@@ -25,7 +26,7 @@ std::vector<Category> makeDefaultCategories() {
         c.name = "accessories";
         c.label = "Accessories";
         c.description = "Small productivity tools like Notepad, Calendar, Paint, and StopWatch.";
-        c.icon = ImageSet(Path(kIconDir, "blank-notepad.svg"));
+        c.icon = ImageSet(Path(slv_core_pop, "interface-essential/blank-notepad.svg"));
         cats.push_back(c);
     }
 
@@ -35,7 +36,7 @@ std::vector<Category> makeDefaultCategories() {
         c.name = "game";
         c.label = "Games";
         c.description = "Games and entertainment.";
-        c.icon = ImageSet(Path(kIconDir, "bomb.svg"));
+        c.icon = ImageSet(Path(slv_core_pop, "interface-essential/bomb.svg"));
         cats.push_back(c);
     }
 
@@ -49,9 +50,7 @@ const std::vector<Category>& categoryStorage() {
 
 } // namespace
 
-const std::vector<Category>& getAllCategories() {
-    return categoryStorage();
-}
+const std::vector<Category>& getAllCategories() { return categoryStorage(); }
 
 const Category* getCategoryById(CategoryId id) {
     const auto& cats = categoryStorage();
@@ -64,4 +63,3 @@ const Category* getCategoryById(CategoryId id) {
 }
 
 } // namespace os
-

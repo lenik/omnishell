@@ -48,7 +48,7 @@ bool ShellApp::OnUserInit() {
     SetAppDisplayName(m_name + " Desktop Environment");
     SetVendorName(m_name + " Project");
 
-    m_moduleRegistry = new ModuleRegistry(m_volumeManager);
+    m_moduleRegistry = new ModuleRegistry(&app);
 
     if (!initializeModules()) {
         wxLogError("Failed to initialize modules");

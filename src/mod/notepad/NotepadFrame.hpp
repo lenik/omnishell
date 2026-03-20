@@ -3,6 +3,8 @@
 
 #include "NotepadBody.hpp"
 
+#include "../../core/App.hpp"
+
 #include <bas/ui/arch/UIFragment.hpp>
 #include <bas/wx/uiframe.hpp>
 
@@ -10,10 +12,12 @@ namespace os {
 
 class NotepadFrame : public uiFrame {
   public:
-    NotepadFrame();
+    NotepadFrame(App* app, std::string title);
     ~NotepadFrame() override = default;
 
     void createFragmentView(CreateViewContext* ctx) override;
+
+    NotepadBody& body() { return m_body; }
 
   private:
     NotepadBody m_body;

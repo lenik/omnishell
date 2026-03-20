@@ -15,6 +15,9 @@
 #include <cstdio>
 #include <set>
 
+#include "../ui/ThemeStyles.hpp"
+using namespace ThemeStyles;
+
 namespace os {
 
 // XP-style colors
@@ -70,10 +73,10 @@ static wxBitmap ChevronBitmap(bool hover) {
 
 StartMenu::StartMenu(wxWindow* parent)
     : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxSize(kMenuWidth, kMenuHeight)),
-      m_searchBox(nullptr), m_scrollArea(nullptr), m_categoryPanel(nullptr), m_launchCallback(nullptr),
-      m_activeCategoryId(ID_CATEGORY_NONE), m_subMenu(nullptr), m_subScrollArea(nullptr),
-      m_subSizer(nullptr), m_subMenuKind(ROW_LEAF), m_subMenuCategoryId(ID_CATEGORY_NONE),
-      m_menuWidth(kMenuWidth), m_menuHeight(kMenuHeight) {
+      m_searchBox(nullptr), m_scrollArea(nullptr), m_categoryPanel(nullptr),
+      m_launchCallback(nullptr), m_activeCategoryId(ID_CATEGORY_NONE), m_subMenu(nullptr),
+      m_subScrollArea(nullptr), m_subSizer(nullptr), m_subMenuKind(ROW_LEAF),
+      m_subMenuCategoryId(ID_CATEGORY_NONE), m_menuWidth(kMenuWidth), m_menuHeight(kMenuHeight) {
     SetBackgroundColour(kMenuBg);
     SetMinSize(wxSize(m_menuWidth, 200));
 
@@ -112,7 +115,7 @@ StartMenu::StartMenu(wxWindow* parent)
     mainSizer->AddSpacer(10);
 
     m_searchBox = new wxTextCtrl(contentPanel, wxID_ANY, "Search programs...", wxDefaultPosition,
-                                wxSize(-1, 28), wxTE_PROCESS_ENTER);
+                                 wxSize(-1, 28), wxTE_PROCESS_ENTER);
     m_searchBox->Bind(wxEVT_TEXT, &StartMenu::OnSearch, this);
     m_searchBox->Bind(wxEVT_TEXT_ENTER, [this](wxCommandEvent&) {
         if (!m_filteredModules.empty() && m_launchCallback) {
@@ -125,8 +128,8 @@ StartMenu::StartMenu(wxWindow* parent)
     // Start hidden; it will appear on first key press via HandleGlobalKey.
     m_searchBox->Show(false);
 
-    m_scrollArea = new wxPanel(contentPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize,
-                              wxBORDER_NONE);
+    m_scrollArea =
+        new wxPanel(contentPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_NONE);
     m_scrollArea->SetBackgroundColour(kMenuBg);
     // Stretch the list area so the category strip stays pinned to the bottom.
     // (The empty space, if any, lives inside the list area.)
@@ -135,13 +138,13 @@ StartMenu::StartMenu(wxWindow* parent)
     m_categoryPanel = new wxPanel(contentPanel, wxID_ANY);
     wxBoxSizer* catSizer = new wxBoxSizer(wxHORIZONTAL);
     // Top category strip: icon-only buttons with tooltips.
-    wxButton* allBtn = new wxButton(m_categoryPanel, wxID_ANY, "",
-                                    wxDefaultPosition, wxDefaultSize, wxBORDER_NONE);
+    wxButton* allBtn = new wxButton(m_categoryPanel, wxID_ANY, "", wxDefaultPosition, wxDefaultSize,
+                                    wxBORDER_NONE);
     allBtn->SetMinSize(wxSize(44, -1));
     {
         // Use a known-good icon so ALL always has a bitmap.
-        std::string dir = "streamline-vectors/core/pop/interface-essential";
-        wxBitmap allBmp = ImageSet(Path(dir, "layout-window-8.svg")).toBitmap1(16, 16);
+        wxBitmap allBmp = ImageSet(Path(slv_core_pop, "interface-essential/layout-window-8.svg"))
+                              .toBitmap1(16, 16);
         if (allBmp.IsOk()) {
             allBtn->SetBitmap(allBmp, wxLEFT);
             allBtn->SetBitmapMargins(4, 0);
@@ -166,8 +169,8 @@ StartMenu::StartMenu(wxWindow* parent)
     });
     catSizer->Add(allBtn, 1, wxEXPAND | wxALL, 2);
     for (const auto& cat : getAllCategories()) {
-        wxButton* btn = new wxButton(m_categoryPanel, wxID_ANY, "",
-                                     wxDefaultPosition, wxDefaultSize, wxBORDER_NONE);
+        wxButton* btn = new wxButton(m_categoryPanel, wxID_ANY, "", wxDefaultPosition,
+                                     wxDefaultSize, wxBORDER_NONE);
         btn->SetMinSize(wxSize(44, -1));
         // Show the same icon as used for category rows in the main list, but scaled down a bit.
         auto catBmp = cat.icon.toBitmap1(16, 16);
@@ -210,12 +213,12 @@ StartMenu::StartMenu(wxWindow* parent)
 
     // Right-side submenu overlay (sibling overlay, like the start menu itself).
     m_subMenu = new wxPanel(parent, wxID_ANY, wxDefaultPosition, wxSize(kSubMenuWidth, 200),
-                           wxBORDER_SIMPLE);
+                            wxBORDER_SIMPLE);
     m_subMenu->SetBackgroundColour(kMenuBg);
     m_subMenu->Hide();
     m_subMenu->Bind(wxEVT_LEAVE_WINDOW, &StartMenu::OnSubMenuLeaveWindow, this);
-    m_subScrollArea = new wxPanel(m_subMenu, wxID_ANY, wxDefaultPosition, wxDefaultSize,
-                                 wxBORDER_NONE);
+    m_subScrollArea =
+        new wxPanel(m_subMenu, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_NONE);
     m_subScrollArea->SetBackgroundColour(kMenuBg);
     wxBoxSizer* subRoot = new wxBoxSizer(wxVERTICAL);
     subRoot->Add(m_subScrollArea, 1, wxEXPAND | wxALL, 4);
@@ -296,8 +299,7 @@ bool StartMenu::HandleGlobalKey(wxKeyEvent& event) {
     }
 
     // Ignore pure modifier keys.
-    if (event.HasModifiers() &&
-        !(event.ControlDown() && !event.AltDown() && !event.ShiftDown())) {
+    if (event.HasModifiers() && !(event.ControlDown() && !event.AltDown() && !event.ShiftDown())) {
         return false;
     }
 
@@ -335,13 +337,9 @@ bool StartMenu::HandleGlobalKey(wxKeyEvent& event) {
     return false;
 }
 
-void StartMenu::OnLeaveWindow(wxMouseEvent& event) {
-    event.Skip();
-}
+void StartMenu::OnLeaveWindow(wxMouseEvent& event) { event.Skip(); }
 
-void StartMenu::OnSubMenuLeaveWindow(wxMouseEvent& event) {
-    event.Skip();
-}
+void StartMenu::OnSubMenuLeaveWindow(wxMouseEvent& event) { event.Skip(); }
 
 void StartMenu::FilterModules(const std::string& searchText) {
     m_filteredModules.clear();
@@ -382,8 +380,8 @@ void StartMenu::AddMenuItem(wxWindow* parent, wxSizer* sizer, const wxString& la
         icon->SetBackgroundColour(kMenuBg);
         rowSizer->Add(icon, 0, wxALIGN_CENTER_VERTICAL | wxLEFT, 8);
     }
-    wxStaticText* text = new wxStaticText(row, wxID_ANY, label, wxDefaultPosition,
-                                          wxDefaultSize, wxALIGN_LEFT | wxST_ELLIPSIZE_END);
+    wxStaticText* text = new wxStaticText(row, wxID_ANY, label, wxDefaultPosition, wxDefaultSize,
+                                          wxALIGN_LEFT | wxST_ELLIPSIZE_END);
     text->SetBackgroundColour(kMenuBg);
     rowSizer->Add(text, 1, wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, 8);
 
@@ -480,7 +478,8 @@ void StartMenu::OnMenuItemClick(wxMouseEvent& event) {
             }
         } else if (lbl.StartsWith("Recent") || lbl.StartsWith("Console")) {
             if (lbl.StartsWith("Console")) {
-                wxFrame* f = new wxFrame(nullptr, wxID_ANY, "Console", wxDefaultPosition, wxSize(800, 400));
+                wxFrame* f =
+                    new wxFrame(nullptr, wxID_ANY, "Console", wxDefaultPosition, wxSize(800, 400));
                 wxBoxSizer* s = new wxBoxSizer(wxVERTICAL);
                 wxTextCtrl* out = new wxTextCtrl(f, wxID_ANY, "", wxDefaultPosition, wxDefaultSize,
                                                  wxTE_MULTILINE | wxTE_READONLY);
@@ -581,7 +580,8 @@ void StartMenu::ShowSubMenuForRow(wxWindow* row) {
             continue;
         if (mr.kind != ROW_CATEGORY_FOLDER && mr.kind != ROW_RECENT_FOLDER)
             return;
-        if (m_subMenu->IsShown() && m_subMenuKind == mr.kind && m_subMenuCategoryId == mr.categoryId) {
+        if (m_subMenu->IsShown() && m_subMenuKind == mr.kind &&
+            m_subMenuCategoryId == mr.categoryId) {
             PositionSubMenuNearRow(row);
             return;
         }
@@ -714,15 +714,22 @@ void StartMenu::CreateMenuContent() {
     wxBoxSizer* sizer = new wxBoxSizer(wxVERTICAL);
     std::set<std::string> usedUris;
 
-    std::string dir1 = "streamline-vectors/core/pop/interface-essential";
-    std::string dir2 = "streamline-vectors/core/pop/computer-devices";
-    std::string dir3 = "streamline-vectors/core/pop/map-travel";
-    auto iconRecent = ImageSet(Path(dir1, "folder-add.svg")).toBitmap1(kIconSize, kIconSize);
-    auto iconTrash = ImageSet(Path(dir1, "archive-box.svg")).toBitmap1(kIconSize, kIconSize);
-    auto iconConsole = ImageSet(Path(dir2, "desktop-code.svg")).toBitmap1(kIconSize, kIconSize);
-    auto iconExit = ImageSet(Path(dir3, "emergency-exit.svg")).toBitmap1(kIconSize, kIconSize);
+    auto iconRecent = //
+        ImageSet(Path(slv_core_pop, "interface-essential/folder-add.svg"))
+            .toBitmap1(kIconSize, kIconSize);
+    auto iconTrash = //
+        ImageSet(Path(slv_core_pop, "interface-essential/archive-box.svg"))
+            .toBitmap1(kIconSize, kIconSize);
+    auto iconConsole = //
+        ImageSet(Path(slv_core_pop, "computer-devices/desktop-code.svg"))
+            .toBitmap1(kIconSize, kIconSize);
+    auto iconExit = //
+        ImageSet(Path(slv_core_pop, "map-travel/emergency-exit.svg"))
+            .toBitmap1(kIconSize, kIconSize);
     if (!iconExit.IsOk())
-        iconExit = ImageSet(Path(dir1, "download-circle.svg")).toBitmap1(kIconSize, kIconSize);
+        iconExit = //
+            ImageSet(Path(slv_core_pop, "interface-essential/download-circle.svg"))
+                .toBitmap1(kIconSize, kIconSize);
 
     auto addModule = [&](ModulePtr m) {
         if (!m || usedUris.count(m->getFullUri()))

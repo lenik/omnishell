@@ -1,16 +1,14 @@
 #ifndef OMNISHELL_APP_BACKGROUND_SETTINGS_HPP
 #define OMNISHELL_APP_BACKGROUND_SETTINGS_HPP
 
-#include "BackgroundSettingsBody.hpp"
-
 #include "../../core/Module.hpp"
-
-#include <wx/wx.h>
 
 namespace os {
 
+class App;
+
 class BackgroundSettingsApp : public Module {
-public:
+  public:
     BackgroundSettingsApp(CreateModuleContext* ctx);
     virtual ~BackgroundSettingsApp();
 
@@ -18,11 +16,10 @@ public:
 
     void initializeMetadata();
 
-private:
-    BackgroundSettingsBody m_body;
+  private:
+    App* m_app;
 };
 
 } // namespace os
 
 #endif // OMNISHELL_APP_BACKGROUND_SETTINGS_HPP
-

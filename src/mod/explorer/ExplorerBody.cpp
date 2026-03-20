@@ -1,8 +1,13 @@
 #include "ExplorerBody.hpp"
 
+#include "../../core/registry/FileAssociations.hpp"
 #include "../../shell/Shell.hpp"
+#include "../browser/BrowserApp.hpp"
 #include "../notepad/NotepadApp.hpp"
 #include "../paint/PaintApp.hpp"
+#include "ui/ThemeStyles.hpp"
+
+using namespace ThemeStyles;
 
 #include <bas/volume/VolumeFile.hpp>
 #include <bas/volume/VolumeManager.hpp>
@@ -45,19 +50,20 @@ static std::string parentPath(const std::string& p) {
 } // namespace
 
 ExplorerBody::ExplorerBody(VolumeManager* vm, Volume* volume, std::string dir)
-    : m_vm(vm)
-    , m_volume(volume)
-    , m_dir(std::move(dir)) {
-    const std::string icons = "heroicons/normal";
+    : m_vm(vm), m_volume(volume), m_dir(std::move(dir)) {
 
     group(ID_GROUP_NAV, "navigate", "explorer", 1000, "&Navigate", "Explorer navigation").install();
     int seq = 0;
-    action(ID_UP, "navigate/explorer", "up", seq++, "&Up", "Go to parent folder")
-        .icon(wxART_GO_BACK, icons, "arrow-uturn-left.svg")
+    action(ID_UP, "navigate/explorer", "up", seq++)
+        .label("&Up")
+        .description("Go to parent folder")
+        .icon(wxART_GO_BACK, hi_normal, "arrow-uturn-left.svg")
         .performFn([this](PerformContext* ctx) { onUp(ctx); })
         .install();
-    action(ID_REFRESH, "navigate/explorer", "refresh", seq++, "&Refresh", "Refresh directory")
-        .icon(wxART_REDO, icons, "arrow-path.svg")
+    action(ID_REFRESH, "navigate/explorer", "refresh", seq++)
+        .label("&Refresh")
+        .description("Refresh directory")
+        .icon(wxART_REDO, hi_normal, "arrow-path.svg")
         .performFn([this](PerformContext* ctx) { onRefresh(ctx); })
         .install();
 }
@@ -81,16 +87,16 @@ void ExplorerBody::createFragmentView(CreateViewContext* ctx) {
 
     wxPanel* left = new wxPanel(split, wxID_ANY);
     wxBoxSizer* leftSizer = new wxBoxSizer(wxVERTICAL);
-    m_tree = new wxTreeCtrl(left, wxID_ANY, wxDefaultPosition, wxDefaultSize,
-                           wxTR_HAS_BUTTONS | wxTR_LINES_AT_ROOT |
-                               wxTR_HIDE_ROOT | wxTR_DEFAULT_STYLE);
+    m_tree =
+        new wxTreeCtrl(left, wxID_ANY, wxDefaultPosition, wxDefaultSize,
+                       wxTR_HAS_BUTTONS | wxTR_LINES_AT_ROOT | wxTR_HIDE_ROOT | wxTR_DEFAULT_STYLE);
     leftSizer->Add(m_tree, 1, wxEXPAND | wxALL, 6);
     left->SetSizer(leftSizer);
 
     wxPanel* right = new wxPanel(split, wxID_ANY);
     wxBoxSizer* rightSizer = new wxBoxSizer(wxVERTICAL);
     m_list = new wxListCtrl(right, wxID_ANY, wxDefaultPosition, wxDefaultSize,
-                           wxLC_REPORT | wxLC_SINGLE_SEL);
+                            wxLC_REPORT | wxLC_SINGLE_SEL);
     m_list->InsertColumn(0, "Name", wxLIST_FORMAT_LEFT, 420);
     m_list->InsertColumn(1, "Type", wxLIST_FORMAT_LEFT, 100);
     m_list->InsertColumn(2, "Size", wxLIST_FORMAT_RIGHT, 100);
@@ -102,57 +108,46 @@ void ExplorerBody::createFragmentView(CreateViewContext* ctx) {
 
     // Tree image list (volume icons) - streamline-vectors
     m_treeImages = new wxImageList(16, 16);
-    auto addTreeIcon = [this](const char* relDir, const char* file) {
-        ImageSet set(Path(std::string("streamline-vectors/") + relDir, file));
+    auto addTreeIcon = [this](std::string_view dir, std::string_view tail) {
+        ImageSet set(Path(dir, tail));
         wxBitmap bmp = set.toBitmap1(16, 16);
         return bmp.IsOk() ? m_treeImages->Add(bmp) : -1;
     };
     // Use flat computer-device icons for volumes
     m_volIcon[(int)VolumeType::HARDDISK] =
-        addTreeIcon("core/flat/computer-devices", "hard-drive-1.svg");
+        addTreeIcon(slv_core_flat, "computer-devices/hard-drive-1.svg");
     m_volIcon[(int)VolumeType::NETWORK] =
-        addTreeIcon("core/flat/computer-devices", "network.svg");
+        addTreeIcon(slv_core_flat, "computer-devices/network.svg");
     m_volIcon[(int)VolumeType::MEMORY] =
-        addTreeIcon("core/flat/computer-devices", "database-server-1.svg");
+        addTreeIcon(slv_core_flat, "computer-devices/database-server-1.svg");
     m_volIcon[(int)VolumeType::CDROM] =
-        addTreeIcon("freehand/duotone/computers-devices-electronics", "cd-rom-disc-1.svg");
+        addTreeIcon(slv_freehand_duotone, "computers-devices-electronics/cd-rom-disc-1.svg");
     m_volIcon[(int)VolumeType::ARCHIVE] =
-        addTreeIcon("core/pop/interface-essential", "archive-box.svg");
+        addTreeIcon(slv_core_pop, "interface-essential/archive-box.svg");
     // Fallbacks
     m_volIcon[(int)VolumeType::SYSTEM] = m_volIcon[(int)VolumeType::MEMORY];
     m_volIcon[(int)VolumeType::FLOPPY] = m_volIcon[(int)VolumeType::HARDDISK];
     m_volIcon[(int)VolumeType::OTHER] =
-        addTreeIcon("block/interface-essential/content", "folder.svg");
+        addTreeIcon(slv_core_pop, "interface-essential/folder-add.svg");
     m_tree->AssignImageList(m_treeImages);
 
     // List image list (file icons) - streamline-vectors
     m_listImages = new wxImageList(16, 16);
-    auto addListIcon = [this](const char* relDir, const char* file) {
-        ImageSet set(Path(std::string("streamline-vectors/") + relDir, file));
+    auto addListIcon = [this](std::string_view dir, std::string_view tail) {
+        ImageSet set(Path(dir, tail));
         wxBitmap bmp = set.toBitmap1(16, 16);
         return bmp.IsOk() ? m_listImages->Add(bmp) : -1;
     };
-    m_iconFolder =
-        addListIcon("block/interface-essential/content", "folder.svg");
-    m_iconFileGeneric =
-        addListIcon("block/interface-essential/content", "file.svg");
-    m_iconFileImage =
-        addListIcon("block/interface-essential/content", "image.svg");
-    // Use text-field as generic text/office file icon
-    m_iconFileText =
-        addListIcon("block/interface-essential/text-formatting", "text-field.svg");
-    m_iconFileAudio =
-        addListIcon("ultimate/bold/files-folders", "audio-file-mp-3.svg");
-    m_iconFileVideo =
-        addListIcon("block/interface-essential/content", "video.svg");
-    m_iconFilePdf =
-        addListIcon("core/pop/interface-essential", "convert-pdf-2.svg");
-    m_iconFileCode =
-        addListIcon("core/pop/programming", "code-monitor-1.svg");
-    m_iconFileArchive =
-        addListIcon("flex/pop/interface-essential", "zip-folder.svg");
-    m_iconFileSheet =
-        addListIcon("freehand/duotone/work-office-companies", "office-file-sheet.svg");
+    m_iconFolder = addListIcon(slv_core_pop, "interface-essential/folder-add.svg");
+    m_iconFileGeneric = addListIcon(slv_core_pop, "interface-essential/file-add-alternate.svg");
+    m_iconFileImage = addListIcon(slv_core_pop, "images-photography/edit-image-photo.svg");
+    m_iconFileText = addListIcon(slv_core_pop, "interface-essential/text-square.svg");
+    m_iconFileAudio = addListIcon(slv_core_pop, "entertainment/music-note-1.svg");
+    m_iconFileVideo = addListIcon(slv_core_pop, "entertainment/camera-video.svg");
+    m_iconFilePdf = addListIcon(slv_core_pop, "interface-essential/convert-pdf-2.svg");
+    m_iconFileCode = addListIcon(slv_core_pop, "programming/code-monitor-1.svg");
+    m_iconFileArchive = addListIcon(slv_core_pop, "interface-essential/archive-box.svg");
+    m_iconFileSheet = addListIcon(slv_core_pop, "interface-essential/text-flow-rows.svg");
     m_list->SetImageList(m_listImages, wxIMAGE_LIST_SMALL);
 
     m_list->Bind(wxEVT_LIST_ITEM_ACTIVATED, [this](wxListEvent& e) {
@@ -204,8 +199,8 @@ void ExplorerBody::refresh() {
         return;
     try {
         auto entries = m_volume->readDir(m_dir, false);
-        m_pathLabel->SetLabel(wxString::Format("Volume: %s   Path: %s",
-                                              m_volume->getLabel().c_str(), m_dir.c_str()));
+        m_pathLabel->SetLabel(
+            wxString::Format("Volume: %s   Path: %s", m_volume->getLabel().c_str(), m_dir.c_str()));
         m_list->DeleteAllItems();
         long index = 0;
         for (const auto& e : entries) {
@@ -239,7 +234,8 @@ void ExplorerBody::refresh() {
             m_frame->SetTitle(wxString::Format("Explorer - %s", m_dir.c_str()));
         }
     } catch (const std::exception& ex) {
-        wxMessageBox(wxString("Cannot open directory: ") + ex.what(), "Explorer", wxOK | wxICON_ERROR);
+        wxMessageBox(wxString("Cannot open directory: ") + ex.what(), "Explorer",
+                     wxOK | wxICON_ERROR);
     }
 }
 
@@ -280,7 +276,8 @@ void ExplorerBody::loadTreeChildren(const wxTreeItemId& id) {
             if (!e->isDirectory())
                 continue;
             std::string childPath = joinPath(d->path.empty() ? "/" : d->path, e->name);
-            wxTreeItemId cid = m_tree->AppendItem(id, e->name, -1, -1, new TreeData(d->volume, childPath));
+            wxTreeItemId cid =
+                m_tree->AppendItem(id, e->name, -1, -1, new TreeData(d->volume, childPath));
             m_tree->AppendItem(cid, "(loading...)");
         }
     } catch (...) {
@@ -326,7 +323,8 @@ void ExplorerBody::selectTreePath(Volume* vol, const std::string& path) {
         if (start >= p.size())
             break;
         size_t slash = p.find('/', start);
-        std::string seg = (slash == std::string::npos) ? p.substr(start) : p.substr(start, slash - start);
+        std::string seg =
+            (slash == std::string::npos) ? p.substr(start) : p.substr(start, slash - start);
         curPath = joinPath(curPath, seg);
 
         loadTreeChildren(curId);
@@ -363,44 +361,61 @@ void ExplorerBody::openChild(const std::string& name, bool isDir) {
 namespace {
 bool extIn(const std::string& ext, const std::vector<std::string>& list) {
     for (const auto& e : list)
-        if (ext == e) return true;
+        if (ext == e)
+            return true;
     return false;
 }
 } // namespace
 
 int ExplorerBody::listIconForExtension(const std::string& ext) const {
-    if (ext.empty()) return m_iconFileGeneric;
-    static const std::vector<std::string> image = {
-        "png","jpg","jpeg","jfif","bmp","gif","webp","ico","svg","tiff","tif","heic","avif","raw","cr2","nef","arw"
-    };
-    static const std::vector<std::string> audio = {
-        "mp3","wav","flac","ogg","m4a","aac","wma","opus","aiff","aif","ape","alac","mid","midi","au","snd"
-    };
-    static const std::vector<std::string> video = {
-        "mp4","mkv","avi","webm","mov","wmv","flv","m4v","mpeg","mpg","3gp","3g2","ogv","vob","ts","m2ts","divx"
-    };
+    if (ext.empty())
+        return m_iconFileGeneric;
+    static const std::vector<std::string> image = {"png",  "jpg", "jpeg", "jfif", "bmp", "gif",
+                                                   "webp", "ico", "svg",  "tiff", "tif", "heic",
+                                                   "avif", "raw", "cr2",  "nef",  "arw"};
+    static const std::vector<std::string> audio = {"mp3", "wav",  "flac", "ogg", "m4a", "aac",
+                                                   "wma", "opus", "aiff", "aif", "ape", "alac",
+                                                   "mid", "midi", "au",   "snd"};
+    static const std::vector<std::string> video = {"mp4", "mkv", "avi",  "webm", "mov", "wmv",
+                                                   "flv", "m4v", "mpeg", "mpg",  "3gp", "3g2",
+                                                   "ogv", "vob", "ts",   "m2ts", "divx"};
     static const std::vector<std::string> code = {
-        "c","cpp","cc","cxx","h","hh","hpp","hxx","py","pyw","js","ts","jsx","tsx","mjs","cjs","rs","go","java","kt","kts","swift","vb","cs","fs","rb","pl","pm","php","scala","r","lua","sh","bash","zsh","bat","cmd","ps1","html","htm","xhtml","css","vue","sass","scss","less","sql","rkt","clj","cljs","ex","exs","erl","hrl","hs","lhs","ml","mli","fsi","nim","zig","v","dart","groovy","gradle"
-    };
+        "c",    "cpp",  "cc",  "cxx", "h",   "hh",   "hpp", "hxx",   "py",     "pyw",   "js",
+        "ts",   "jsx",  "tsx", "mjs", "cjs", "rs",   "go",  "java",  "kt",     "kts",   "swift",
+        "vb",   "cs",   "fs",  "rb",  "pl",  "pm",   "php", "scala", "r",      "lua",   "sh",
+        "bash", "zsh",  "bat", "cmd", "ps1", "html", "htm", "xhtml", "css",    "vue",   "sass",
+        "scss", "less", "sql", "rkt", "clj", "cljs", "ex",  "exs",   "erl",    "hrl",   "hs",
+        "lhs",  "ml",   "mli", "fsi", "nim", "zig",  "v",   "dart",  "groovy", "gradle"};
     static const std::vector<std::string> text = {
-        "txt","md","markdown","log","ini","cfg","conf","json","xml","yaml","yml","toml","rst","tex","latex","bib","doc","docx","odt","rtf","texinfo","asciidoc","adoc"
-    };
+        "txt", "md",   "markdown", "log",  "ini",     "cfg",      "conf",  "json",
+        "xml", "yaml", "yml",      "toml", "rst",     "tex",      "latex", "bib",
+        "doc", "docx", "odt",      "rtf",  "texinfo", "asciidoc", "adoc"};
     static const std::vector<std::string> archive = {
-        "zip","7z","rar","tar","gz","bz2","xz","z","lz","lzma","tgz","tbz2","tzst","zst","lz4","br","jar","war","ear","cab","deb","rpm","dmg","iso","cpio"
-    };
-    static const std::vector<std::string> sheet = {
-        "xls","xlsx","ods","csv","tsv","numbers","dif","slk","wb2","wks"
-    };
-    if (extIn(ext, image) && m_iconFileImage >= 0) return m_iconFileImage;
-    if (extIn(ext, audio) && m_iconFileAudio >= 0) return m_iconFileAudio;
-    if (extIn(ext, video) && m_iconFileVideo >= 0) return m_iconFileVideo;
-    if (ext == "pdf" && m_iconFilePdf >= 0) return m_iconFilePdf;
-    if (extIn(ext, code) && m_iconFileCode >= 0) return m_iconFileCode;
-    if (extIn(ext, text) && m_iconFileText >= 0) return m_iconFileText;
-    if (extIn(ext, archive) && m_iconFileArchive >= 0) return m_iconFileArchive;
-    if (extIn(ext, sheet) && m_iconFileSheet >= 0) return m_iconFileSheet;
-    if (extIn(ext, text)) return m_iconFileText >= 0 ? m_iconFileText : m_iconFileGeneric;
-    if (extIn(ext, code)) return m_iconFileCode >= 0 ? m_iconFileCode : m_iconFileGeneric;
+        "zip",  "7z",  "rar",  "tar",  "gz",  "bz2", "xz",  "z",   "lz",
+        "lzma", "tgz", "tbz2", "tzst", "zst", "lz4", "br",  "jar", "war",
+        "ear",  "cab", "deb",  "rpm",  "dmg", "iso", "cpio"};
+    static const std::vector<std::string> sheet = {"xls",     "xlsx", "ods", "csv", "tsv",
+                                                   "numbers", "dif",  "slk", "wb2", "wks"};
+    if (extIn(ext, image) && m_iconFileImage >= 0)
+        return m_iconFileImage;
+    if (extIn(ext, audio) && m_iconFileAudio >= 0)
+        return m_iconFileAudio;
+    if (extIn(ext, video) && m_iconFileVideo >= 0)
+        return m_iconFileVideo;
+    if (ext == "pdf" && m_iconFilePdf >= 0)
+        return m_iconFilePdf;
+    if (extIn(ext, code) && m_iconFileCode >= 0)
+        return m_iconFileCode;
+    if (extIn(ext, text) && m_iconFileText >= 0)
+        return m_iconFileText;
+    if (extIn(ext, archive) && m_iconFileArchive >= 0)
+        return m_iconFileArchive;
+    if (extIn(ext, sheet) && m_iconFileSheet >= 0)
+        return m_iconFileSheet;
+    if (extIn(ext, text))
+        return m_iconFileText >= 0 ? m_iconFileText : m_iconFileGeneric;
+    if (extIn(ext, code))
+        return m_iconFileCode >= 0 ? m_iconFileCode : m_iconFileGeneric;
     return m_iconFileGeneric;
 }
 
@@ -410,8 +425,9 @@ static bool looksLikeTextFile(const std::string& name) {
         return false;
     std::string ext = name.substr(dot + 1);
     std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
-    static const char* kExts[] = {"txt","md","log","ini","cfg","conf","json","xml","yaml","yml","csv","tsv",
-                                  "cpp","hpp","h","c","cc","hh","py","sh","js","ts","css","html","htm","rs","go"};
+    static const char* kExts[] = {"txt", "md",  "log", "ini", "cfg", "conf", "json", "xml", "yaml",
+                                  "yml", "csv", "tsv", "cpp", "hpp", "h",    "c",    "cc",  "hh",
+                                  "py",  "sh",  "js",  "ts",  "css", "html", "htm",  "rs",  "go"};
     for (auto* e : kExts) {
         if (ext == e)
             return true;
@@ -438,6 +454,26 @@ void ExplorerBody::openFile(const std::string& name) {
                 return;
             }
         }
+        auto dot = name.rfind('.');
+        if (dot != std::string::npos) {
+            std::string ext = name.substr(dot + 1);
+            std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+            if (auto modUri = getFirstOpenWithModuleForExtension(ext)) {
+                ProcessPtr p;
+                if (*modUri == "omnishell.Browser")
+                    p = BrowserApp::open(m_vm, vf);
+                else if (*modUri == "omnishell.Notepad")
+                    p = NotepadApp::open(m_vm, vf);
+                if (p) {
+                    if (auto shell = ShellApp::getInstance()) {
+                        if (shell->getTaskbar())
+                            shell->getTaskbar()->addProcess(p);
+                    }
+                    return;
+                }
+            }
+        }
+
         if (looksLikeTextFile(name)) {
             ProcessPtr p = NotepadApp::open(m_vm, vf);
             if (auto shell = ShellApp::getInstance()) {
@@ -446,18 +482,14 @@ void ExplorerBody::openFile(const std::string& name) {
             }
             return;
         }
-        wxMessageBox("No associated app for this file type.", "Explorer", wxOK | wxICON_INFORMATION);
+        wxMessageBox("No associated app for this file type.", "Explorer",
+                     wxOK | wxICON_INFORMATION);
     } catch (...) {
     }
 }
 
-void ExplorerBody::onUp(PerformContext*) {
-    setDir(parentPath(m_dir));
-}
+void ExplorerBody::onUp(PerformContext*) { setDir(parentPath(m_dir)); }
 
-void ExplorerBody::onRefresh(PerformContext*) {
-    refresh();
-}
+void ExplorerBody::onRefresh(PerformContext*) { refresh(); }
 
 } // namespace os
-

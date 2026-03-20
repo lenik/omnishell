@@ -1,32 +1,32 @@
 #include "BackgroundSettingsApp.hpp"
 
+#include "BackgroundSettingsFrame.hpp"
+
 #include "../../core/ModuleRegistry.hpp"
 
-#include <bas/wx/uiframe.hpp>
+#include "../../ui/ThemeStyles.hpp"
+using namespace ThemeStyles;
 
 namespace os {
 
-OMNISHELL_REGISTER_MODULE("omnishell.backgroundsettings", BackgroundSettingsApp)
+OMNISHELL_REGISTER_MODULE("omnishell.BackgroundSettings", BackgroundSettingsApp)
 
 BackgroundSettingsApp::BackgroundSettingsApp(CreateModuleContext* ctx) //
-    : Module(ctx)
-    , m_body() {
+    : Module(ctx), m_app(ctx->getApp()) {
     initializeMetadata();
 }
 
-BackgroundSettingsApp::~BackgroundSettingsApp() {
-}
+BackgroundSettingsApp::~BackgroundSettingsApp() {}
 
 void BackgroundSettingsApp::initializeMetadata() {
-    uri = "omnishell";
+    uri = "omnishell.BackgroundSettings";
     name = "backgroundsettings";
     label = "Background Settings";
     description = "Configure desktop background";
     doc = "UI for changing desktop background.";
     categoryId = ID_CATEGORY_SYSTEM;
 
-    std::string dir = "streamline-vectors/core/pop/interface-essential";
-    image = ImageSet(Path(dir, "image-blur.svg"));
+    image = ImageSet(Path(slv_core_pop, "interface-essential/image-blur.svg"));
 }
 
 ProcessPtr BackgroundSettingsApp::run() {
@@ -36,9 +36,7 @@ ProcessPtr BackgroundSettingsApp::run() {
     proc->label = label;
     proc->icon = image;
 
-    uiFrame* frame = new uiFrame("Background Settings");
-    frame->addFragment(&m_body);
-    frame->createView();
+    auto* frame = new BackgroundSettingsFrame(m_app, "Background Settings");
     frame->SetSize(wxSize(520, 260));
     frame->Centre();
     frame->Show(true);
@@ -47,4 +45,3 @@ ProcessPtr BackgroundSettingsApp::run() {
 }
 
 } // namespace os
-

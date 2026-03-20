@@ -1,31 +1,33 @@
 #include "RegistryApp.hpp"
 
+#include "RegistryFrame.hpp"
+
 #include "../../core/ModuleRegistry.hpp"
 
-#include <bas/wx/uiframe.hpp>
+#include "../../ui/ThemeStyles.hpp"
+using namespace ThemeStyles;
 
 namespace os {
 
-OMNISHELL_REGISTER_MODULE("omnishell.registry", RegistryApp)
+OMNISHELL_REGISTER_MODULE("omnishell.Registry", RegistryApp)
 
 RegistryApp::RegistryApp(CreateModuleContext* ctx)
     : Module(ctx)
-    , m_body() {
+    , m_app(ctx->getApp()) {
     initializeMetadata();
 }
 
 RegistryApp::~RegistryApp() {}
 
 void RegistryApp::initializeMetadata() {
-    uri = "omnishell";
+    uri = "omnishell.Registry";
     name = "registry";
     label = "Registry";
     description = "View and edit registry database";
-    doc = "Simple viewer/editor for the JSON-backed RegistryDb.";
+    doc = "Viewer/editor for the file-backed registry (nodes = dirs, values = .json files).";
     categoryId = ID_CATEGORY_SYSTEM;
 
-    std::string dir = "streamline-vectors/core/pop/interface-essential";
-    image = ImageSet(Path(dir, "filter-2.svg"));
+    image = ImageSet(Path(slv_core_pop, "interface-essential/filter-2.svg"));
 }
 
 ProcessPtr RegistryApp::run() {
@@ -35,9 +37,7 @@ ProcessPtr RegistryApp::run() {
     proc->label = label;
     proc->icon = image;
 
-    uiFrame* frame = new uiFrame("Registry");
-    frame->addFragment(&m_body);
-    frame->createView();
+    auto* frame = new RegistryFrame(m_app, "Registry");
     frame->Centre();
     frame->Show(true);
     proc->addWindow(frame);
@@ -45,4 +45,3 @@ ProcessPtr RegistryApp::run() {
 }
 
 } // namespace os
-

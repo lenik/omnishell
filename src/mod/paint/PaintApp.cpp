@@ -1,35 +1,41 @@
 #include "PaintApp.hpp"
 
+#include "PaintFrame.hpp"
+
+#include "../../ui/ThemeStyles.hpp"
+
+#include "../../core/App.hpp"
 #include "../../core/ModuleRegistry.hpp"
 
 #include <bas/volume/VolumeFile.hpp>
-#include <bas/wx/uiframe.hpp>
+#include <bas/volume/VolumeManager.hpp>
 
 #include <wx/mstream.h>
 
+namespace {
+constexpr const char* kPaintModuleUri = "omnishell.Paint";
+}
+
 namespace os {
+using namespace ThemeStyles;
 
-OMNISHELL_REGISTER_MODULE("omnishell.paint", PaintApp)
+OMNISHELL_REGISTER_MODULE(kPaintModuleUri, PaintApp)
 
-PaintApp::PaintApp(CreateModuleContext* ctx)
-    : Module(ctx)
-    , m_body() {
+PaintApp::PaintApp(CreateModuleContext* ctx) : Module(ctx), m_app(ctx->getApp()) {
     initializeMetadata();
 }
 
-PaintApp::~PaintApp() {
-}
+PaintApp::~PaintApp() {}
 
 void PaintApp::initializeMetadata() {
-    uri = "omnishell";
+    uri = kPaintModuleUri;
     name = "paint";
     label = "Paint";
     description = "Simple drawing canvas";
     doc = "Basic paint application.";
     categoryId = ID_CATEGORY_ACCESSORIES;
 
-    std::string dir = "streamline-vectors/core/pop/interface-essential";
-    image = ImageSet(Path(dir, "paint-palette.svg"));
+    image = ImageSet(Path(slv_core_pop, "interface-essential/paint-palette.svg"));
 }
 
 ProcessPtr PaintApp::run() {
@@ -39,9 +45,7 @@ ProcessPtr PaintApp::run() {
     proc->label = label;
     proc->icon = image;
 
-    uiFrame* frame = new uiFrame("Paint");
-    frame->addFragment(&m_body);
-    frame->createView();
+    auto* frame = new PaintFrame(m_app, "Paint");
     frame->Centre();
     frame->Show(true);
     proc->addWindow(frame);
@@ -49,19 +53,15 @@ ProcessPtr PaintApp::run() {
 }
 
 ProcessPtr PaintApp::openImage(VolumeManager* volumeManager, VolumeFile file) {
+    (void)volumeManager;
+
     auto proc = std::make_shared<Process>();
-    proc->uri = "omnishell";
+    proc->uri = kPaintModuleUri;
     proc->name = "paint";
     proc->label = "Paint";
-    std::string dir = "streamline-vectors/core/pop/interface-essential";
-    proc->icon = ImageSet(Path(dir, "paint-palette.svg"));
+    proc->icon = ImageSet(Path(slv_core_pop, "interface-essential/paint-palette.svg"));
 
-    auto core = std::make_shared<PaintBody>();
-    uiFrame* frame = new uiFrame("Paint");
-    frame->addFragment(core.get());
-    frame->createView();
-    frame->Centre();
-    frame->Show(true);
+    auto* frame = new PaintFrame(&app, "Paint");
 
     try {
         if (file.isNotEmpty()) {
@@ -70,21 +70,18 @@ ProcessPtr PaintApp::openImage(VolumeManager* volumeManager, VolumeFile file) {
                 wxMemoryInputStream ms(data.data(), data.size());
                 wxImage img(ms, wxBITMAP_TYPE_ANY);
                 if (img.IsOk()) {
-                    core->loadImage(img);
+                    frame->body().loadImage(img);
                 }
             }
         }
     } catch (...) {
     }
 
-    frame->Bind(wxEVT_CLOSE_WINDOW, [core](wxCloseEvent& e) {
-        (void)core;
-        e.Skip();
-    });
+    frame->Centre();
+    frame->Show(true);
 
     proc->addWindow(frame);
     return proc;
 }
 
 } // namespace os
-

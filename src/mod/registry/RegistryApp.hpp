@@ -1,21 +1,19 @@
 #ifndef OMNISHELL_APP_REGISTRY_HPP
 #define OMNISHELL_APP_REGISTRY_HPP
 
-#include "RegistryBody.hpp"
-
 #include "../../core/Module.hpp"
 
-#include <wx/wx.h>
-
 namespace os {
+
+class App;
 
 /**
  * Registry viewer/editor.
  *
- * Simple UI on top of RegistryDb.
+ * Simple UI on top of RegistryDb (directory tree + JSON property files).
  */
 class RegistryApp : public Module {
-public:
+  public:
     explicit RegistryApp(CreateModuleContext* ctx);
     virtual ~RegistryApp();
 
@@ -23,11 +21,10 @@ public:
 
     void initializeMetadata();
 
-private:
-    RegistryBody m_body;
+  private:
+    App* m_app;
 };
 
 } // namespace os
 
 #endif // OMNISHELL_APP_REGISTRY_HPP
-

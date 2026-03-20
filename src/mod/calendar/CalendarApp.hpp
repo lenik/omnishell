@@ -1,17 +1,14 @@
 #ifndef OMNISHELL_APP_CALENDAR_HPP
 #define OMNISHELL_APP_CALENDAR_HPP
 
-#include "CalendarBody.hpp"
-
 #include "../../core/Module.hpp"
-
-#include <wx/calctrl.h>
-#include <wx/wx.h>
 
 namespace os {
 
+class App;
+
 class CalendarApp : public Module {
-public:
+  public:
     explicit CalendarApp(CreateModuleContext* ctx);
     virtual ~CalendarApp();
 
@@ -19,11 +16,10 @@ public:
 
     void initializeMetadata();
 
-private:
-    CalendarBody m_body;
+  private:
+    App* m_app;
 };
 
 } // namespace os
 
 #endif // OMNISHELL_APP_CALENDAR_HPP
-

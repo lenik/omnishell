@@ -165,9 +165,16 @@ void LabeledIcon::setLabel(const wxString& text) {
     }
 }
 
+void LabeledIcon::setSelected(bool selected) {
+    if (m_selected == selected)
+        return;
+    m_selected = selected;
+    Refresh();
+}
+
 void LabeledIcon::OnPaint(wxPaintEvent& event) {
     // Transparent background by default; only draw our highlight when needed.
-    if (!m_hover && !m_pressed) {
+    if (!m_hover && !m_pressed && !m_selected) {
         event.Skip();
         return;
     }
@@ -178,15 +185,18 @@ void LabeledIcon::OnPaint(wxPaintEvent& event) {
     wxRect box = rect;
     box.Deflate(2);
 
-    wxColour borderColor(200, 200, 200); // light gray border
+    wxColour borderColor(200, 200, 200);
     wxColour fillColor;
     if (m_pressed) {
-        fillColor = wxColour(200, 220, 245); // pressed background
+        fillColor = wxColour(200, 220, 245);
+    } else if (m_selected) {
+        fillColor = wxColour(210, 230, 255);
+        borderColor = wxColour(80, 140, 220);
     } else {
-        fillColor = wxColour(220, 235, 250); // hover background
+        fillColor = wxColour(220, 235, 250);
     }
 
-    dc.SetPen(wxPen(borderColor, 1));
+    dc.SetPen(wxPen(borderColor, m_selected && !m_pressed ? 2 : 1));
     dc.SetBrush(wxBrush(fillColor));
     dc.DrawRoundedRectangle(box, 4);
 

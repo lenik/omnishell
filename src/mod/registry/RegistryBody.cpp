@@ -112,7 +112,7 @@ void RegistryBody::buildTree() {
     m_tree->DeleteAllItems();
     wxTreeItemId root = m_tree->AddRoot("Registry", -1, -1, new RegistryTreePathData(""));
 
-    const auto& data = RegistryDb::getInstance().data();
+    const auto data = RegistryDb::getInstance().snapshotStrings();
     std::set<std::string> folderPaths;
     folderPaths.insert("");
     for (const auto& kv : data) {
@@ -158,7 +158,7 @@ void RegistryBody::populateProperties(const std::string& nodePath) {
         return;
     m_list->DeleteAllItems();
 
-    const auto& data = RegistryDb::getInstance().data();
+    const auto data = RegistryDb::getInstance().snapshotStrings();
     const std::string prefix = nodePath.empty() ? "" : (nodePath + ".");
 
     struct Entry {

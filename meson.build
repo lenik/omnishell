@@ -1,5 +1,5 @@
 project('omnishell', 'cpp',
-  version : '1.0.1',
+  version : '1.0.2',
   default_options : ['warning_level=0', 'cpp_std=c++17'])
 
 pkgdatadir = get_option('datadir') / meson.project_name()
@@ -11,6 +11,10 @@ cpp = meson.get_compiler('cpp')
     bas_c_dep = dependency('bas-c', required : true)
     bas_cpp_dep = dependency('bas-cpp', required : true)
     bas_ui_dep = dependency('bas-ui', required : true)
+    boost_dep = dependency('boost', required : true)
+    date_tz_lib = cpp.find_library('date-tz', required : true)
+    threads_dep = dependency('threads')
+    date_dep = declare_dependency(dependencies: [threads_dep, date_tz_lib])
 
 # wxWidgets dependencies (must use a single GTK toolkit to avoid "GTK+ 2.x and GTK+ 3 in the same process" error)
     wx_dep = dependency('wxwidgets', method: 'config-tool', required: true)
@@ -30,7 +34,7 @@ cpp = meson.get_compiler('cpp')
     wx_media_lib = cpp.find_library(wx_gtk_prefix + '_media-' + wx_ver, required: false)
     wx_richtext_lib = cpp.find_library(wx_gtk_prefix + '_richtext-' + wx_ver, required: true)
     wx_stc_lib = cpp.find_library(wx_gtk_prefix + '_stc-' + wx_ver, required: true)
-    wx_webview_lib = cpp.find_library(wx_gtk_prefix + '_webview-' + wx_ver, required: false)
+    wx_webview_lib = cpp.find_library(wx_gtk_prefix + '_webview-' + wx_ver, required: true)
 
 # wx_dep = dependency('wxwidgets', modules : [
 #     'core',
@@ -50,13 +54,23 @@ cpp = meson.get_compiler('cpp')
 cpp_nowarn = cpp.get_supported_arguments(['-w', '/w'])
 cpp_nowarn = cpp_nowarn + wx_defines
 
+# Precompiled header for wxWidgets
+wx_pch = 'src/wx_pch.h'
+
 # Source files - reorganized structure
 cpp_sources = files(
   'src/core/Module.cpp',
   'src/core/ModuleRegistry.cpp',
   'src/core/Category.cpp',
   'src/core/Process.cpp',
-  'src/core/RegistryDb.cpp',
+  'src/core/registry/IRegistry.cpp',
+  'src/core/registry/RegistryValueIo.cpp',
+  'src/core/registry/RegistryKeyUtil.cpp',
+  'src/core/registry/LocalRegistry.cpp',
+  'src/core/registry/JsonRegistry.cpp',
+  'src/core/registry/VolumeRegistry.cpp',
+  'src/core/registry/FileAssociations.cpp',
+  'src/core/registry/RegistryService.cpp',
   'src/core/App.cpp',
   'src/core/TrayIcon.cpp',
   'src/core/ServiceManager.cpp',
@@ -65,20 +79,45 @@ cpp_sources = files(
   'src/shell/StartMenu.cpp',
   'src/shell/Shell.cpp',
   'src/mod/notepad/NotepadApp.cpp',
+  'src/mod/notepad/NotepadFrame.cpp',
   'src/mod/notepad/NotepadBody.cpp',
   'src/mod/controlpanel/ControlPanelApp.cpp',
+  'src/mod/controlpanel/ControlPanelFrame.cpp',
+  'src/mod/controlpanel/ControlPanelBody.cpp',
   'src/mod/explorer/ExplorerApp.cpp',
+  'src/mod/explorer/ExplorerFrame.cpp',
   'src/mod/explorer/ExplorerBody.cpp',
+  'src/mod/browser/BrowserApp.cpp',
+  'src/mod/browser/BrowserFrame.cpp',
+  'src/mod/browser/BrowserBody.cpp',
   'src/mod/registry/RegistryBody.cpp',
+  'src/mod/registry/RegistryFrame.cpp',
   'src/mod/registry/RegistryApp.cpp',
   'src/mod/calendar/CalendarBody.cpp',
+  'src/mod/calendar/CalendarFrame.cpp',
   'src/mod/calendar/CalendarApp.cpp',
   'src/mod/paint/PaintBody.cpp',
+  'src/mod/paint/PaintFrame.cpp',
   'src/mod/paint/PaintApp.cpp',
+  'src/mod/sudoku/SudokuApp.cpp',
+  'src/mod/sudoku/SudokuFrame.cpp',
+  'src/mod/sudoku/SudokuBody.cpp',
+  'src/mod/solitaire/SolitaireApp.cpp',
+  'src/mod/solitaire/SolitaireFrame.cpp',
+  'src/mod/solitaire/SolitaireBody.cpp',
+  'src/mod/fiveormore/FiveOrMoreApp.cpp',
+  'src/mod/fiveormore/FiveOrMoreFrame.cpp',
+  'src/mod/fiveormore/FiveOrMoreBody.cpp',
   'src/mod/minesweeper/MinesweeperApp.cpp',
+  'src/mod/minesweeper/MinesweeperFrame.cpp',
+  'src/mod/minesweeper/MinesweeperBody.cpp',
   'src/mod/stopwatch/StopWatchApp.cpp',
+  'src/mod/stopwatch/StopWatchFrame.cpp',
   'src/mod/stopwatch/StopWatchBody.cpp',
+  'src/mod/passwordmanager/LoginDialog.cpp',
+  'src/mod/passwordmanager/PasswordManager.cpp',
   'src/mod/background/BackgroundSettingsApp.cpp',
+  'src/mod/background/BackgroundSettingsFrame.cpp',
   'src/mod/background/BackgroundSettingsBody.cpp',
   'src/ui/dialogs/ChooseFileDialog.cpp',
   'src/ui/dialogs/ChooseFolderDialog.cpp',
@@ -131,7 +170,9 @@ exe_deps = [
     bas_c_dep,
     bas_cpp_dep,
     bas_ui_dep,
+    boost_dep,
     wx_dep,
+    wx_webview_lib,
 ]
 
 # if wx_dep.version() < '3.1'
@@ -154,6 +195,7 @@ lib_omnishell = library('omnishell',
     dependencies : exe_deps,
     include_directories : exe_inc,
     cpp_args : cpp_nowarn + ['-DLOGGER_NAME=omni'],
+    cpp_pch: wx_pch,
     override_options: ['b_lundef=false'], # Allows undefined symbols at link time
     version : meson.project_version(),
     soversion : meson.project_version().split('.')[0],
@@ -162,7 +204,8 @@ lib_omnishell = library('omnishell',
 
 omnishell_dep = declare_dependency(
     link_with: lib_omnishell,
-    include_directories: exe_inc
+    include_directories: exe_inc,
+    dependencies: [boost_dep, date_dep, wx_webview_lib],
 )
 
 # ---- pkg-config ----
@@ -173,7 +216,7 @@ pkgconfig.generate(
     description : 'omnishell',
     version : meson.project_version(),
     subdirs : 'omnishell',
-    requires : ['bas-c', 'bas-cpp', 'bas-ui'],
+    requires : ['bas-c', 'bas-cpp', 'bas-ui', 'boost'],
 )
 
 # ---- Headers for libbas-c package (includedir/bas-c) ----
@@ -245,6 +288,7 @@ foreach test_rel_path : all_test_files
         include_directories : exe_inc,
         dependencies : exe_deps + [omnishell_dep],
         cpp_args : cpp_nowarn + ['-DLOGGER_NAME=' + test_name],
+        cpp_pch: wx_pch,
         install : false,
     )
     
@@ -277,6 +321,7 @@ foreach app_cpp : app_cpp_list
         include_directories : exe_inc,
         dependencies : exe_deps + [omnishell_dep],
         cpp_args : cpp_nowarn + ['-DLOGGER_NAME=' + app_name],
+        cpp_pch: wx_pch,
         install : true,
         install_dir : install_dir,
     )

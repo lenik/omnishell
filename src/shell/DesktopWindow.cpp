@@ -20,6 +20,9 @@
 #include <fstream>
 #include <sstream>
 
+#include "../ui/ThemeStyles.hpp"
+using namespace ThemeStyles;
+
 namespace {
 
 std::string getProjectName() {
@@ -73,6 +76,7 @@ namespace os {
 BEGIN_EVENT_TABLE(DesktopWindow, wxPanel)
 EVT_PAINT(DesktopWindow::OnPaint)
 EVT_SIZE(DesktopWindow::OnSize)
+EVT_LEFT_DOWN(DesktopWindow::OnDesktopLeftDown)
 EVT_LEFT_DCLICK(DesktopWindow::OnLeftDoubleClick)
 EVT_RIGHT_DOWN(DesktopWindow::OnRightClick)
 EVT_ERASE_BACKGROUND(DesktopWindow::OnEraseBackground)
@@ -142,6 +146,7 @@ void DesktopWindow::addVolumeIcons() {
 }
 
 void DesktopWindow::clearIcons() {
+    m_selectedDesktopIcon = nullptr;
     for (auto& icon : m_volumeIcons) {
         if (icon.widget)
             icon.widget->Destroy();
@@ -190,8 +195,8 @@ void DesktopWindow::CreateVolumeIconControls(VolumeDesktopIcon& icon) {
     if (!icon.volume)
         return;
 
-    std::string dir = "streamline-vectors/core/pop/computer-devices";
-    ImageSet iconSet = ImageSet(wxART_HARDDISK, Path(dir, "hard-disk.svg"));
+    ImageSet iconSet = ImageSet(wxART_HARDDISK, //
+                                Path(slv_core_pop, "computer-devices/hard-disk.svg"));
     wxBitmap bitmap = iconSet.toBitmap1(32, 32);
 
     std::string labelStr = icon.volume->getLabel();
@@ -232,10 +237,10 @@ void DesktopWindow::setBackgroundImage(const wxBitmap& bitmap) {
 
 void DesktopWindow::loadBackgroundSettings() {
     RegistryDb::getInstance().load();
-    std::string mode = RegistryDb::getInstance().get("Desktop.Background.Mode", "color");
+    std::string mode = RegistryDb::getInstance().getString("Desktop.Background.Mode", "color");
 
     if (mode == "image") {
-        std::string path = RegistryDb::getInstance().get("Desktop.Background.ImagePath", "");
+        std::string path = RegistryDb::getInstance().getString("Desktop.Background.ImagePath", "");
         if (!path.empty() && m_volumeManager) {
             Volume* vol = m_volumeManager->getDefaultVolume();
             if (vol) {
@@ -263,7 +268,8 @@ void DesktopWindow::loadBackgroundSettings() {
     }
 
     if (mode == "color") {
-        std::string hex = RegistryDb::getInstance().get("Desktop.Background.Color", "#d3d3d3");
+        std::string hex =
+            RegistryDb::getInstance().getString("Desktop.Background.Color", "#d3d3d3");
         if (hex.size() == 7 && hex[0] == '#') {
             long r = std::strtol(hex.substr(1, 2).c_str(), nullptr, 16);
             long g = std::strtol(hex.substr(3, 2).c_str(), nullptr, 16);
@@ -286,7 +292,8 @@ void DesktopWindow::UpdateScaledBackground() {
     wxSize sz = GetClientSize();
     if (sz.GetWidth() <= 0 || sz.GetHeight() <= 0)
         return;
-    wxImage scaled = m_backgroundImageSrc.Scale(sz.GetWidth(), sz.GetHeight(), wxIMAGE_QUALITY_HIGH);
+    wxImage scaled =
+        m_backgroundImageSrc.Scale(sz.GetWidth(), sz.GetHeight(), wxIMAGE_QUALITY_HIGH);
     if (scaled.IsOk()) {
         m_backgroundImage = wxBitmap(scaled);
     }
@@ -510,6 +517,41 @@ void DesktopWindow::OnEraseBackground(wxEraseEvent& event) {
     event.Skip();
 }
 
+void DesktopWindow::clearDesktopIconSelection() {
+    for (auto& ic : m_icons) {
+        ic.selected = false;
+        if (ic.widget) {
+            if (auto* li = dynamic_cast<LabeledIcon*>(ic.widget))
+                li->setSelected(false);
+        }
+    }
+    for (auto& ic : m_volumeIcons) {
+        ic.selected = false;
+        if (ic.widget) {
+            if (auto* li = dynamic_cast<LabeledIcon*>(ic.widget))
+                li->setSelected(false);
+        }
+    }
+    m_selectedDesktopIcon = nullptr;
+}
+
+void DesktopWindow::setSingleSelectedIcon(DesktopIcon* icon) {
+    clearDesktopIconSelection();
+    if (!icon || !icon->widget)
+        return;
+    if (auto* li = dynamic_cast<LabeledIcon*>(icon->widget)) {
+        li->setSelected(true);
+        icon->selected = true;
+        m_selectedDesktopIcon = icon;
+    }
+}
+
+void DesktopWindow::OnDesktopLeftDown(wxMouseEvent& event) {
+    if (!FindIconAt(event.GetPosition()))
+        clearDesktopIconSelection();
+    event.Skip();
+}
+
 void DesktopWindow::CreateIconControls(DesktopIcon& icon) {
     auto* moduleIcon = dynamic_cast<DesktopModuleIcon*>(&icon);
     if (!moduleIcon || !moduleIcon->module)
@@ -600,6 +642,8 @@ void DesktopWindow::OnIconLeftDown(wxMouseEvent& event) {
         event.Skip();
         return;
     }
+
+    setSingleSelectedIcon(icon);
 
     m_isDragging = true;
     m_draggingIcon = icon;

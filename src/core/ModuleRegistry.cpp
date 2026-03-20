@@ -1,5 +1,7 @@
 #include "ModuleRegistry.hpp"
 
+#include "App.hpp"
+
 #include <wx/log.h>
 
 #include <algorithm>
@@ -12,13 +14,12 @@ namespace {
 
 class CreateModuleContextImpl : public CreateModuleContext {
   public:
-    explicit CreateModuleContextImpl(VolumeManager* volumeManager)
-        : m_volumeManager(volumeManager) {}
+    explicit CreateModuleContextImpl(App* app) : m_app(app) {}
 
-    VolumeManager* getVolumeManager() const override { return m_volumeManager; }
+    App* getApp() const override { return m_app; }
 
   private:
-    VolumeManager* m_volumeManager;
+    App* m_app;
 };
 
 // Global registry of module factories. This is intentionally separate from
@@ -31,8 +32,7 @@ std::map<std::string, ModuleRegistry::ModuleFactory>& globalModuleFactories() {
 
 } // namespace
 
-ModuleRegistry::ModuleRegistry(VolumeManager* volumeManager)
-    : m_volumeManager(volumeManager) {
+ModuleRegistry::ModuleRegistry(App* app) : m_app(app) {
     // Initialize registry entries from globally registered factories.
     for (const auto& pair : globalModuleFactories()) {
         ModuleInfo info;
@@ -81,7 +81,7 @@ ModulePtr ModuleRegistry::getOrCreateModule(const std::string& uri) {
     }
 
     if (!it->second.instance) {
-        CreateModuleContextImpl ctx(m_volumeManager);
+        CreateModuleContextImpl ctx(m_app);
         it->second.instance = it->second.factory(&ctx);
         if (!it->second.instance) {
             wxLogError("Failed to create module instance: %s", uri);

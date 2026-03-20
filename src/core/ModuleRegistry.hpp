@@ -1,9 +1,8 @@
 #ifndef OMNISHELL_CORE_MODULE_REGISTRY_HPP
 #define OMNISHELL_CORE_MODULE_REGISTRY_HPP
 
+#include "App.hpp"
 #include "Module.hpp"
-
-#include <bas/volume/VolumeManager.hpp>
 
 #include <functional>
 #include <map>
@@ -31,12 +30,9 @@ class ModuleRegistry {
     };
 
     /**
-     * Construct a module registry bound to a given VolumeManager.
-     *
-     * The registry owns no global state; all module instances are managed
-     * by this object and created via their registered factories.
+     * Construct a module registry bound to the application (VFS, modules, etc.).
      */
-    ModuleRegistry(VolumeManager* volumeManager);
+    explicit ModuleRegistry(App* app);
 
     ~ModuleRegistry();
 
@@ -123,7 +119,7 @@ class ModuleRegistry {
 
     std::map<std::string, ModuleInfo> m_modules;
 
-    VolumeManager* m_volumeManager;
+    App* m_app;
 };
 
 } // namespace os

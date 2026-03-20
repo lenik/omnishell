@@ -128,6 +128,7 @@ class DesktopWindow : public wxPanel {
 
     void OnIconLeftDoubleClick(wxMouseEvent& event);
     void OnIconRightClick(wxMouseEvent& event);
+    void OnDesktopLeftDown(wxMouseEvent& event);
     void OnIconLeftDown(wxMouseEvent& event);
     void OnIconLeftUp(wxMouseEvent& event);
     void OnIconMouseMove(wxMouseEvent& event);
@@ -158,6 +159,11 @@ class DesktopWindow : public wxPanel {
     DesktopIcon* m_draggingIcon = nullptr;
     // Offset from icon's top-left to the mouse position at drag start.
     wxPoint m_dragOffset;
+
+    DesktopIcon* m_selectedDesktopIcon{nullptr};
+
+    void clearDesktopIconSelection();
+    void setSingleSelectedIcon(DesktopIcon* icon);
 };
 
 } // namespace os

@@ -1,5 +1,9 @@
 #include "PaintBody.hpp"
 
+#include <bas/ui/arch/ImageSet.hpp>
+
+#include <wx/artprov.h>
+#include <wx/bmpbuttn.h>
 #include <wx/button.h>
 #include <wx/dcbuffer.h>
 #include <wx/filedlg.h>
@@ -17,17 +21,7 @@ namespace os {
 
 namespace {
 
-enum class Tool {
-    Pencil,
-    Brush,
-    Eraser,
-    Line,
-    Rect,
-    Ellipse,
-    Fill,
-    Picker,
-    Text
-};
+using PaintTool = PaintBody::PaintTool;
 
 enum {
     ID_SAVE_PNG = uiFrame::ID_APP_HIGHEST + 1,
@@ -62,7 +56,7 @@ public:
 
     void setPrimaryColor(const wxColour& c) { m_primary = c; }
     void setWidth(int w) { m_width = std::max(1, w); }
-    void setTool(Tool t) { m_tool = t; }
+    void setTool(PaintTool t) { m_tool = t; }
 
     void clear() {
         ensureBuffer();
@@ -124,11 +118,11 @@ private:
         dc.DrawLine(a, b);
     }
 
-    void drawShapeTo(wxDC& dc, Tool shape, const wxPoint& a, const wxPoint& b) {
+    void drawShapeTo(wxDC& dc, PaintTool shape, const wxPoint& a, const wxPoint& b) {
         wxPen pen = makePen(false);
         dc.SetPen(pen);
         dc.SetBrush(*wxTRANSPARENT_BRUSH);
-        if (shape == Tool::Line) {
+        if (shape == PaintTool::Line) {
             dc.DrawLine(a, b);
             return;
         }
@@ -136,9 +130,9 @@ private:
         int y = std::min(a.y, b.y);
         int w = std::abs(a.x - b.x);
         int h = std::abs(a.y - b.y);
-        if (shape == Tool::Rect) {
+        if (shape == PaintTool::Rect) {
             dc.DrawRectangle(x, y, w, h);
-        } else if (shape == Tool::Ellipse) {
+        } else if (shape == PaintTool::Ellipse) {
             dc.DrawEllipse(x, y, w, h);
         }
     }
@@ -196,7 +190,7 @@ private:
         if (m_buffer.IsOk()) {
             dc.DrawBitmap(m_buffer, 0, 0, false);
         }
-        if (m_previewActive && (m_tool == Tool::Line || m_tool == Tool::Rect || m_tool == Tool::Ellipse)) {
+        if (m_previewActive && (m_tool == PaintTool::Line || m_tool == PaintTool::Rect || m_tool == PaintTool::Ellipse)) {
             drawShapeTo(dc, m_tool, m_dragStart, m_last);
         }
     }
@@ -208,7 +202,7 @@ private:
         m_dragStart = e.GetPosition();
         m_last = m_dragStart;
 
-        if (m_tool == Tool::Picker) {
+        if (m_tool == PaintTool::Picker) {
             if (m_buffer.IsOk()) {
                 wxImage img = m_buffer.ConvertToImage();
                 if (img.IsOk() && m_dragStart.x >= 0 && m_dragStart.y >= 0 &&
@@ -224,7 +218,7 @@ private:
             return;
         }
 
-        if (m_tool == Tool::Fill) {
+        if (m_tool == PaintTool::Fill) {
             floodFill(m_dragStart, m_primary);
             m_dragging = false;
             if (HasCapture())
@@ -232,7 +226,7 @@ private:
             return;
         }
 
-        if (m_tool == Tool::Text) {
+        if (m_tool == PaintTool::Text) {
             wxTextEntryDialog dlg(this, "Text:", "Paint");
             if (dlg.ShowModal() == wxID_OK) {
                 wxString text = dlg.GetValue();
@@ -249,11 +243,11 @@ private:
             return;
         }
 
-        m_previewActive = (m_tool == Tool::Line || m_tool == Tool::Rect || m_tool == Tool::Ellipse);
+        m_previewActive = (m_tool == PaintTool::Line || m_tool == PaintTool::Rect || m_tool == PaintTool::Ellipse);
     }
 
     void OnLeftUp(wxMouseEvent&) {
-        if (m_previewActive && (m_tool == Tool::Line || m_tool == Tool::Rect || m_tool == Tool::Ellipse)) {
+        if (m_previewActive && (m_tool == PaintTool::Line || m_tool == PaintTool::Rect || m_tool == PaintTool::Ellipse)) {
             ensureBuffer();
             wxMemoryDC dc(m_buffer);
             drawShapeTo(dc, m_tool, m_dragStart, m_last);
@@ -269,16 +263,16 @@ private:
         if (!m_dragging || !e.LeftIsDown())
             return;
         wxPoint p = e.GetPosition();
-        if (m_tool == Tool::Pencil) {
+        if (m_tool == PaintTool::Pencil) {
             drawStroke(m_last, p, false);
-        } else if (m_tool == Tool::Brush) {
+        } else if (m_tool == PaintTool::Brush) {
             int oldW = m_width;
             m_width = std::max(m_width, 6);
             drawStroke(m_last, p, false);
             m_width = oldW;
-        } else if (m_tool == Tool::Eraser) {
+        } else if (m_tool == PaintTool::Eraser) {
             drawStroke(m_last, p, true);
-        } else if (m_tool == Tool::Line || m_tool == Tool::Rect || m_tool == Tool::Ellipse) {
+        } else if (m_tool == PaintTool::Line || m_tool == PaintTool::Rect || m_tool == PaintTool::Ellipse) {
             m_previewActive = true;
         }
         m_last = p;
@@ -294,7 +288,7 @@ private:
     wxBitmap m_buffer;
     wxColour m_primary{0, 0, 0};
     int m_width{3};
-    Tool m_tool{Tool::Pencil};
+    PaintTool m_tool{PaintTool::Pencil};
     bool m_dragging{false};
     wxPoint m_last{0, 0};
     wxPoint m_dragStart{0, 0};
@@ -322,42 +316,51 @@ PaintBody::PaintBody() {
     seq = 0;
     action(ID_TOOL_PENCIL, "tools/draw", "pencil", seq++, "&Pencil", "Pencil tool")
         .icon(wxART_TIP, dir, "pencil.svg")
+        .no_tool()
         .performFn([this](PerformContext* ctx) { onToolPencil(ctx); })
         .install();
     action(ID_TOOL_BRUSH, "tools/draw", "brush", seq++, "&Brush", "Brush tool")
         .icon(wxART_TIP, dir, "paint-brush.svg")
+        .no_tool()
         .performFn([this](PerformContext* ctx) { onToolBrush(ctx); })
         .install();
     action(ID_TOOL_ERASER, "tools/draw", "eraser", seq++, "&Eraser", "Eraser tool")
         .icon(wxART_DELETE, dir, "backspace.svg")
+        .no_tool()
         .performFn([this](PerformContext* ctx) { onToolEraser(ctx); })
         .install();
 
     seq = 0;
     action(ID_TOOL_LINE, "tools/shapes", "line", seq++, "&Line", "Line tool")
         .icon(wxART_MINUS, dir, "minus.svg")
+        .no_tool()
         .performFn([this](PerformContext* ctx) { onToolLine(ctx); })
         .install();
     action(ID_TOOL_RECT, "tools/shapes", "rect", seq++, "&Rectangle", "Rectangle tool")
         .icon(wxART_NORMAL_FILE, dir, "rectangle-group.svg")
+        .no_tool()
         .performFn([this](PerformContext* ctx) { onToolRect(ctx); })
         .install();
     action(ID_TOOL_ELLIPSE, "tools/shapes", "ellipse", seq++, "&Ellipse", "Ellipse tool")
         .icon(wxART_NORMAL_FILE, dir, "stop-circle.svg")
+        .no_tool()
         .performFn([this](PerformContext* ctx) { onToolEllipse(ctx); })
         .install();
 
     seq = 0;
     action(ID_TOOL_FILL, "tools", "fill", seq++, "&Fill", "Fill tool")
         .icon(wxART_TIP, dir, "swatch.svg")
+        .no_tool()
         .performFn([this](PerformContext* ctx) { onToolFill(ctx); })
         .install();
     action(ID_TOOL_PICKER, "tools", "picker", seq++, "Pick &Color", "Color picker tool")
         .icon(wxART_FIND, dir, "eye-dropper.svg")
+        .no_tool()
         .performFn([this](PerformContext* ctx) { onToolPicker(ctx); })
         .install();
     action(ID_TOOL_TEXT, "tools", "text", seq++, "&Text", "Text tool")
         .icon(wxART_TIP, dir, "chat-bubble-bottom-center-text.svg")
+        .no_tool()
         .performFn([this](PerformContext* ctx) { onToolText(ctx); })
         .install();
 }
@@ -380,44 +383,76 @@ void PaintBody::createFragmentView(CreateViewContext* ctx) {
     m_root = new wxPanel(parent, wxID_ANY, ctx->getPos(), ctx->getSize());
     wxBoxSizer* rootSizer = new wxBoxSizer(wxHORIZONTAL);
 
+    m_toolToggles.clear();
+
     wxPanel* toolsPanel = new wxPanel(m_root, wxID_ANY);
-    toolsPanel->SetMinSize(wxSize(140, -1));
+    toolsPanel->SetMinSize(wxSize(88, -1));
     wxBoxSizer* toolsSizer = new wxBoxSizer(wxVERTICAL);
-    toolsSizer->Add(new wxStaticText(toolsPanel, wxID_ANY, "Tools"), 0, wxLEFT | wxTOP | wxBOTTOM, 8);
 
-    auto makeToolBtn = [toolsPanel](const wxString& text) {
-        return new wxToggleButton(toolsPanel, wxID_ANY, text, wxDefaultPosition, wxSize(120, 28));
+    const std::string iconDir = "heroicons/normal";
+    constexpr int kIconPx = 24;
+    auto toolBmp = [&](wxArtID art, const char* svg) {
+        return ImageSet(art, iconDir, svg).toBitmap1(kIconPx, kIconPx);
     };
 
-    wxToggleButton* btnPencil = makeToolBtn("Pencil");
-    wxToggleButton* btnBrush = makeToolBtn("Brush");
-    wxToggleButton* btnEraser = makeToolBtn("Eraser");
-    wxToggleButton* btnLine = makeToolBtn("Line");
-    wxToggleButton* btnRect = makeToolBtn("Rectangle");
-    wxToggleButton* btnEllipse = makeToolBtn("Ellipse");
-    wxToggleButton* btnFill = makeToolBtn("Fill");
-    wxToggleButton* btnPicker = makeToolBtn("Pick Color");
-    wxToggleButton* btnText = makeToolBtn("Text");
-
-    std::vector<std::pair<wxToggleButton*, Tool>> toolButtons = {
-        {btnPencil, Tool::Pencil}, {btnBrush, Tool::Brush},   {btnEraser, Tool::Eraser},
-        {btnLine, Tool::Line},     {btnRect, Tool::Rect},     {btnEllipse, Tool::Ellipse},
-        {btnFill, Tool::Fill},     {btnPicker, Tool::Picker}, {btnText, Tool::Text},
+    struct ToolSpec {
+        wxArtID art;
+        const char* svg;
+        const char* tip;
+        PaintTool tool;
+    };
+    static const ToolSpec kToolSpecs[] = {
+        {wxART_TIP, "pencil.svg", "Pencil", PaintTool::Pencil},
+        {wxART_TIP, "paint-brush.svg", "Brush", PaintTool::Brush},
+        {wxART_DELETE, "backspace.svg", "Eraser", PaintTool::Eraser},
+        {wxART_MINUS, "minus.svg", "Line", PaintTool::Line},
+        {wxART_NORMAL_FILE, "rectangle-group.svg", "Rectangle", PaintTool::Rect},
+        {wxART_NORMAL_FILE, "stop-circle.svg", "Ellipse", PaintTool::Ellipse},
+        {wxART_TIP, "swatch.svg", "Fill", PaintTool::Fill},
+        {wxART_FIND, "eye-dropper.svg", "Pick color", PaintTool::Picker},
+        {wxART_TIP, "chat-bubble-bottom-center-text.svg", "Text", PaintTool::Text},
     };
 
-    for (auto& it : toolButtons) {
-        toolsSizer->Add(it.first, 0, wxLEFT | wxRIGHT | wxBOTTOM, 8);
+    wxBoxSizer* toolsRow = new wxBoxSizer(wxHORIZONTAL);
+    wxBoxSizer* iconCol = new wxBoxSizer(wxVERTICAL);
+    for (const ToolSpec& spec : kToolSpecs) {
+        wxBitmap bm = toolBmp(spec.art, spec.svg);
+        auto* b = new wxBitmapToggleButton(toolsPanel, wxID_ANY, bm, wxDefaultPosition, wxDefaultSize,
+                                           wxBU_AUTODRAW | wxBORDER_NONE);
+        b->SetToolTip(spec.tip);
+        m_toolToggles.push_back({b, spec.tool});
+        iconCol->Add(b, 0, wxALIGN_CENTER_HORIZONTAL | wxBOTTOM, 3);
+        b->Bind(wxEVT_TOGGLEBUTTON, [this, b, t = spec.tool](wxCommandEvent&) {
+            if (!b->GetValue()) {
+                b->SetValue(true);
+                return;
+            }
+            setCurrentTool(t);
+        });
     }
+    toolsRow->Add(iconCol, 0, wxEXPAND | wxTOP | wxBOTTOM | wxLEFT, 6);
 
-    toolsSizer->AddStretchSpacer();
-    toolsSizer->Add(new wxStaticText(toolsPanel, wxID_ANY, "Width"), 0, wxLEFT | wxRIGHT | wxBOTTOM, 6);
-    wxSlider* width = new wxSlider(toolsPanel, wxID_ANY, 3, 1, 30, wxDefaultPosition, wxSize(120, -1));
-    toolsSizer->Add(width, 0, wxLEFT | wxRIGHT | wxBOTTOM, 10);
+    wxBoxSizer* sliderCol = new wxBoxSizer(wxVERTICAL);
+    wxSlider* width = new wxSlider(toolsPanel, wxID_ANY, 3, 1, 30, wxDefaultPosition, wxSize(-1, 200),
+                                   wxSL_VERTICAL | wxSL_INVERSE);
+    width->SetToolTip("Stroke width");
+    sliderCol->Add(width, 1, wxEXPAND | wxTOP | wxBOTTOM, 6);
+    toolsRow->Add(sliderCol, 0, wxEXPAND | wxRIGHT | wxTOP | wxBOTTOM, 8);
 
-    wxButton* clearBtn = new wxButton(toolsPanel, wxID_ANY, "Clear");
-    wxButton* saveBtn = new wxButton(toolsPanel, wxID_ANY, "Save PNG...");
-    toolsSizer->Add(clearBtn, 0, wxLEFT | wxRIGHT | wxBOTTOM, 8);
-    toolsSizer->Add(saveBtn, 0, wxLEFT | wxRIGHT | wxBOTTOM, 10);
+    toolsSizer->Add(toolsRow, 1, wxEXPAND);
+
+    wxBitmap bmpClear = ImageSet(wxART_DELETE, iconDir, "trash.svg").toBitmap1(kIconPx, kIconPx);
+    wxBitmap bmpSave = ImageSet(wxART_FILE_SAVE_AS, iconDir, "arrow-down-tray.svg").toBitmap1(kIconPx, kIconPx);
+    auto* clearBtn = new wxBitmapButton(toolsPanel, wxID_ANY, bmpClear, wxDefaultPosition, wxDefaultSize,
+                                        wxBU_AUTODRAW | wxBORDER_NONE);
+    clearBtn->SetToolTip("Clear canvas");
+    auto* saveBtn = new wxBitmapButton(toolsPanel, wxID_ANY, bmpSave, wxDefaultPosition, wxDefaultSize,
+                                       wxBU_AUTODRAW | wxBORDER_NONE);
+    saveBtn->SetToolTip("Save PNG...");
+    wxBoxSizer* fileRow = new wxBoxSizer(wxHORIZONTAL);
+    fileRow->Add(clearBtn, 0, wxRIGHT, 6);
+    fileRow->Add(saveBtn, 0);
+    toolsSizer->Add(fileRow, 0, wxALIGN_CENTER_HORIZONTAL | wxBOTTOM, 8);
     toolsPanel->SetSizer(toolsSizer);
 
     wxPanel* rightPanel = new wxPanel(m_root, wxID_ANY);
@@ -465,18 +500,7 @@ void PaintBody::createFragmentView(CreateViewContext* ctx) {
     rootSizer->Add(rightPanel, 1, wxEXPAND);
     m_root->SetSizer(rootSizer);
 
-    auto setToolSelected = [this, &toolButtons](Tool t) {
-        if (m_canvas)
-            m_canvas->setTool(t);
-        for (auto& [btn, tool] : toolButtons) {
-            btn->SetValue(tool == t);
-        }
-    };
-    setToolSelected(Tool::Pencil);
-
-    for (auto& [btn, tool] : toolButtons) {
-        btn->Bind(wxEVT_TOGGLEBUTTON, [setToolSelected, tool](wxCommandEvent&) { setToolSelected(tool); });
-    }
+    setCurrentTool(PaintTool::Pencil);
 
     width->Bind(wxEVT_SLIDER, [this, width](wxCommandEvent&) {
         if (m_canvas)
@@ -511,15 +535,24 @@ void PaintBody::onClear(PerformContext*) {
         m_canvas->clear();
 }
 
-void PaintBody::onToolPencil(PerformContext*) { if (m_canvas) m_canvas->setTool(Tool::Pencil); }
-void PaintBody::onToolBrush(PerformContext*) { if (m_canvas) m_canvas->setTool(Tool::Brush); }
-void PaintBody::onToolEraser(PerformContext*) { if (m_canvas) m_canvas->setTool(Tool::Eraser); }
-void PaintBody::onToolLine(PerformContext*) { if (m_canvas) m_canvas->setTool(Tool::Line); }
-void PaintBody::onToolRect(PerformContext*) { if (m_canvas) m_canvas->setTool(Tool::Rect); }
-void PaintBody::onToolEllipse(PerformContext*) { if (m_canvas) m_canvas->setTool(Tool::Ellipse); }
-void PaintBody::onToolFill(PerformContext*) { if (m_canvas) m_canvas->setTool(Tool::Fill); }
-void PaintBody::onToolPicker(PerformContext*) { if (m_canvas) m_canvas->setTool(Tool::Picker); }
-void PaintBody::onToolText(PerformContext*) { if (m_canvas) m_canvas->setTool(Tool::Text); }
+void PaintBody::setCurrentTool(PaintTool t) {
+    if (m_canvas)
+        m_canvas->setTool(t);
+    for (auto& [btn, tool] : m_toolToggles) {
+        if (btn)
+            btn->SetValue(tool == t);
+    }
+}
+
+void PaintBody::onToolPencil(PerformContext*) { setCurrentTool(PaintTool::Pencil); }
+void PaintBody::onToolBrush(PerformContext*) { setCurrentTool(PaintTool::Brush); }
+void PaintBody::onToolEraser(PerformContext*) { setCurrentTool(PaintTool::Eraser); }
+void PaintBody::onToolLine(PerformContext*) { setCurrentTool(PaintTool::Line); }
+void PaintBody::onToolRect(PerformContext*) { setCurrentTool(PaintTool::Rect); }
+void PaintBody::onToolEllipse(PerformContext*) { setCurrentTool(PaintTool::Ellipse); }
+void PaintBody::onToolFill(PerformContext*) { setCurrentTool(PaintTool::Fill); }
+void PaintBody::onToolPicker(PerformContext*) { setCurrentTool(PaintTool::Picker); }
+void PaintBody::onToolText(PerformContext*) { setCurrentTool(PaintTool::Text); }
 
 } // namespace os
 

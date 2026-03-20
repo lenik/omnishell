@@ -19,7 +19,7 @@ bool Module::isEnabled() const {
     // Configurable enable/disable via RegistryDb.
     // Key convention: Module.Disabled.<fullUri> = "1"
     const std::string key = "Module.Disabled." + getFullUri();
-    return RegistryDb::getInstance().get(key, "0") != "1";
+    return RegistryDb::getInstance().getString(key, "0") != "1";
 }
 
 bool Module::isVisible() const {
@@ -44,7 +44,7 @@ void Module::uninstall() {
 }
 
 std::string Module::getFullUri() const {
-    return uri.empty() ? name : (uri + "." + name);
+    return !uri.empty() ? uri : name;
 }
 
 void Module::recordExecution() {

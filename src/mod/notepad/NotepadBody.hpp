@@ -1,10 +1,11 @@
-#ifndef OMNISHELL_CORE_NOTEPAD_HPP
-#define OMNISHELL_CORE_NOTEPAD_HPP
+#ifndef NOTEPAD_BODY_HPP
+#define NOTEPAD_BODY_HPP
 
-#include "wx/uiframe.hpp"
+#include "../../core/App.hpp"
 
 #include <bas/fmt/FileForm.hpp>
 #include <bas/ui/arch/UIFragment.hpp>
+#include <bas/wx/uiframe.hpp>
 #include <bas/volume/VolumeFile.hpp>
 #include <bas/volume/VolumeManager.hpp>
 
@@ -14,9 +15,11 @@
 #include <wx/textctrl.h>
 #include <wx/textdlg.h>
 
+namespace os {
+
 class NotepadBody : public UIFragment, public IFileForm {
   public:
-    NotepadBody(VolumeManager* volumeManager);
+    NotepadBody(App* app);
     virtual ~NotepadBody() {}
 
     void createFragmentView(CreateViewContext* ctx) override;
@@ -27,7 +30,9 @@ class NotepadBody : public UIFragment, public IFileForm {
     bool openFile(VolumeFile file) { return uiRestoreObject(file); }
 
   private:
-    VolumeManager* m_volumeManager;
+    VolumeManager* volumeManager() const { return m_app ? m_app->volumeManager.get() : nullptr; }
+
+    App* m_app;
     VolumeFile m_file;
     bool m_loaded{false};
     bool m_modified{false};
@@ -66,4 +71,6 @@ class NotepadBody : public UIFragment, public IFileForm {
     void onEncoding(PerformContext*);
 };
 
-#endif // OMNISHELL_CORE_NOTEPAD_HPP
+} // namespace os
+
+#endif // NOTEPAD_BODY_HPP

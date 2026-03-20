@@ -4,13 +4,30 @@
 #include <bas/ui/arch/UIFragment.hpp>
 #include <bas/wx/uiframe.hpp>
 
+#include <cstdint>
+#include <vector>
+
 #include <wx/image.h>
 #include <wx/panel.h>
+
+class wxBitmapToggleButton;
 
 namespace os {
 
 class PaintBody : public UIFragment {
 public:
+    enum class PaintTool : std::uint8_t {
+        Pencil,
+        Brush,
+        Eraser,
+        Line,
+        Rect,
+        Ellipse,
+        Fill,
+        Picker,
+        Text
+    };
+
     PaintBody();
     ~PaintBody() override = default;
 
@@ -27,6 +44,10 @@ private:
     wxPanel* m_root{nullptr};
     PaintCanvas* m_canvas{nullptr};
     wxImage m_pendingImage;
+
+    std::vector<std::pair<wxBitmapToggleButton*, PaintTool>> m_toolToggles;
+
+    void setCurrentTool(PaintTool t);
 
     void onSavePng(PerformContext* ctx);
     void onClear(PerformContext* ctx);
@@ -45,4 +66,3 @@ private:
 } // namespace os
 
 #endif
-

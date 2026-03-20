@@ -35,6 +35,7 @@ debian/substvars
 debian/tmp/
 
 /.cache
+/.vscode
 /bin
 /obj
 /tmp

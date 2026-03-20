@@ -1,20 +1,18 @@
 #ifndef OMNISHELL_APP_PAINT_HPP
 #define OMNISHELL_APP_PAINT_HPP
 
-#include "PaintBody.hpp"
-
 #include "../../core/Module.hpp"
 
 #include <bas/volume/VolumeFile.hpp>
-
-#include <wx/wx.h>
 
 class VolumeManager;
 
 namespace os {
 
+class App;
+
 class PaintApp : public Module {
-public:
+  public:
     explicit PaintApp(CreateModuleContext* ctx);
     virtual ~PaintApp();
 
@@ -25,11 +23,10 @@ public:
     /** Open an image in a new Paint window. */
     static ProcessPtr openImage(VolumeManager* volumeManager, VolumeFile file);
 
-private:
-    PaintBody m_body;
+  private:
+    App* m_app;
 };
 
 } // namespace os
 
 #endif // OMNISHELL_APP_PAINT_HPP
-

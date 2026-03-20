@@ -27,6 +27,10 @@ public:
     void setBitmap(const wxBitmap& bitmap);
     void setLabel(const wxString& label);
 
+    /** Persistent desktop selection (only one icon should be true at a time). */
+    void setSelected(bool selected);
+    bool isSelected() const { return m_selected; }
+
     wxStaticBitmap* getBitmapCtrl() const { return m_bitmap; }
     wxStaticText* getLabelCtrl() const { return m_label; }
 
@@ -53,6 +57,7 @@ private:
     wxStaticText* m_label;
     bool m_hover = false;
     bool m_pressed = false;
+    bool m_selected = false;
 };
 
 } // namespace os

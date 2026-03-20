@@ -1,14 +1,15 @@
-#ifndef OMNISHELL_APP_NOTEPAD_HPP
-#define OMNISHELL_APP_NOTEPAD_HPP
-
-#include "NotepadBody.hpp"
+#ifndef NOTEPAD_APP_HPP
+#define NOTEPAD_APP_HPP
 
 #include "../../core/Module.hpp"
-#include "../../core/ModuleRegistry.hpp"
 
-#include <bas/wx/uiframe.hpp>
+#include <bas/volume/VolumeFile.hpp>
+
+class VolumeManager;
 
 namespace os {
+
+class App;
 
 /**
  * Notepad Application Module
@@ -27,19 +28,10 @@ class NotepadApp : public Module {
     /** Open a file in a new Notepad window. */
     static ProcessPtr open(VolumeManager* volumeManager, VolumeFile file);
 
-    // void createFragmentView(CreateViewContext* ctx) override;
-    // wxEvtHandler* getEventHandler() override;
-
   private:
-    VolumeManager* m_volumeManager;
-    NotepadBody m_body;
-
-    // wxTextCtrl* editor_;
-    // wxStatusBar* statusBar_;
-
-    void onAbout(PerformContext*);
+    App* m_app;
 };
 
 } // namespace os
 
-#endif // OMNISHELL_APP_NOTEPAD_HPP
+#endif // NOTEPAD_APP_HPP

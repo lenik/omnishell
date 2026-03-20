@@ -1,8 +1,6 @@
 #ifndef OMNISHELL_APP_EXPLORER_HPP
 #define OMNISHELL_APP_EXPLORER_HPP
 
-#include "ExplorerBody.hpp"
-
 #include "../../core/Module.hpp"
 
 #include <bas/volume/Volume.hpp>
@@ -18,7 +16,7 @@ namespace os {
  * Simple volume browser showing directory contents of a Volume.
  */
 class ExplorerApp : public Module {
-public:
+  public:
     explicit ExplorerApp(CreateModuleContext* ctx);
     virtual ~ExplorerApp();
 
@@ -33,11 +31,10 @@ public:
      */
     static ProcessPtr open(Volume* volume, const std::string& dir = "/");
 
-private:
+  private:
     static ProcessPtr openInternal(Volume* volume, const std::string& dir);
 };
 
 } // namespace os
 
 #endif // OMNISHELL_APP_EXPLORER_HPP
-

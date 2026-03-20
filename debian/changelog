@@ -1,3 +1,16 @@
+omnishell (1.0.2) unstable; urgency=medium
+
+  * Replace monolithic registry with layered core under src/core/registry/
+    (IRegistry, LocalRegistry, JsonRegistry, VolumeRegistry, RegistryService).
+  * Add authentication abstractions (os::auth) and wx PasswordManager proxy
+    with LoginDialog and in-memory PasswordDb.
+  * Standardize built-in apps on App + Frame + Body; add Browser, Connect4,
+    Sudoku, Chain, Solitaire, FiveOrMore; refactor Control Panel and
+    Minesweeper accordingly.
+  * Shell chrome updates (desktop, taskbar, start menu, LabeledIcon).
+
+ -- Lenik (谢继雷) <lenik@bodz.net>  Fri, 20 Mar 2026 12:00:00 +0800
+
 omnishell (1.0.1) unstable; urgency=medium
 
   * Refactor module registry/service management and shell integration.

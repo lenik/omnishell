@@ -3,95 +3,131 @@
 #include "Shell.hpp"
 
 #include <bas/ui/arch/ImageSet.hpp>
-
 #include <wx/datetime.h>
+#include <wx/dcbuffer.h>
 #include <wx/log.h>
 #include <wx/toplevel.h>
 #include <wx/uiaction.h>
 
 #include <algorithm>
 
+#include "../ui/ThemeStyles.hpp"
+using namespace ThemeStyles;
+
+namespace {
+
+const wxColour kTaskbarStartBlue(0x0A, 0x24, 0x6A);
+
+/**
+ * GTK wxButton reapplies theme colours when focus/active state changes, so the Start label
+ * can turn black. Owner-drawn panel keeps white text on the blue bar.
+ */
+class TaskbarStartPlate : public wxPanel {
+  public:
+    TaskbarStartPlate(wxWindow* parent, int barHeight, wxBitmap icon)
+        : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize), m_icon(std::move(icon)) {
+        SetMinSize(wxSize(60, barHeight));
+        SetBackgroundStyle(wxBG_STYLE_PAINT);
+        SetCursor(wxCursor(wxCURSOR_HAND));
+        Bind(wxEVT_PAINT, &TaskbarStartPlate::OnPaint, this);
+    }
+
+  private:
+    void OnPaint(wxPaintEvent&) {
+        wxAutoBufferedPaintDC dc(this);
+        const wxSize sz = GetClientSize();
+        dc.SetBrush(wxBrush(kTaskbarStartBlue));
+        dc.SetPen(*wxTRANSPARENT_PEN);
+        dc.DrawRectangle(0, 0, sz.GetWidth(), sz.GetHeight());
+
+        int textX = 8;
+        if (m_icon.IsOk()) {
+            const int iy = std::max(0, (sz.GetHeight() - m_icon.GetHeight()) / 2);
+            dc.DrawBitmap(m_icon, 8, iy, true);
+            textX = 8 + m_icon.GetWidth() + 4;
+        }
+
+        dc.SetTextForeground(*wxWHITE);
+        dc.SetFont(wxFont(12, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD));
+        const int ty = std::max(0, (sz.GetHeight() - dc.GetCharHeight()) / 2);
+        dc.DrawText("Start", textX, ty);
+    }
+
+    wxBitmap m_icon;
+};
+
+} // namespace
+
 namespace os {
 
 BEGIN_EVENT_TABLE(Taskbar, wxPanel)
-    EVT_SIZE(Taskbar::OnSize)
-    EVT_PAINT(Taskbar::OnPaint)
+EVT_SIZE(Taskbar::OnSize)
+EVT_PAINT(Taskbar::OnPaint)
 END_EVENT_TABLE()
 
 Taskbar::Taskbar(wxWindow* parent)
-    : wxPanel(parent, wxID_ANY)
-    , m_startMenu(nullptr)
-    , m_buttonWidth(150)
-    , m_buttonSpacing(2)
-    , m_margin(0)
-{
+    : wxPanel(parent, wxID_ANY), m_startMenu(nullptr), m_buttonWidth(150), m_buttonSpacing(2),
+      m_margin(0) {
     SetMinSize(wxSize(-1, GetDefaultHeight()));
     SetMaxSize(wxSize(-1, GetDefaultHeight()));
-    
-    // Start button: white text, bold, larger font; no margin (flush to edges)
+
+    // Start: owner-drawn plate (see TaskbarStartPlate) so label stays white on GTK when
+    // other windows open / focus changes (native wxButton would restyle the label).
     int h = GetDefaultHeight();
-    m_startButton = new wxButton(this, wxID_ANY, "Start",
-                                 wxPoint(0, 0), wxSize(100, h));
-    m_startButton->SetMinSize(wxSize(60, h));
-    m_startButton->SetBackgroundColour(wxColour(0x0A, 0x24, 0x6A));
-    m_startButton->SetForegroundColour(*wxWHITE);
-    m_startButton->SetFont(wxFont(12, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD));
-    std::string iconDir = "streamline-vectors/core/pop/interface-essential";
-    wxBitmap startBmp = ImageSet(Path(iconDir, "brightness-3.svg"))
-                            .toBitmap1(24, 24);
-    if (startBmp.IsOk()) {
-        m_startButton->SetBitmap(startBmp, wxLEFT);
-        m_startButton->SetBitmapMargins(4, 0);
-    }
-    m_startButton->Bind(wxEVT_BUTTON, &Taskbar::OnStartButtonClick, this);
-    m_startButton->Bind(wxEVT_UPDATE_UI, [this](wxUpdateUIEvent&) {
-        m_startButton->SetForegroundColour(*wxWHITE);
+    wxBitmap startBmp =
+        ImageSet(Path(slv_core_pop, "interface-essential/brightness-3.svg")).toBitmap1(24, 24);
+    m_startButton = new TaskbarStartPlate(this, h, startBmp);
+    m_startButton->SetPosition(wxPoint(0, 0));
+    m_startButton->SetSize(wxSize(100, h));
+    m_startButton->Bind(wxEVT_LEFT_UP, [this](wxMouseEvent& e) {
+        wxCommandEvent dummy;
+        OnStartButtonClick(dummy);
+        e.Skip(false);
     });
-    
+
     m_appListPanel = new wxPanel(this, wxID_ANY, wxPoint(100, 0), wxSize(100, h));
     m_appListPanel->SetBackgroundColour(*wxWHITE);
-    
+
     m_trayPanel = new wxPanel(this, wxID_ANY);
     m_trayPanel->SetBackgroundColour(*wxWHITE);
-    
-    m_clock = new wxStaticText(m_trayPanel, wxID_ANY, "",
-                               wxPoint(5, 5), wxSize(100, 20),
+
+    m_clock = new wxStaticText(m_trayPanel, wxID_ANY, "", wxPoint(5, 5), wxSize(100, 20),
                                wxALIGN_RIGHT | wxALIGN_CENTRE_VERTICAL);
     m_clock->SetForegroundColour(*wxBLACK);
-    
+
     // Start timer for clock
-    Bind(wxEVT_TIMER, [this](wxTimerEvent&) {
-        m_clock->SetLabel(wxDateTime::Now().Format("%H:%M"));
-    }, wxID_ANY);
+    Bind(
+        wxEVT_TIMER,
+        [this](wxTimerEvent&) { m_clock->SetLabel(wxDateTime::Now().Format("%H:%M")); }, wxID_ANY);
     wxTimer* timer = new wxTimer(this);
     timer->Start(1000);
     m_clock->SetLabel(wxDateTime::Now().Format("%H:%M"));
-    
+
     SetBackgroundColour(wxColour(200, 200, 200));
 }
 
-Taskbar::~Taskbar() {
-}
+Taskbar::~Taskbar() {}
 
 void Taskbar::addApplication(ModulePtr module, wxWindow* window) {
-    if (!module || !window) return;
-    
+    if (!module || !window)
+        return;
+
     // Check if already in taskbar
     if (FindButtonByModule(module)) {
         return;
     }
-    
+
     TaskbarButton button;
     button.module = module;
     button.window = window;
     button.active = false;
     button.minimized = false;
-    
+
     // Create button
-    button.button = new wxButton(m_appListPanel, wxID_ANY, module->label,
-                                  wxDefaultPosition, wxSize(140, 28));
+    button.button =
+        new wxButton(m_appListPanel, wxID_ANY, module->label, wxDefaultPosition, wxSize(140, 28));
     button.button->Bind(wxEVT_BUTTON, &Taskbar::OnAppButtonClick, this);
-    
+
     m_applications.push_back(button);
     UpdateButtonLayout();
 }
@@ -113,8 +149,8 @@ void Taskbar::addProcess(ProcessPtr process) {
         button.active = false;
         button.minimized = false;
 
-        button.button = new wxButton(m_appListPanel, wxID_ANY, process->label,
-                                     wxDefaultPosition, wxSize(140, 28));
+        button.button = new wxButton(m_appListPanel, wxID_ANY, process->label, wxDefaultPosition,
+                                     wxSize(140, 28));
         wxBitmap bmp = process->icon.toBitmap1(16, 16);
         if (bmp.IsOk()) {
             button.button->SetBitmap(bmp, wxLEFT);
@@ -182,10 +218,8 @@ void Taskbar::removeProcess(ProcessPtr process) {
 
 void Taskbar::removeApplication(ModulePtr module) {
     auto it = std::find_if(m_applications.begin(), m_applications.end(),
-        [&module](const TaskbarButton& tb) {
-            return tb.module == module;
-        });
-    
+                           [&module](const TaskbarButton& tb) { return tb.module == module; });
+
     if (it != m_applications.end()) {
         if (it->button) {
             it->button->Destroy();
@@ -209,7 +243,7 @@ void Taskbar::updateApplicationState(ModulePtr module, bool active, bool minimiz
     if (button) {
         button->active = active;
         button->minimized = minimized;
-        
+
         if (button->button) {
             if (active) {
                 button->button->SetBackgroundColour(wxColour(100, 149, 237)); // Active color
@@ -234,9 +268,7 @@ void Taskbar::SetButtonVisual(TaskbarButton& b) {
     b.button->Refresh();
 }
 
-void Taskbar::setStartMenu(wxMenu* menu) {
-    m_startMenu = menu;
-}
+void Taskbar::setStartMenu(wxMenu* menu) { m_startMenu = menu; }
 
 void Taskbar::OnStartButtonClick(wxCommandEvent& event) {
     ShellApp* shell = ShellApp::getInstance();
@@ -247,7 +279,7 @@ void Taskbar::OnStartButtonClick(wxCommandEvent& event) {
 void Taskbar::OnAppButtonClick(wxCommandEvent& event) {
     // Find which button was clicked
     wxObject* obj = event.GetEventObject();
-    
+
     for (auto& app : m_applications) {
         if (app.button == obj) {
             if (app.window) {
@@ -268,14 +300,14 @@ void Taskbar::OnAppButtonClick(wxCommandEvent& event) {
             break;
         }
     }
-    
+
     event.Skip();
 }
 
 void Taskbar::OnSize(wxSizeEvent& event) {
     wxSize size = GetClientSize();
     int h = size.GetHeight();
-    
+
     m_startButton->SetPosition(wxPoint(0, 0));
     int startW = 100;
     if (size.GetWidth() > 0)
@@ -283,7 +315,7 @@ void Taskbar::OnSize(wxSizeEvent& event) {
     if (startW < 60)
         startW = std::max(1, startW);
     m_startButton->SetSize(wxSize(startW, h));
-    
+
     m_appListPanel->SetPosition(wxPoint(startW, 0));
     int trayWidth = 160;
     if (trayWidth > size.GetWidth() - startW)
@@ -292,15 +324,15 @@ void Taskbar::OnSize(wxSizeEvent& event) {
     if (appListW < 0)
         appListW = 0;
     m_appListPanel->SetSize(wxSize(appListW, h));
-    
+
     int trayX = startW + appListW;
     if (trayX < 0)
         trayX = 0;
     m_trayPanel->SetPosition(wxPoint(trayX, 0));
     m_trayPanel->SetSize(wxSize(size.GetWidth() - trayX, h));
-    
+
     m_clock->SetPosition(wxPoint(230 - 105, 10));
-    
+
     UpdateButtonLayout();
     event.Skip();
 }

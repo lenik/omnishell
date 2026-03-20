@@ -1,41 +1,38 @@
 #include "NotepadApp.hpp"
 
+#include "NotepadFrame.hpp"
+
+#include "../../core/App.hpp"
 #include "../../core/ModuleRegistry.hpp"
 
 #include <bas/volume/VolumeFile.hpp>
 #include <bas/volume/VolumeManager.hpp>
-#include <bas/wx/uiframe.hpp>
 
-#include <wx/filename.h>
-#include <wx/log.h>
-#include <wx/msgdlg.h>
-
-#include <string>
-
+#include "../../ui/ThemeStyles.hpp"
+using namespace ThemeStyles;
 namespace os {
 
-OMNISHELL_REGISTER_MODULE("omnishell.notepad", NotepadApp)
+namespace {
+constexpr const char* kNotepadModuleUri = "omnishell.Notepad";
+}
 
-NotepadApp::NotepadApp(CreateModuleContext* ctx)
-    : Module(ctx)
-    , m_body(ctx->getVolumeManager()) //
-{
+OMNISHELL_REGISTER_MODULE(kNotepadModuleUri, NotepadApp)
+
+NotepadApp::NotepadApp(CreateModuleContext* ctx) : Module(ctx), m_app(ctx->getApp()) {
     initializeMetadata();
 }
 
-NotepadApp::~NotepadApp() {
-}
+NotepadApp::~NotepadApp() {}
 
 void NotepadApp::initializeMetadata() {
-    uri = "omnishell";
+    uri = kNotepadModuleUri;
     name = "notepad";
     label = "Notepad";
     description = "Simple text editor";
     doc = "A basic text editor for viewing and editing text files.";
     categoryId = ID_CATEGORY_ACCESSORIES;
 
-    std::string dir = "streamline-vectors/core/pop/interface-essential";
-    image = ImageSet(Path(dir, "blank-notepad.svg"));
+    image = ImageSet(Path(slv_core_pop, "interface-essential/blank-notepad.svg"));
 }
 
 ProcessPtr NotepadApp::run() {
@@ -45,17 +42,7 @@ ProcessPtr NotepadApp::run() {
     proc->label = label;
     proc->icon = image;
 
-    uiFrame* frame = new uiFrame("Notepad");
-    frame->addFragment(&m_body);
-    frame->createView();
-    // createMenuBar();
-    // editor_ = new wxTextCtrl(frame_, wxID_ANY, "", wxDefaultPosition, wxDefaultSize,
-    //                          wxTE_MULTILINE | wxTE_RICH2 | wxTE_PROCESS_ENTER);
-    // wxFont font(10, wxFONTFAMILY_MODERN, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL);
-    // editor_->SetFont(font);
-    // statusBar_ = frame_->CreateStatusBar(2);
-    // statusBar_->SetStatusText("Line 1, Column 1", 0);
-    // statusBar_->SetStatusText("UTF-8", 1);
+    auto* frame = new NotepadFrame(m_app, "Notepad");
     frame->Centre();
     frame->Show(true);
     proc->addWindow(frame);
@@ -63,33 +50,21 @@ ProcessPtr NotepadApp::run() {
 }
 
 ProcessPtr NotepadApp::open(VolumeManager* volumeManager, VolumeFile file) {
+    (void)volumeManager;
+
     auto proc = std::make_shared<Process>();
-    proc->uri = "omnishell";
+    proc->uri = kNotepadModuleUri;
     proc->name = "notepad";
     proc->label = "Notepad";
-    std::string dir = "streamline-vectors/core/pop/interface-essential";
-    proc->icon = ImageSet(Path(dir, "blank-notepad.svg"));
+    proc->icon = ImageSet(Path(slv_core_pop, "interface-essential/blank-notepad.svg"));
 
-    auto core = std::make_shared<NotepadBody>(volumeManager);
-    uiFrame* frame = new uiFrame("Notepad");
-    frame->addFragment(core.get());
-    frame->createView();
+    auto* frame = new NotepadFrame(&app, "Notepad");
+    frame->body().openFile(file);
     frame->Centre();
     frame->Show(true);
-    core->openFile(file);
-
-    frame->Bind(wxEVT_CLOSE_WINDOW, [core](wxCloseEvent& e) {
-        (void)core;
-        e.Skip();
-    });
 
     proc->addWindow(frame);
     return proc;
-}
-
-void NotepadApp::onAbout(PerformContext* ctx) {
-    wxMessageBox("Notepad for OmniShell\n\nA simple text editor (VFS)", "About Notepad",
-                 wxOK | wxICON_INFORMATION);
 }
 
 } // namespace os

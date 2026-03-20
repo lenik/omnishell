@@ -3,57 +3,24 @@
 
 #include "../../core/Module.hpp"
 
-#include <wx/listctrl.h>
-#include <wx/wx.h>
-
-#include <vector>
-
 namespace os {
+
+class ControlPanelFrame;
 
 /**
  * Control Panel Application Module
- * 
- * Configuration center with:
- * - Module manager
- * - User configuration
- * - System settings
  */
 class ControlPanelApp : public Module {
-public:
+  public:
     explicit ControlPanelApp(CreateModuleContext* ctx);
     virtual ~ControlPanelApp();
-    
+
     virtual ProcessPtr run() override;
-    
-    // Module metadata
+
     void initializeMetadata();
 
-private:
-    void createMainWindow();
-    void createCategoryList();
-    void createContentPanel();
-    
-    void OnCategorySelected(wxCommandEvent& event);
-    void OnModuleDoubleClicked(wxCommandEvent& event);
-    
-    void showModuleManager();
-    void showSystemSettings();
-    void showUserConfiguration();
-    void showDesktopSettings();
-    void showDisplaySettings();
-    void showAbout();
-    
-    wxFrame* m_frame;
-    wxListView* m_categoryList;
-    wxPanel* m_contentPanel;
-    
-    struct Category {
-        wxString name;
-        wxString description;
-        int imageIndex;
-    };
-    
-    std::vector<Category> m_categories;
+  private:
+    ControlPanelFrame* m_frame{nullptr};
 };
 
 } // namespace os

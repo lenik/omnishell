@@ -1,21 +1,30 @@
 #include "ExplorerApp.hpp"
 
+#include "ExplorerFrame.hpp"
+
+#include "../../core/App.hpp"
 #include "../../core/ModuleRegistry.hpp"
 #include "../../shell/Shell.hpp"
 
 #include <bas/volume/VolumeManager.hpp>
-#include <bas/wx/uiframe.hpp>
 
 #include <wx/log.h>
 #include <wx/msgdlg.h>
 
 #include <memory>
 
+#include "../../ui/ThemeStyles.hpp"
+using namespace ThemeStyles;
+
 namespace os {
 
-OMNISHELL_REGISTER_MODULE("omnishell.explorer", ExplorerApp)
+namespace {
+constexpr const char* kExplorerModuleUri = "omnishell.Explorer";
+}
 
-ExplorerApp::ExplorerApp(CreateModuleContext* ctx)
+OMNISHELL_REGISTER_MODULE(kExplorerModuleUri, ExplorerApp)
+
+ExplorerApp::ExplorerApp(CreateModuleContext* ctx) //
     : Module(ctx) {
     initializeMetadata();
 }
@@ -23,15 +32,14 @@ ExplorerApp::ExplorerApp(CreateModuleContext* ctx)
 ExplorerApp::~ExplorerApp() = default;
 
 void ExplorerApp::initializeMetadata() {
-    uri = "omnishell";
+    uri = kExplorerModuleUri;
     name = "explorer";
     label = "Explorer";
     description = "Browse files and folders";
     doc = "A simple file explorer for browsing volumes and directories.";
     categoryId = ID_CATEGORY_SYSTEM;
 
-    std::string dir = "streamline-vectors/core/pop/interface-essential";
-    image = ImageSet(Path(dir, "folder-add.svg"));
+    image = ImageSet(Path(slv_core_pop, "interface-essential/folder-add.svg"));
 }
 
 ProcessPtr ExplorerApp::run() {
@@ -74,29 +82,18 @@ ProcessPtr ExplorerApp::openInternal(Volume* volume, const std::string& dir) {
         ShellApp::getInstance() ? ShellApp::getInstance()->getVolumeManager() : nullptr;
 
     auto proc = std::make_shared<Process>();
-    proc->uri = "omnishell";
+    proc->uri = kExplorerModuleUri;
     proc->name = "explorer";
     proc->label = "Explorer";
-    std::string iconDir = "streamline-vectors/core/pop/interface-essential";
-    proc->icon = ImageSet(Path(iconDir, "folder-add.svg"));
+    proc->icon = ImageSet(Path(slv_core_pop, "interface-essential/folder-add.svg"));
 
-    // Own the core for the lifetime of the window (wx Bind copies functors, so use shared_ptr).
-    auto core = std::make_shared<ExplorerBody>(vm, volume, dir);
-    uiFrame* frame = new uiFrame("Explorer");
-    frame->addFragment(core.get());
-    frame->createView();
+    auto* frame = new ExplorerFrame(&app, vm, volume, dir);
     frame->SetSize(wxSize(800, 600));
     frame->Centre();
     frame->Show(true);
-
-    frame->Bind(wxEVT_CLOSE_WINDOW, [core](wxCloseEvent& e) {
-        (void)core; // keep alive until frame destroyed
-        e.Skip();
-    });
 
     proc->addWindow(frame);
     return proc;
 }
 
 } // namespace os
-

@@ -79,9 +79,9 @@ public:
     void setStartMenu(wxMenu* menu);
     
     /**
-     * Get start button
+     * Get start control (custom painted; not wxButton so label stays white on GTK).
      */
-    wxButton* getStartButton() const { return m_startButton; }
+    wxWindow* getStartButton() const { return m_startButton; }
     
     /**
      * Get application list panel
@@ -108,7 +108,7 @@ protected:
 private:
     DECLARE_EVENT_TABLE()
     
-    wxButton* m_startButton;
+    wxWindow* m_startButton;
     wxPanel* m_appListPanel;
     wxPanel* m_trayPanel;
     wxStaticText* m_clock;

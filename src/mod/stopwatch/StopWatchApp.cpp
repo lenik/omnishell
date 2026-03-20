@@ -1,16 +1,19 @@
 #include "StopWatchApp.hpp"
 
+#include "StopWatchFrame.hpp"
+
 #include "../../core/ModuleRegistry.hpp"
 
-#include <bas/wx/uiframe.hpp>
+#include "../../ui/ThemeStyles.hpp"
+using namespace ThemeStyles;
 
 namespace os {
 
-OMNISHELL_REGISTER_MODULE("omnishell.stopwatch", StopWatchApp)
+OMNISHELL_REGISTER_MODULE("omnishell.StopWatch", StopWatchApp)
 
 StopWatchApp::StopWatchApp(CreateModuleContext* ctx)
     : Module(ctx)
-    , m_body() {
+    , m_app(ctx->getApp()) {
     initializeMetadata();
 }
 
@@ -18,15 +21,14 @@ StopWatchApp::~StopWatchApp() {
 }
 
 void StopWatchApp::initializeMetadata() {
-    uri = "omnishell";
+    uri = "omnishell.StopWatch";
     name = "stopwatch";
     label = "StopWatch";
     description = "Simple stopwatch";
     doc = "Basic stopwatch with start/stop/reset.";
     categoryId = ID_CATEGORY_ACCESSORIES;
 
-    std::string dir = "streamline-vectors/core/pop/interface-essential";
-    image = ImageSet(Path(dir, "circle-clock.svg"));
+    image = ImageSet(Path(slv_core_pop, "interface-essential/circle-clock.svg"));
 }
 
 ProcessPtr StopWatchApp::run() {
@@ -36,9 +38,7 @@ ProcessPtr StopWatchApp::run() {
     proc->label = label;
     proc->icon = image;
 
-    uiFrame* frame = new uiFrame("StopWatch");
-    frame->addFragment(&m_body);
-    frame->createView();
+    auto* frame = new StopWatchFrame(m_app, "StopWatch");
     frame->SetSize(wxSize(300, 150));
     frame->Centre();
     frame->Show(true);
@@ -47,4 +47,3 @@ ProcessPtr StopWatchApp::run() {
 }
 
 } // namespace os
-

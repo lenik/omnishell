@@ -1,32 +1,31 @@
 #include "CalendarApp.hpp"
 
+#include "CalendarFrame.hpp"
+
 #include "../../core/ModuleRegistry.hpp"
 
-#include <bas/wx/uiframe.hpp>
+#include "../../ui/ThemeStyles.hpp"
+using namespace ThemeStyles;
 
 namespace os {
 
-OMNISHELL_REGISTER_MODULE("omnishell.calendar", CalendarApp)
+OMNISHELL_REGISTER_MODULE("omnishell.Calendar", CalendarApp)
 
-CalendarApp::CalendarApp(CreateModuleContext* ctx)
-    : Module(ctx)
-    , m_body() {
+CalendarApp::CalendarApp(CreateModuleContext* ctx) : Module(ctx), m_app(ctx->getApp()) {
     initializeMetadata();
 }
 
-CalendarApp::~CalendarApp() {
-}
+CalendarApp::~CalendarApp() {}
 
 void CalendarApp::initializeMetadata() {
-    uri = "omnishell";
+    uri = "omnishell.Calendar";
     name = "calendar";
     label = "Calendar";
     description = "View monthly calendar";
     doc = "Simple calendar viewer.";
     categoryId = ID_CATEGORY_ACCESSORIES;
 
-    std::string dir = "streamline-vectors/core/pop/interface-essential";
-    image = ImageSet(Path(dir, "blank-calendar.svg"));
+    image = ImageSet(Path(slv_core_pop, "interface-essential/blank-calendar.svg"));
 }
 
 ProcessPtr CalendarApp::run() {
@@ -36,9 +35,7 @@ ProcessPtr CalendarApp::run() {
     proc->label = label;
     proc->icon = image;
 
-    uiFrame* frame = new uiFrame("Calendar");
-    frame->addFragment(&m_body);
-    frame->createView();
+    auto* frame = new CalendarFrame(m_app, "Calendar");
     frame->Centre();
     frame->Show(true);
     proc->addWindow(frame);
@@ -46,4 +43,3 @@ ProcessPtr CalendarApp::run() {
 }
 
 } // namespace os
-

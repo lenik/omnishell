@@ -4,6 +4,8 @@
 #include "Category.hpp"
 #include "Process.hpp"
 
+#include "App.hpp"
+
 #include <bas/ui/arch/ImageSet.hpp>
 #include <bas/volume/VolumeManager.hpp>
 
@@ -16,7 +18,7 @@ namespace os {
 
 class CreateModuleContext {
   public:
-    virtual VolumeManager* getVolumeManager() const = 0;
+    virtual App* getApp() const = 0;
 };
 
 /**
@@ -32,7 +34,7 @@ class CreateModuleContext {
 class Module {
 public:
     // Metadata fields
-    std::string uri;           // Module namespace identifier
+    std::string uri;           // Full unique module URI (e.g. omnishell.Paint)
     std::string name;          // Scripting name
     std::string label;         // Display name
     std::string description;   // Short description
@@ -114,7 +116,7 @@ public:
     // === Utility Methods ===
     
     /**
-     * Get full qualified identifier
+     * Returns uri if set, otherwise name (short scripting id).
      */
     std::string getFullUri() const;
     
