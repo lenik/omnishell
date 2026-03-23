@@ -21,6 +21,9 @@ class App {
     App& operator=(const App&) = delete;
 
     void parseOptions(int argc, char* argv[]);
+
+    /** If no volumes yet: optional dev testdrive, then addLocalVolumes(). */
+    void addDefaultLocalVolumesIfEmpty();
 };
 
 extern App app;

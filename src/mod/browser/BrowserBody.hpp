@@ -7,6 +7,7 @@
 
 #include <wx/string.h>
 
+#include <string>
 #include <vector>
 
 class VolumeManager;
@@ -26,14 +27,26 @@ class BrowserBody : public UIFragment {
 
     void navigateTo(const wxString& url);
 
+    void goBack();
+    void goForward();
+
+    /** Alt+←/→ when WebView has focus (wx accelerators often do not reach embedded WebView). */
+    bool handleBrowserNavKey(wxKeyEvent& e);
+    void refreshPage();
+    /** Select-all style focus for the address field (Ctrl+L / Alt+D). */
+    void focusAddressBar();
+
   private:
+    void updateNavButtons();
     void onGo();
     void onHistoryPick(wxCommandEvent&);
     void onUrlComboEnter(wxCommandEvent&);
     void pushHistory(const wxString& url);
+    wxString mapVirtualToHttp(const wxString& url) const;
 
     uiFrame* m_frame = nullptr;
     VolumeManager* m_vm;
+    std::string m_httpBase;
     wxComboBox* m_urlCombo = nullptr;
     wxWebView* m_web = nullptr;
     wxButton* m_btnBack = nullptr;

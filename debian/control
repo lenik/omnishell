@@ -13,7 +13,8 @@ Build-Depends:
  libbas-cpp-dev,
  libbas-ui-dev,
  libboost-dev,
- libhowardhinnant-date-dev
+ libhowardhinnant-date-dev,
+ libssl-dev
 Standards-Version: 4.6.2
 Rules-Requires-Root: no
 

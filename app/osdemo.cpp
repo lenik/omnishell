@@ -59,10 +59,8 @@ int main(int argc, char** argv) {
     }
 #endif
 
-    // Auto-discover all local volumes by default.
-    if (os::app.volumeManager->getVolumeCount() == 0) {
-        os::app.volumeManager->addLocalVolumes();
-    }
+    // Optional dev testdrive + auto-discover local volumes when none were added (-l).
+    os::app.addDefaultLocalVolumesIfEmpty();
 
     if (dump) {
         Volume* vol = os::app.volumeManager->getDefaultVolume();

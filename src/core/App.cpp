@@ -4,6 +4,7 @@
 #include <bas/volume/LocalVolume.hpp>
 #include <bas/volume/VolumeManager.hpp>
 
+#include <filesystem>
 #include <iostream>
 
 #include <getopt.h>
@@ -14,6 +15,15 @@ App app;
 
 App::App() : volumeManager(std::make_unique<VolumeManager>()), startFiles() {}
 App::~App() {}
+
+void App::addDefaultLocalVolumesIfEmpty() {
+    if (!volumeManager || volumeManager->getVolumeCount() != 0)
+        return;
+    const std::string testdrive = "/home/udisk/testdrive";
+    if (std::filesystem::is_directory(testdrive))
+        volumeManager->addVolume(std::make_unique<LocalVolume>(testdrive));
+    volumeManager->addLocalVolumes();
+}
 
 static option longopts[] = {
     {"dump", no_argument, nullptr, 'D'},
@@ -62,10 +72,7 @@ void App::parseOptions(int argc, char* argv[]) {
         }
     }
 
-    // If no volumes were added, auto-discover local volumes.
-    if (volumeManager->getVolumeCount() == 0) {
-        volumeManager->addLocalVolumes();
-    }
+    addDefaultLocalVolumesIfEmpty();
 }
 
 } // namespace os

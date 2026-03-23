@@ -6,6 +6,7 @@
 #include "Taskbar.hpp"
 
 #include "../core/ModuleRegistry.hpp"
+#include "VfsDaemonHost.hpp"
 
 #include <bas/wx/app.hpp>
 
@@ -35,6 +36,9 @@ class ShellApp : public uiApp {
     Taskbar* getTaskbar() const { return m_taskbar; }
     StartMenu* getStartMenu() const { return m_startMenu; }
 
+    VfsDaemonHost& vfsDaemon() { return m_vfsDaemon; }
+    const VfsDaemonHost& vfsDaemon() const { return m_vfsDaemon; }
+
     void openExplorerAt(const std::string& dir);
 
     void toggleStartMenu();
@@ -49,6 +53,7 @@ class ShellApp : public uiApp {
     void positionStartMenu();
 
     std::string m_name;
+    VfsDaemonHost m_vfsDaemon;
     VolumeManager* m_volumeManager;
     ModuleRegistry* m_moduleRegistry;
     wxFrame* m_mainWindow;

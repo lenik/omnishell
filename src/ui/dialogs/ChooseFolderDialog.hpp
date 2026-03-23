@@ -1,8 +1,9 @@
 #ifndef OMNISHELL_UI_CHOOSE_FOLDER_DIALOG_HPP
 #define OMNISHELL_UI_CHOOSE_FOLDER_DIALOG_HPP
 
+#include "../widget/DirTreeView.hpp"
+
 #include <wx/combobox.h>
-#include <wx/listctrl.h>
 #include <wx/textctrl.h>
 #include <wx/wx.h>
 
@@ -40,11 +41,10 @@ protected:
     void OnCancel(wxCommandEvent& event);
     void OnNewFolder(wxCommandEvent& event);
     void OnVolumeSelected(wxCommandEvent& event);
-    void OnItemActivated(wxListEvent& event);
     void OnPathEnter(wxCommandEvent& event);
 
     void CreateControls();
-    void RefreshDir();
+    void syncTree();
     void SetCurrentPath(const std::string& path);
 
 private:
@@ -52,8 +52,8 @@ private:
     wxStaticText* m_messageText;
     wxComboBox* m_volumeCombo;
     wxTextCtrl* m_pathText;
-    wxListCtrl* m_listCtrl;
-    wxButton* m_newFolderButton;
+    DirTreeView* m_tree = nullptr;
+    wxButton* m_newFolderButton = nullptr;
 
     int m_selectedVolumeIndex;
     std::string m_currentPath;

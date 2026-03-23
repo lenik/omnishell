@@ -66,8 +66,9 @@ void BrowserApp::initializeMetadata() {
     uri = kBrowserModuleUri;
     name = "browser";
     label = "Browser";
-    description = "Web browser with vol:// and asset://";
-    doc = "Browse the web and open HTML from volumes or embedded assets.";
+    description = "Web browser (HTTP/HTTPS, vol://, asset://)";
+    doc = "Browse the web; VFS is served by the shell HttpDaemon (HTTP/HTTPS) and the same daemon "
+          "logic is used for vol:// and asset:// inside WebView.";
     categoryId = ID_CATEGORY_ACCESSORIES;
 
     image = ImageSet(Path(slv_core_flat, "computer-devices/network.svg"));

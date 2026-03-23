@@ -46,11 +46,11 @@ NotepadBody::NotepadBody(App* app)
     seq = 0;
     action(wxID_UNDO, "edit", "undo", seq++, "Undo", "Undo")
         .icon(wxART_UNDO,
-              Path(slv_core_pop, "interface-essential/line-arrow-reload-horizontal-1.svg"))
+              Path(slv_ultimate_colors, "interface-essential/undo.svg"))
         .performFn([this](PerformContext* ctx) { onUndo(ctx); })
         .install();
     action(wxID_REDO, "edit", "redo", seq++, "Redo", "Redo")
-        .icon(wxART_REDO, Path(slv_core_pop, "interface-essential/ai-redo-spark.svg"))
+        .icon(wxART_REDO, Path(slv_core_pop, "artificial-intelligence/ai-redo-spark.svg"))
         .performFn([this](PerformContext* ctx) { onRedo(ctx); })
         .install();
 

@@ -1,60 +1,33 @@
 #include "BrowserBody.hpp"
 
-#include <bas/wx/uiframe.hpp>
-#include <bas/volume/FileStatus.hpp>
-#include <bas/volume/MemoryZip.hpp>
-#include <bas/volume/Volume.hpp>
-#include <bas/volume/VolumeManager.hpp>
-#include <bas/proc/Assets.hpp>
+#include "../../shell/Shell.hpp"
+#include "../../shell/VfsWebViewHandlers.hpp"
 
+#include <bas/wx/uiframe.hpp>
+#include <bas/volume/VolumeManager.hpp>
+
+#include <wx/accel.h>
 #include <wx/button.h>
 #include <wx/combobox.h>
 #include <wx/log.h>
-#include <wx/stattext.h>
-#include <wx/filesys.h>
-#include <wx/mstream.h>
 #include <wx/panel.h>
 #include <wx/sizer.h>
 #include <wx/uri.h>
 #include <wx/webview.h>
+#include <wx/event.h>
 
-#include <algorithm>
 #include <cctype>
 #include <cstdio>
-#include <sstream>
 #include <string>
+#include <string_view>
 
 namespace os {
 
 namespace {
 
-std::string joinPath(const std::string& base, const std::string& name) {
-    if (base.empty() || base == "/")
-        return "/" + name;
-    if (base.back() == '/')
-        return base + name;
-    return base + "/" + name;
-}
-
-std::string parentPath(const std::string& p) {
-    if (p.empty() || p == "/")
-        return "/";
-    std::string s = p;
-    while (s.size() > 1 && s.back() == '/')
-        s.pop_back();
-    size_t slash = s.rfind('/');
-    if (slash == std::string::npos || slash == 0)
-        return "/";
-    return s.substr(0, slash);
-}
-
 std::string wxToUtf8(const wxString& w) {
     const wxScopedCharBuffer buf = w.utf8_str();
     return std::string(buf.data(), buf.length());
-}
-
-wxString utf8Wx(const std::string& s) {
-    return wxString::FromUTF8(s.data(), s.size());
 }
 
 std::string encodeUriBytes(std::string_view path) {
@@ -72,233 +45,6 @@ std::string encodeUriBytes(std::string_view path) {
     return out;
 }
 
-wxString htmlEscapeWx(const wxString& s) {
-    wxString o;
-    for (wxUniChar uc : s) {
-        const wxChar c = static_cast<wxChar>(uc);
-        if (c == '&')
-            o += "&amp;";
-        else if (c == '<')
-            o += "&lt;";
-        else if (c == '>')
-            o += "&gt;";
-        else if (c == '"')
-            o += "&quot;";
-        else
-            o += c;
-    }
-    return o;
-}
-
-wxString mimeForPath(const std::string& path) {
-    auto dot = path.rfind('.');
-    if (dot == std::string::npos)
-        return "application/octet-stream";
-    std::string ext = path.substr(dot + 1);
-    std::transform(ext.begin(), ext.end(), ext.begin(), [](unsigned char c) { return static_cast<char>(::tolower(c)); });
-    if (ext == "html" || ext == "htm")
-        return "text/html";
-    if (ext == "xhtml")
-        return "application/xhtml+xml";
-    if (ext == "css")
-        return "text/css";
-    if (ext == "js" || ext == "mjs")
-        return "application/javascript";
-    if (ext == "json")
-        return "application/json";
-    if (ext == "svg")
-        return "image/svg+xml";
-    if (ext == "png")
-        return "image/png";
-    if (ext == "jpg" || ext == "jpeg")
-        return "image/jpeg";
-    if (ext == "gif")
-        return "image/gif";
-    if (ext == "webp")
-        return "image/webp";
-    if (ext == "ico")
-        return "image/x-icon";
-    if (ext == "txt" || ext == "md")
-        return "text/plain";
-    if (ext == "xml")
-        return "application/xml";
-    if (ext == "wasm")
-        return "application/wasm";
-    return "application/octet-stream";
-}
-
-wxFSFile* makeHtmlResponse(const wxString& uri, const wxString& title, const wxString& innerHtml) {
-    wxString html = wxString::Format(
-        "<!DOCTYPE html><html><head><meta charset=\"utf-8\"/><title>%s</title></head><body>%s</body></html>",
-        htmlEscapeWx(title), innerHtml);
-    const wxScopedCharBuffer buf = html.utf8_str();
-    return new wxFSFile(new wxMemoryInputStream(buf.data(), buf.length()), uri, "text/html", wxEmptyString,
-                        wxDateTime::Now());
-}
-
-class VolSchemeHandler : public wxWebViewHandler {
-  public:
-    explicit VolSchemeHandler(VolumeManager* vm)
-        : wxWebViewHandler("vol")
-        , m_vm(vm) {}
-
-    wxFSFile* GetFile(const wxString& uriWx) override {
-        if (!m_vm)
-            return makeHtmlResponse(uriWx, "Error", "<p>No volume manager.</p>");
-
-        wxURI u(uriWx);
-        if (!u.HasScheme() || u.GetScheme().Lower() != "vol")
-            return nullptr;
-        if (!u.HasServer())
-            return makeHtmlResponse(uriWx, "Bad URL", "<p>Expected vol://&lt;index&gt;/path</p>");
-
-        long idxL = 0;
-        if (!u.GetServer().ToLong(&idxL) || idxL < 0)
-            return makeHtmlResponse(uriWx, "Bad volume index", "<p>Volume index must be a non-negative integer.</p>");
-
-        const size_t idx = static_cast<size_t>(idxL);
-        if (idx >= m_vm->getVolumeCount())
-            return makeHtmlResponse(uriWx, "Volume not found", "<p>Volume index out of range.</p>");
-
-        Volume* vol = m_vm->getVolume(idx);
-        wxString pathWx = u.GetPath();
-        if (pathWx.empty())
-            pathWx = "/";
-        while (pathWx.StartsWith("//"))
-            pathWx = pathWx.Mid(1);
-
-        std::string path;
-        try {
-            path = vol->normalize(wxToUtf8(pathWx), true);
-        } catch (...) {
-            return makeHtmlResponse(uriWx, "Bad path", "<p>Could not normalize path.</p>");
-        }
-
-        try {
-            if (vol->isDirectory(path)) {
-                auto entries = vol->readDir(path, false);
-                std::sort(entries.begin(), entries.end(),
-                          [](const std::unique_ptr<FileStatus>& a, const std::unique_ptr<FileStatus>& b) {
-                              if (a->isDirectory() != b->isDirectory())
-                                  return a->isDirectory() > b->isDirectory();
-                              return a->name < b->name;
-                          });
-
-                wxString list;
-                list << "<ul style=\"font-family:system-ui,sans-serif\">";
-                const wxString parent =
-                    wxString::Format("vol://%ld%s", idxL, utf8Wx(encodeUriBytes(parentPath(path))));
-                list << "<li><a href=\"" << htmlEscapeWx(parent) << "\">Parent directory</a></li>";
-
-                for (const auto& e : entries) {
-                    const std::string child = joinPath(path, e->name);
-                    const std::string enc = encodeUriBytes(child);
-                    wxString href = wxString::Format("vol://%ld%s", idxL, utf8Wx(enc));
-                    wxString label = htmlEscapeWx(utf8Wx(e->name));
-                    if (e->isDirectory())
-                        label << "/";
-                    list << "<li><a href=\"" << htmlEscapeWx(href) << "\">" << label << "</a></li>";
-                }
-                list << "</ul>";
-
-                wxString title = wxString::Format("Index of vol://%ld%s", idxL, utf8Wx(path));
-                wxString body;
-                body << "<h1>" << htmlEscapeWx(title) << "</h1>" << list;
-                return makeHtmlResponse(uriWx, title, body);
-            }
-
-            if (!vol->isFile(path))
-                return makeHtmlResponse(uriWx, "Not found", "<p>Path does not exist or is not a file.</p>");
-
-            std::vector<uint8_t> data = vol->readFile(path);
-            wxString mime = mimeForPath(path);
-            return new wxFSFile(new wxMemoryInputStream(data.data(), data.size()), uriWx, mime, wxEmptyString,
-                                wxDateTime::Now());
-        } catch (const std::exception& ex) {
-            return makeHtmlResponse(uriWx, "Error", wxString::Format("<p>%s</p>", htmlEscapeWx(utf8Wx(ex.what()))));
-        } catch (...) {
-            return makeHtmlResponse(uriWx, "Error", "<p>Unknown error reading volume.</p>");
-        }
-    }
-
-  private:
-    VolumeManager* m_vm;
-};
-
-class AssetSchemeHandler : public wxWebViewHandler {
-  public:
-    AssetSchemeHandler()
-        : wxWebViewHandler("asset") {}
-
-    wxFSFile* GetFile(const wxString& uriWx) override {
-        MemoryZip* z = assets.get();
-        if (!z)
-            return makeHtmlResponse(uriWx, "Assets", "<p>Embedded assets volume is not available.</p>");
-
-        wxURI u(uriWx);
-        if (!u.HasScheme() || u.GetScheme().Lower() != "asset")
-            return nullptr;
-
-        wxString pathWx = u.GetPath();
-        while (pathWx.StartsWith("//"))
-            pathWx = pathWx.Mid(1);
-        if (pathWx.empty())
-            pathWx = "/";
-
-        std::string path;
-        try {
-            path = z->normalize(wxToUtf8(pathWx), true);
-        } catch (...) {
-            return makeHtmlResponse(uriWx, "Bad path", "<p>Could not normalize path.</p>");
-        }
-
-        try {
-            if (z->isDirectory(path)) {
-                auto entries = z->readDir(path, false);
-                std::sort(entries.begin(), entries.end(),
-                          [](const std::unique_ptr<FileStatus>& a, const std::unique_ptr<FileStatus>& b) {
-                              if (a->isDirectory() != b->isDirectory())
-                                  return a->isDirectory() > b->isDirectory();
-                              return a->name < b->name;
-                          });
-
-                wxString list;
-                list << "<ul style=\"font-family:system-ui,sans-serif\">";
-                const wxString parent = utf8Wx(encodeUriBytes(parentPath(path)));
-                list << "<li><a href=\"" << htmlEscapeWx(wxString("asset://") + parent) << "\">Parent directory</a></li>";
-
-                for (const auto& e : entries) {
-                    const std::string child = joinPath(path, e->name);
-                    const std::string enc = encodeUriBytes(child);
-                    wxString href = wxString("asset://") + utf8Wx(enc);
-                    wxString label = htmlEscapeWx(utf8Wx(e->name));
-                    if (e->isDirectory())
-                        label << "/";
-                    list << "<li><a href=\"" << htmlEscapeWx(href) << "\">" << label << "</a></li>";
-                }
-                list << "</ul>";
-
-                wxString title = wxString::Format("Index of asset://%s", utf8Wx(path));
-                wxString body;
-                body << "<h1>" << htmlEscapeWx(title) << "</h1>" << list;
-                return makeHtmlResponse(uriWx, title, body);
-            }
-
-            if (!z->isFile(path))
-                return makeHtmlResponse(uriWx, "Not found", "<p>Path does not exist or is not a file.</p>");
-
-            std::vector<uint8_t> data = z->readFile(path);
-            wxString mime = mimeForPath(path);
-            return new wxFSFile(new wxMemoryInputStream(data.data(), data.size()), uriWx, mime, wxEmptyString,
-                                wxDateTime::Now());
-        } catch (const std::exception& ex) {
-            return makeHtmlResponse(uriWx, "Error", wxString::Format("<p>%s</p>", htmlEscapeWx(utf8Wx(ex.what()))));
-        } catch (...) {
-            return makeHtmlResponse(uriWx, "Error", "<p>Unknown error reading assets.</p>");
-        }
-    }
-};
-
 enum {
     ID_URL_COMBO = wxID_HIGHEST + 900,
     ID_BTN_BACK,
@@ -307,12 +53,66 @@ enum {
     ID_BTN_REFRESH,
     ID_BTN_HOME,
     ID_WEBVIEW,
+    ID_WV_ACCEL_BACK,
+    ID_WV_ACCEL_FWD,
 };
 
 } // namespace
 
 BrowserBody::BrowserBody(VolumeManager* vm)
     : m_vm(vm) {}
+
+void BrowserBody::updateNavButtons() {
+    if (!m_web || !m_btnBack || !m_btnFwd)
+        return;
+    m_btnBack->Enable(m_web->CanGoBack());
+    m_btnFwd->Enable(m_web->CanGoForward());
+}
+
+void BrowserBody::goBack() {
+    if (m_web && m_web->CanGoBack()) {
+        m_web->GoBack();
+        updateNavButtons();
+    }
+}
+
+void BrowserBody::goForward() {
+    if (m_web && m_web->CanGoForward()) {
+        m_web->GoForward();
+        updateNavButtons();
+    }
+}
+
+bool BrowserBody::handleBrowserNavKey(wxKeyEvent& e) {
+    if (!e.AltDown() || e.ControlDown())
+        return false;
+    const int k = e.GetKeyCode();
+    if (k == WXK_LEFT || k == WXK_NUMPAD_LEFT) {
+        goBack();
+        return true;
+    }
+    if (k == WXK_RIGHT || k == WXK_NUMPAD_RIGHT) {
+        goForward();
+        return true;
+    }
+    return false;
+}
+
+void BrowserBody::refreshPage() {
+    if (m_web)
+        m_web->Reload(wxWEBVIEW_RELOAD_NO_CACHE);
+}
+
+void BrowserBody::focusAddressBar() {
+    if (!m_urlCombo)
+        return;
+    m_urlCombo->SetFocus();
+    const wxString v = m_urlCombo->GetValue();
+    if (v.empty())
+        m_urlCombo->SetInsertionPointEnd();
+    else
+        m_urlCombo->SetSelection(0, static_cast<long>(v.length()));
+}
 
 void BrowserBody::createFragmentView(CreateViewContext* ctx) {
     wxWindow* parent = ctx->getParent();
@@ -347,43 +147,38 @@ void BrowserBody::createFragmentView(CreateViewContext* ctx) {
     m_web->EnableContextMenu(true);
     v->Add(m_web, 1, wxEXPAND);
 
-    if (m_vm) {
-        m_web->RegisterHandler(wxSharedPtr<wxWebViewHandler>(new VolSchemeHandler(m_vm)));
+    if (ShellApp* sh = ShellApp::getInstance()) {
+        m_httpBase = sh->vfsDaemon().httpBase();
+        if (m_web && m_vm && !m_httpBase.empty())
+            RegisterDaemonWebViewHandlers(m_web, m_vm, m_httpBase);
     }
-    m_web->RegisterHandler(wxSharedPtr<wxWebViewHandler>(new AssetSchemeHandler()));
+
+    // Alt+←/→: frame accelerators often miss the focused WebView; accels on the WebView + CHAR_HOOK cover GTK/MSW.
+    wxAcceleratorEntry wvNav[2];
+    wvNav[0].Set(wxACCEL_ALT, WXK_LEFT, ID_WV_ACCEL_BACK);
+    wvNav[1].Set(wxACCEL_ALT, WXK_RIGHT, ID_WV_ACCEL_FWD);
+    m_web->SetAcceleratorTable(wxAcceleratorTable(2, wvNav));
+    m_web->Bind(wxEVT_MENU, [this](wxCommandEvent&) { goBack(); }, ID_WV_ACCEL_BACK);
+    m_web->Bind(wxEVT_MENU, [this](wxCommandEvent&) { goForward(); }, ID_WV_ACCEL_FWD);
 
     root->SetSizer(v);
 
-    auto updateNavButtons = [this] {
-        if (!m_web || !m_btnBack || !m_btnFwd)
-            return;
-        m_btnBack->Enable(m_web->CanGoBack());
-        m_btnFwd->Enable(m_web->CanGoForward());
-    };
-
-    m_btnBack->Bind(wxEVT_BUTTON, [this, updateNavButtons](wxCommandEvent&) {
-        if (m_web && m_web->CanGoBack()) {
-            m_web->GoBack();
-            updateNavButtons();
-        }
-    });
-    m_btnFwd->Bind(wxEVT_BUTTON, [this, updateNavButtons](wxCommandEvent&) {
-        if (m_web && m_web->CanGoForward()) {
-            m_web->GoForward();
-            updateNavButtons();
-        }
-    });
+    m_btnBack->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) { goBack(); });
+    m_btnFwd->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) { goForward(); });
     go->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) { onGo(); });
-    refresh->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) {
-        if (m_web)
-            m_web->Reload(wxWEBVIEW_RELOAD_DEFAULT);
+    refresh->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) { refreshPage(); });
+    home->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) {
+        if (m_httpBase.empty()) {
+            wxLogWarning("Browser: VFS daemon not running");
+            return;
+        }
+        navigateTo(wxString::FromUTF8(m_httpBase.data(), static_cast<int>(m_httpBase.size())) + "/volume/");
     });
-    home->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) { navigateTo(wxString("asset:///")); });
 
     m_urlCombo->Bind(wxEVT_TEXT_ENTER, &BrowserBody::onUrlComboEnter, this);
     m_urlCombo->Bind(wxEVT_COMBOBOX, &BrowserBody::onHistoryPick, this);
 
-    m_web->Bind(wxEVT_WEBVIEW_NAVIGATED, [this, updateNavButtons](wxWebViewEvent& ev) {
+    m_web->Bind(wxEVT_WEBVIEW_NAVIGATED, [this](wxWebViewEvent& ev) {
         m_updatingCombo = true;
         if (m_urlCombo)
             m_urlCombo->SetValue(ev.GetURL());
@@ -395,12 +190,20 @@ void BrowserBody::createFragmentView(CreateViewContext* ctx) {
         if (m_frame)
             m_frame->SetTitle(ev.GetString().empty() ? "Browser" : ("Browser - " + ev.GetString()));
     });
-    m_web->Bind(wxEVT_WEBVIEW_NEWWINDOW, [this](wxWebViewEvent& ev) {
-        navigateTo(ev.GetURL());
-    });
+    m_web->Bind(wxEVT_WEBVIEW_NEWWINDOW, [this](wxWebViewEvent& ev) { navigateTo(ev.GetURL()); });
     m_web->Bind(wxEVT_WEBVIEW_ERROR, [](wxWebViewEvent& ev) {
         wxLogWarning("WebView error: %s", ev.GetURL());
     });
+
+    // Embedded WebView (especially GTK WebKit) often does not let frame accelerator tables see Alt+arrows.
+    if (m_frame) {
+        m_frame->Bind(wxEVT_CHAR_HOOK, [this](wxKeyEvent& e) {
+            if (handleBrowserNavKey(e))
+                e.Skip(false);
+            else
+                e.Skip();
+        });
+    }
 
     updateNavButtons();
 }
@@ -409,21 +212,78 @@ wxEvtHandler* BrowserBody::getEventHandler() {
     return m_web ? m_web->GetEventHandler() : (m_urlCombo ? m_urlCombo->GetEventHandler() : nullptr);
 }
 
+wxString BrowserBody::mapVirtualToHttp(const wxString& url) const {
+    if (m_httpBase.empty())
+        return url;
+
+    wxString u = url;
+    u.Trim(true).Trim(false);
+    if (u.StartsWith("http://") || u.StartsWith("https://") || u.StartsWith("file://"))
+        return u;
+
+    if (u.StartsWith("vol://")) {
+        wxURI uri(u);
+        if (!uri.HasScheme() || uri.GetScheme().Lower() != "vol")
+            return url;
+        if (!uri.HasServer())
+            return url;
+        const std::string idx = wxToUtf8(uri.GetServer());
+        wxString pathWx = uri.GetPath();
+        while (pathWx.StartsWith("//"))
+            pathWx = pathWx.Mid(1);
+        std::string path = wxToUtf8(pathWx);
+        if (!path.empty() && path[0] == '/')
+            path = path.substr(1);
+
+        std::string s = m_httpBase + "/volume/" + idx;
+        if (!path.empty())
+            s += "/" + encodeUriBytes(path);
+        return wxString::FromUTF8(s.data(), static_cast<int>(s.size()));
+    }
+
+    if (u.StartsWith("asset://")) {
+        wxURI uri(u);
+        wxString pathWx = uri.GetPath();
+        while (pathWx.StartsWith("//"))
+            pathWx = pathWx.Mid(1);
+        std::string path = wxToUtf8(pathWx);
+        if (!path.empty() && path[0] == '/')
+            path = path.substr(1);
+
+        std::string s = m_httpBase + "/asset";
+        if (!path.empty())
+            s += "/" + encodeUriBytes(path);
+        return wxString::FromUTF8(s.data(), static_cast<int>(s.size()));
+    }
+
+    return url;
+}
+
 void BrowserBody::navigateTo(const wxString& url) {
     if (!m_web || url.empty())
         return;
     wxString u = url;
     u.Trim(true).Trim(false);
-    if (u.StartsWith("vol://") || u.StartsWith("asset://") || u.StartsWith("http://") || u.StartsWith("https://") ||
-        u.StartsWith("file://")) {
+
+    if (u.StartsWith("vol://") || u.StartsWith("asset://")) {
+        if (m_httpBase.empty()) {
+            wxLogWarning("Browser: cannot load %s (VFS daemon not running)", u);
+            return;
+        }
         m_web->LoadURL(u);
         return;
     }
-    if (u.StartsWith("/")) {
-        m_web->LoadURL(wxString("file://") + u);
+
+    if (!u.StartsWith("http://") && !u.StartsWith("https://") && !u.StartsWith("file://")) {
+        if (u.StartsWith("/")) {
+            m_web->LoadURL(wxString("file://") + u);
+            return;
+        }
+        m_web->LoadURL(wxString("https://") + u);
         return;
     }
-    m_web->LoadURL(wxString("https://") + u);
+
+    m_web->LoadURL(mapVirtualToHttp(u));
 }
 
 void BrowserBody::onGo() {

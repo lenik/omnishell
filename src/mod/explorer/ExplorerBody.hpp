@@ -1,83 +1,74 @@
-#ifndef OMNISHELL_MOD_EXPLORER_CORE_HPP
-#define OMNISHELL_MOD_EXPLORER_CORE_HPP
+#ifndef SOS_MOD_SOS_EXPLORER_CORE_HPP
+#define SOS_MOD_SOS_EXPLORER_CORE_HPP
 
-#include <bas/ui/arch/ImageSet.hpp>
+#include "../../ui/LocationHistory.hpp"
+#include "../../ui/widget/BreadcrumbNav.hpp"
+#include "../../ui/widget/FileListView.hpp"
+#include "../../ui/widget/DirTreeView.hpp"
+
+#include <bas/ui/arch/UIAction.hpp>
 #include <bas/ui/arch/UIFragment.hpp>
-#include <bas/volume/Volume.hpp>
-#include <bas/wx/uiframe.hpp>
 
-#include <wx/imaglist.h>
-#include <wx/listctrl.h>
+#include <bas/volume/Volume.hpp>
+#include <bas/volume/VolumeManager.hpp>
+
+#include <wx/defs.h>
+#include <wx/panel.h>
 #include <wx/splitter.h>
 #include <wx/stattext.h>
-#include <wx/treectrl.h>
 
+#include <memory>
 #include <string>
 
-class VolumeManager;
-struct VolumeFile;
-
-namespace os {
-
+/**
+ * Explorer Body: reusable UI fragment for browsing volumes/directories.
+ * Can be embedded in a Frame (standalone window) or in a Panel (e.g. tab).
+ * Follows bas-ui: UIFragment + UIAction; state (Navigator, view mode) lives in Body.
+ */
 class ExplorerBody : public UIFragment {
 public:
-    ExplorerBody(VolumeManager* vm, Volume* volume, std::string dir);
-    ~ExplorerBody() override = default;
+    explicit ExplorerBody(VolumeManager* vm);
+    ~ExplorerBody() override;
+
+    /** Set initial volume and path (call before createFragmentView when running as standalone). */
+    void setOpenTarget(Volume* volume, const std::string& dir);
 
     void createFragmentView(CreateViewContext* ctx) override;
     wxEvtHandler* getEventHandler() override;
 
-    void setDir(std::string dir);
-    const std::string& dir() const { return m_dir; }
-
 private:
-    class TreeData : public wxTreeItemData {
-    public:
-        TreeData(Volume* v, std::string p) : volume(v), path(std::move(p)) {}
-        Volume* volume{nullptr};
-        std::string path;
-        bool loaded{false};
-    };
+    void createActions();
+    void setupCallbacks();
+    void updateStatusLine();
+    void refresh();
+    void setViewMode(const std::string& mode);
+    void openFile(const std::string& filename);
+    bool ensureVolumeAccess(Volume* volume);
+
+    int doGoBack(PerformContext* c);
+    int doGoForward(PerformContext* c);
+    int doGoUp(PerformContext* c);
+    int doGoHome(PerformContext* c);
+    int doSetListViewMode(PerformContext* c);
+    int doSetGridViewMode(PerformContext* c);
+    int doRefresh(PerformContext* c);
+    int doCopy(PerformContext* c);
+    int doCut(PerformContext* c);
+    int doPaste(PerformContext* c);
+    int doDelete(PerformContext* c);
 
     VolumeManager* m_vm{nullptr};
     Volume* m_volume{nullptr};
-    std::string m_dir;
+    std::string m_dir{"/"};
+    std::string m_viewMode{"list"};
 
-    uiFrame* m_frame{nullptr};
-    wxStaticText* m_pathLabel{nullptr};
-    wxTreeCtrl* m_tree{nullptr};
-    wxListCtrl* m_list{nullptr};
-
-    // Icons for tree and list
-    wxImageList* m_treeImages{nullptr};
-    wxImageList* m_listImages{nullptr};
-    int m_volIcon[static_cast<int>(VolumeType::OTHER) + 1] = {};
-    int m_iconFolder{-1};
-    int m_iconFileText{-1};
-    int m_iconFileImage{-1};
-    int m_iconFileAudio{-1};
-    int m_iconFileVideo{-1};
-    int m_iconFilePdf{-1};
-    int m_iconFileCode{-1};
-    int m_iconFileArchive{-1};
-    int m_iconFileSheet{-1};
-    int m_iconFileGeneric{-1};
-
-    int listIconForExtension(const std::string& ext) const;
-
-    void refresh();
-    void refreshTreeVolumes();
-    void loadTreeChildren(const wxTreeItemId& id);
-    void selectTreePath(Volume* vol, const std::string& path);
-
-    void openChild(const std::string& name, bool isDir);
-    void openFile(const std::string& name);
-
-    void onUp(PerformContext* ctx);
-    void onRefresh(PerformContext* ctx);
+    std::unique_ptr<LocationHistory> m_locationHistory;
+    wxPanel* m_panel{nullptr};
+    BreadcrumbNav* m_breadcrumbNav{nullptr};
+    wxSplitterWindow* m_splitter{nullptr};
+    DirTreeView* m_dirTreeView{nullptr};
+    FileListView* m_fileListView{nullptr};
+    wxStaticText* m_statusLine{nullptr};
 };
 
-} // namespace os
-
 #endif
-

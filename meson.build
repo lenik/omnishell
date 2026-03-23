@@ -15,6 +15,7 @@ cpp = meson.get_compiler('cpp')
     date_tz_lib = cpp.find_library('date-tz', required : true)
     threads_dep = dependency('threads')
     date_dep = declare_dependency(dependencies: [threads_dep, date_tz_lib])
+    openssl_dep = dependency('openssl', required : true)
 
 # wxWidgets dependencies (must use a single GTK toolkit to avoid "GTK+ 2.x and GTK+ 3 in the same process" error)
     wx_dep = dependency('wxwidgets', method: 'config-tool', required: true)
@@ -74,10 +75,21 @@ cpp_sources = files(
   'src/core/App.cpp',
   'src/core/TrayIcon.cpp',
   'src/core/ServiceManager.cpp',
+  'src/daemon/ApiDirIndex.cpp',
+  'src/daemon/ApiFileController.cpp',
+  'src/daemon/ApiVolumeIndex.cpp',
+  'src/daemon/AssetController.cpp',
+  'src/daemon/DirIndex.cpp',
+  'src/daemon/FileController.cpp',
+  'src/daemon/FileIndex.cpp',
+  'src/daemon/HttpDaemon.cpp',
+  'src/daemon/VolumeIndex.cpp',
   'src/shell/DesktopWindow.cpp',
   'src/shell/Taskbar.cpp',
   'src/shell/StartMenu.cpp',
   'src/shell/Shell.cpp',
+  'src/shell/VfsDaemonHost.cpp',
+  'src/shell/VfsWebViewHandlers.cpp',
   'src/mod/notepad/NotepadApp.cpp',
   'src/mod/notepad/NotepadFrame.cpp',
   'src/mod/notepad/NotepadBody.cpp',
@@ -90,6 +102,9 @@ cpp_sources = files(
   'src/mod/browser/BrowserApp.cpp',
   'src/mod/browser/BrowserFrame.cpp',
   'src/mod/browser/BrowserBody.cpp',
+  'src/mod/mediaplayer/MediaPlayerApp.cpp',
+  'src/mod/mediaplayer/MediaPlayerFrame.cpp',
+  'src/mod/mediaplayer/MediaPlayerBody.cpp',
   'src/mod/registry/RegistryBody.cpp',
   'src/mod/registry/RegistryFrame.cpp',
   'src/mod/registry/RegistryApp.cpp',
@@ -119,6 +134,11 @@ cpp_sources = files(
   'src/mod/background/BackgroundSettingsApp.cpp',
   'src/mod/background/BackgroundSettingsFrame.cpp',
   'src/mod/background/BackgroundSettingsBody.cpp',
+  'src/ui/Location.cpp',
+  'src/ui/LocationHistory.cpp',
+  'src/ui/widget/BreadcrumbNav.cpp',
+  'src/ui/widget/DirTreeView.cpp',
+  'src/ui/widget/FileListView.cpp',
   'src/ui/dialogs/ChooseFileDialog.cpp',
   'src/ui/dialogs/ChooseFolderDialog.cpp',
   'src/ui/dialogs/ChoosePrinterDialog.cpp',
@@ -171,9 +191,18 @@ exe_deps = [
     bas_cpp_dep,
     bas_ui_dep,
     boost_dep,
+    openssl_dep,
     wx_dep,
     wx_webview_lib,
 ]
+
+have_wx_media = wx_media_lib.found()
+lib_omnishell_cpp_args = cpp_nowarn + ['-DLOGGER_NAME=omni']
+lib_omnishell_deps = exe_deps
+if have_wx_media
+    lib_omnishell_deps += [wx_media_lib]
+    lib_omnishell_cpp_args += ['-DHAVE_WX_MEDIA=1']
+endif
 
 # if wx_dep.version() < '3.1'
 #     exe_deps += [
@@ -186,15 +215,16 @@ exe_deps = [
 
 exe_inc = [
     include_directories('src'),
+    include_directories('src/daemon'),
     include_directories('.'),
 ]
 
 lib_omnishell = library('omnishell',
     cpp_sources,
     'src/module.cpp',
-    dependencies : exe_deps,
+    dependencies : lib_omnishell_deps,
     include_directories : exe_inc,
-    cpp_args : cpp_nowarn + ['-DLOGGER_NAME=omni'],
+    cpp_args : lib_omnishell_cpp_args,
     cpp_pch: wx_pch,
     override_options: ['b_lundef=false'], # Allows undefined symbols at link time
     version : meson.project_version(),
@@ -202,10 +232,15 @@ lib_omnishell = library('omnishell',
     install : true,
 )
 
+omni_dep_list = [boost_dep, date_dep, openssl_dep, wx_webview_lib]
+if have_wx_media
+    omni_dep_list += [wx_media_lib]
+endif
+
 omnishell_dep = declare_dependency(
     link_with: lib_omnishell,
     include_directories: exe_inc,
-    dependencies: [boost_dep, date_dep, wx_webview_lib],
+    dependencies: omni_dep_list,
 )
 
 # ---- pkg-config ----
@@ -216,7 +251,7 @@ pkgconfig.generate(
     description : 'omnishell',
     version : meson.project_version(),
     subdirs : 'omnishell',
-    requires : ['bas-c', 'bas-cpp', 'bas-ui', 'boost'],
+    requires : ['bas-c', 'bas-cpp', 'bas-ui', 'boost', 'openssl'],
 )
 
 # ---- Headers for libbas-c package (includedir/bas-c) ----

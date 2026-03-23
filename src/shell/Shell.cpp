@@ -44,6 +44,10 @@ bool ShellApp::OnUserInit() {
         return false;
     }
 
+    if (!m_vfsDaemon.start(m_volumeManager)) {
+        wxLogWarning("VFS HTTP daemon failed to start; Browser and MediaPlayer VFS URLs may not work.");
+    }
+
     SetAppName(m_name);
     SetAppDisplayName(m_name + " Desktop Environment");
     SetVendorName(m_name + " Project");

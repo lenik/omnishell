@@ -1,8 +1,11 @@
 #ifndef OMNISHELL_UI_CHOOSE_FILE_DIALOG_HPP
 #define OMNISHELL_UI_CHOOSE_FILE_DIALOG_HPP
 
+#include "../widget/DirTreeView.hpp"
+#include "../widget/FileListView.hpp"
+
 #include <wx/combobox.h>
-#include <wx/listctrl.h>
+#include <wx/splitter.h>
 #include <wx/textctrl.h>
 #include <wx/wx.h>
 
@@ -51,13 +54,12 @@ protected:
     void OnOK(wxCommandEvent& event);
     void OnCancel(wxCommandEvent& event);
     void OnVolumeSelected(wxCommandEvent& event);
-    void OnItemActivated(wxListEvent& event);
-    void OnItemSelected(wxListEvent& event);
     void OnFilterChanged(wxCommandEvent& event);
     void OnPathEnter(wxCommandEvent& event);
 
     void CreateControls();
-    void RefreshDir();
+    void syncListFilter();
+    void syncViews();
     void SetCurrentPath(const std::string& path);
     bool matchesFilter(const std::string& name) const;
 
@@ -65,7 +67,9 @@ private:
     VolumeManager* m_volumeManager;
     wxComboBox* m_volumeCombo;
     wxTextCtrl* m_pathText;
-    wxListCtrl* m_listCtrl;
+    wxSplitterWindow* m_splitter = nullptr;
+    DirTreeView* m_tree = nullptr;
+    FileListView* m_list = nullptr;
     wxTextCtrl* m_filenameText;
     wxComboBox* m_filterCombo;
     wxStaticText* m_statusText;
