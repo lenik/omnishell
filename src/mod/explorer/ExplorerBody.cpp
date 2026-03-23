@@ -8,11 +8,24 @@
 #include <bas/volume/Volume.hpp>
 #include <bas/volume/VolumeFile.hpp>
 #include <bas/volume/VolumeManager.hpp>
+#include <bas/wx/uiframe.hpp>
 
 #include <wx/msgdlg.h>
 #include <wx/sizer.h>
 #include <wx/splitter.h>
 #include <wx/stattext.h>
+
+namespace {
+
+enum {
+    ID_GROUP_FILE = uiFrame::ID_APP_HIGHEST + 320,
+    ID_GROUP_EDIT,
+    ID_GROUP_VIEW,
+    ID_GROUP_TOOLS,
+    ID_GROUP_HELP,
+};
+
+} // namespace
 
 ExplorerBody::ExplorerBody(VolumeManager* vm)
     : m_vm(vm) {
@@ -69,11 +82,11 @@ wxEvtHandler* ExplorerBody::getEventHandler() {
 }
 
 void ExplorerBody::createActions() {
-    group(0, "", "file").label("&File").description("File operations").install();
-    group(0, "", "edit").label("&Edit").description("Edit operations").install();
-    group(0, "", "view").label("&View").description("View operations").install();
-    group(0, "", "tools").label("&Tools").description("Tools operations").install();
-    group(0, "", "help").label("&Help").description("Help operations").install();
+    group(ID_GROUP_FILE, "", "file").label("&File").description("File operations").install();
+    group(ID_GROUP_EDIT, "", "edit").label("&Edit").description("Edit operations").install();
+    group(ID_GROUP_VIEW, "", "view").label("&View").description("View operations").install();
+    group(ID_GROUP_TOOLS, "", "tools").label("&Tools").description("Tools operations").install();
+    group(ID_GROUP_HELP, "", "help").label("&Help").description("Help operations").install();
 
     action(wxID_BACKWARD, "view", "back")
         .label("Back").description("Go back").icon(wxART_GO_BACK).addShortcut("Alt+Left")
@@ -241,8 +254,10 @@ int ExplorerBody::doDelete(PerformContext* c) {
     for (const auto& file : sel) {
         Location loc = m_locationHistory->location();
         std::unique_ptr<VolumeFile> vf = loc.join(file);
-        if (vf->isFile()) vf->removeFile();
-        else if (vf->isDirectory()) vf->removeDirectory();
+        if (vf->isFile())
+            vf->removeFile();
+        else if (vf->isDirectory())
+            vf->removeDirectory();
     }
     refresh();
     return 0;
