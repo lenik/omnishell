@@ -112,10 +112,10 @@ void BackgroundSettingsBody::onChooseImage(PerformContext*) {
     dlg.setFileMustExist(true);
     if (dlg.ShowModal() != wxID_OK)
         return;
-    VolumeFile vf = dlg.getVolumeFile();
+    auto vf = dlg.getVolumeFile();
     if (!vf)
         return;
-    m_selectedImagePath = vf.getPath();
+    m_selectedImagePath = vf->getPath();
 }
 
 void BackgroundSettingsBody::onApplyColor(PerformContext*) {

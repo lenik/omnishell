@@ -12,7 +12,7 @@ class BackgroundSettingsApp : public Module {
     BackgroundSettingsApp(CreateModuleContext* ctx);
     virtual ~BackgroundSettingsApp();
 
-    virtual ProcessPtr run() override;
+    ProcessPtr run(const RunConfig& config) override;
 
     void initializeMetadata();
 

@@ -126,8 +126,8 @@ void NotepadBody::onFrameClose(wxCloseEvent& event) {
     if (m_modified) {
         int ret = wxMessageBox("Save changes?", "Notepad", wxYES_NO | wxCANCEL | wxICON_QUESTION);
         if (ret == wxYES) {
-            if (m_file.isNotEmpty()) {
-                uiPersistObject(m_file);
+            if (m_file) {
+                uiPersistObject(*m_file);
             } else {
                 if (!uiSaveAs())
                     return;
@@ -144,8 +144,8 @@ void NotepadBody::onFrameText(wxCommandEvent& event) {
     if (!m_modified) {
         m_modified = true;
         wxString title = "Notepad - ";
-        if (m_file.isNotEmpty()) {
-            title += displayNameFromPath(m_file.getPath()) + " *";
+        if (m_file) {
+            title += displayNameFromPath(m_file->getPath()) + " *";
         } else {
             title += "Untitled *";
         }
@@ -160,8 +160,6 @@ void NotepadBody::persistObject(VolumeFile file) {
 }
 
 bool NotepadBody::uiPersistObject(VolumeFile file) {
-    if (file.isEmpty())
-        return false;
     try {
         persistObject(file);
     } catch (const std::exception& e) {
@@ -182,12 +180,12 @@ bool NotepadBody::uiSaveAs() {
     dlg.setFileMustExist(false);
     if (dlg.ShowModal() != wxID_OK)
         return false;
-    VolumeFile vf = dlg.getVolumeFile();
-    if (vf.isEmpty())
+    auto vf = dlg.getVolumeFile();
+    if (!vf)
         return false;
-    if (!uiPersistObject(vf))
+    if (!uiPersistObject(*vf))
         return false;
-    m_file = vf;
+    m_file = *vf;
     return true;
 }
 
@@ -195,17 +193,15 @@ void NotepadBody::restoreObject(VolumeFile file) {
     std::string utf8 = file.readFileString(m_encoding.ToStdString());
     m_text->SetValue(wxString(utf8));
     m_modified = false;
-    m_file = file;
+    m_file = std::move(file);
 }
 
 bool NotepadBody::uiRestoreObject(VolumeFile file) {
-    if (file.isEmpty())
-        return false;
     if (m_modified) {
         int ret = wxMessageBox("Save changes?", "Notepad", wxYES_NO | wxCANCEL | wxICON_QUESTION);
         if (ret == wxYES) {
-            if (m_file.isNotEmpty()) {
-                uiPersistObject(m_file);
+            if (m_file) {
+                uiPersistObject(*m_file);
             } else {
                 if (!uiSaveAs())
                     return false;
@@ -229,8 +225,8 @@ void NotepadBody::onNew(PerformContext* ctx) {
     if (m_modified) {
         int ret = wxMessageBox("Save changes?", "Notepad", wxYES_NO | wxCANCEL | wxICON_QUESTION);
         if (ret == wxYES) {
-            if (m_file.isNotEmpty()) {
-                uiPersistObject(m_file);
+            if (m_file) {
+                uiPersistObject(*m_file);
             } else {
                 if (!uiSaveAs())
                     return;
@@ -241,7 +237,7 @@ void NotepadBody::onNew(PerformContext* ctx) {
     }
     m_text->Clear();
     m_modified = false;
-    m_file = VolumeFile();
+    m_file.reset();
     m_frame->SetTitle("Notepad - Untitled");
 }
 
@@ -249,8 +245,8 @@ void NotepadBody::onOpen(PerformContext* ctx) {
     if (m_modified) {
         int ret = wxMessageBox("Save changes?", "Notepad", wxYES_NO | wxCANCEL | wxICON_QUESTION);
         if (ret == wxYES) {
-            if (m_file.isNotEmpty())
-                uiPersistObject(m_file);
+            if (m_file)
+                uiPersistObject(*m_file);
             else if (!uiSaveAs())
                 return;
         } else if (ret == wxCANCEL)
@@ -265,17 +261,20 @@ void NotepadBody::onOpen(PerformContext* ctx) {
     dlg.addFilter("All files", "*.*");
     dlg.setFileMustExist(true);
     if (dlg.ShowModal() == wxID_OK) {
-        m_file = dlg.getVolumeFile();
+        auto vf = dlg.getVolumeFile();
+        if (!vf)
+            return;
+        m_file = *vf;
         m_loaded = true;
-        m_text->SetValue(m_file.readFileString(m_encoding.ToStdString()));
+        m_text->SetValue(m_file->readFileString(m_encoding.ToStdString()));
     }
 }
 
 void NotepadBody::onSave(PerformContext* ctx) {
-    if (m_file.isEmpty()) {
+    if (!m_file) {
         uiSaveAs();
     } else {
-        uiPersistObject(m_file);
+        uiPersistObject(*m_file);
     }
 }
 

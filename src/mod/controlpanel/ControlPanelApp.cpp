@@ -34,7 +34,8 @@ void ControlPanelApp::initializeMetadata() {
     image = ImageSet(Path(slv_core_pop, "interface-essential/cog-1.svg"));
 }
 
-ProcessPtr ControlPanelApp::run() {
+ProcessPtr ControlPanelApp::run(const RunConfig& config) {
+    (void)config;
     if (m_frame) {
         m_frame->Raise();
         m_frame->SetFocus();

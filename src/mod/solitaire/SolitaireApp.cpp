@@ -27,7 +27,8 @@ void SolitaireApp::initializeMetadata() {
     image = ImageSet(Path(slv_core_pop, "money-shopping/credit-card-1.svg"));
 }
 
-ProcessPtr SolitaireApp::run() {
+ProcessPtr SolitaireApp::run(const RunConfig& config) {
+    (void)config;
     auto proc = std::make_shared<Process>();
     proc->uri = uri;
     proc->name = name;

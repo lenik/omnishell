@@ -6,11 +6,15 @@
 #include "Taskbar.hpp"
 
 #include "../core/ModuleRegistry.hpp"
+#include "../wx/wxcWindow.hpp"
 #include "VfsDaemonHost.hpp"
 
 #include <bas/wx/app.hpp>
 
 #include <wx/wx.h>
+
+#include <string>
+#include <vector>
 
 // #include <bas/wx/uiframe.hpp>
 
@@ -44,6 +48,8 @@ class ShellApp : public uiApp {
     void toggleStartMenu();
 
     void launchModule(ModulePtr module);
+    /** Same as launchModule(module) but with association-style args (e.g. vol://…/path). */
+    void launchModule(ModulePtr module, std::vector<std::string> args);
     void refreshDesktop();
 
   private:
@@ -51,12 +57,13 @@ class ShellApp : public uiApp {
     void createUI();
     void setupEventHandlers();
     void positionStartMenu();
+    void processStartFiles();
 
     std::string m_name;
     VfsDaemonHost m_vfsDaemon;
     VolumeManager* m_volumeManager;
     ModuleRegistry* m_moduleRegistry;
-    wxFrame* m_mainWindow;
+    wxcFrame* m_mainWindow;
     DesktopWindow* m_desktop;
     Taskbar* m_taskbar;
     StartMenu* m_startMenu;

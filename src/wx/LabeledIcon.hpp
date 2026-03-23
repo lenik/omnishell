@@ -1,6 +1,8 @@
 #ifndef OMNISHELL_UI_WX_LABELED_ICON_HPP
 #define OMNISHELL_UI_WX_LABELED_ICON_HPP
 
+#include "wxcWindow.hpp"
+
 #include <wx/event.h>
 #include <wx/panel.h>
 #include <wx/sizer.h>
@@ -15,7 +17,7 @@ namespace os {
  * Composite widget: icon bitmap + text label stacked vertically.
  * Exposes simple events for double-click and right-click.
  */
-class LabeledIcon : public wxPanel {
+class LabeledIcon : public wxcPanel {
 public:
     LabeledIcon(wxWindow* parent, wxWindowID id = wxID_ANY,
                 const wxBitmap& bitmap = wxNullBitmap,

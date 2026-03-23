@@ -3,6 +3,7 @@
 
 #include "Category.hpp"
 #include "Process.hpp"
+#include "RunConfig.hpp"
 
 #include "App.hpp"
 
@@ -104,14 +105,12 @@ public:
     virtual void uninstall();
     
     /**
-     * Entry point for module execution
-     * Called when user launches the module or service starts
-     * 
-     * Override to:
-     * - Open main window (applications)
-     * - Start service loop (services)
+     * Entry point for module execution (same role as main() for a standalone app).
+     * RunConfig carries argv[0], arguments, and the process environment snapshot.
+     *
+     * File association / CLI open: args[0] is typically vol://<volumeIndex>/<path>.
      */
-    virtual ProcessPtr run() = 0;
+    virtual ProcessPtr run(const RunConfig& config) = 0;
     
     // === Utility Methods ===
     

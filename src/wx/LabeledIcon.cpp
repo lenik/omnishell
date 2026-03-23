@@ -49,14 +49,16 @@ namespace os {
 LabeledIcon::LabeledIcon(wxWindow* parent, wxWindowID id, const wxBitmap& bitmap,
                          const wxString& label, const wxPoint& pos, const wxSize& size,
                          long style)
-    : wxPanel(parent, id, pos, wxDefaultSize, style), m_bitmap(nullptr), m_label(nullptr) {
+    : wxcPanel(parent, id, pos, wxDefaultSize, style), m_bitmap(nullptr), m_label(nullptr) {
     SetBackgroundStyle(wxBG_STYLE_PAINT);
 
     wxBoxSizer* sizer = new wxBoxSizer(wxVERTICAL);
 
     m_bitmap = new wxStaticBitmap(this, wxID_ANY, bitmap);
+    m_bitmap->SetName(wxT("icon"));
     m_label = new wxStaticText(this, wxID_ANY, label, wxDefaultPosition, wxDefaultSize,
                               wxALIGN_CENTRE);
+    m_label->SetName(wxT("caption"));
 
     // Fixed wrapping width; allow height to grow naturally.
     const int wrapWidth = 80;
@@ -86,10 +88,10 @@ LabeledIcon::LabeledIcon(wxWindow* parent, wxWindowID id, const wxBitmap& bitmap
         e.Skip();
     };
 
-    m_bitmap->Bind(wxEVT_LEFT_DCLICK, forwardLeftDClick);
-    m_label->Bind(wxEVT_LEFT_DCLICK, forwardLeftDClick);
-    m_bitmap->Bind(wxEVT_RIGHT_DOWN, forwardRightDown);
-    m_label->Bind(wxEVT_RIGHT_DOWN, forwardRightDown);
+    wxcBind(*m_bitmap, wxEVT_LEFT_DCLICK, forwardLeftDClick);
+    wxcBind(*m_label, wxEVT_LEFT_DCLICK, forwardLeftDClick);
+    wxcBind(*m_bitmap, wxEVT_RIGHT_DOWN, forwardRightDown);
+    wxcBind(*m_label, wxEVT_RIGHT_DOWN, forwardRightDown);
 
     // Forward drag-related mouse events from children as well
     auto forwardLeftDown = [this](wxMouseEvent& e) {
@@ -111,12 +113,12 @@ LabeledIcon::LabeledIcon(wxWindow* parent, wxWindowID id, const wxBitmap& bitmap
         e.Skip();
     };
 
-    m_bitmap->Bind(wxEVT_LEFT_DOWN, forwardLeftDown);
-    m_label->Bind(wxEVT_LEFT_DOWN, forwardLeftDown);
-    m_bitmap->Bind(wxEVT_LEFT_UP, forwardLeftUp);
-    m_label->Bind(wxEVT_LEFT_UP, forwardLeftUp);
-    m_bitmap->Bind(wxEVT_MOTION, forwardMotion);
-    m_label->Bind(wxEVT_MOTION, forwardMotion);
+    wxcBind(*m_bitmap, wxEVT_LEFT_DOWN, forwardLeftDown);
+    wxcBind(*m_label, wxEVT_LEFT_DOWN, forwardLeftDown);
+    wxcBind(*m_bitmap, wxEVT_LEFT_UP, forwardLeftUp);
+    wxcBind(*m_label, wxEVT_LEFT_UP, forwardLeftUp);
+    wxcBind(*m_bitmap, wxEVT_MOTION, forwardMotion);
+    wxcBind(*m_label, wxEVT_MOTION, forwardMotion);
 
     // Hover / pressed tracking on panel
     Bind(wxEVT_ENTER_WINDOW, &LabeledIcon::OnMouseEnter, this);
@@ -142,10 +144,10 @@ LabeledIcon::LabeledIcon(wxWindow* parent, wxWindowID id, const wxBitmap& bitmap
         e.Skip();
     };
 
-    m_bitmap->Bind(wxEVT_ENTER_WINDOW, childEnter);
-    m_label->Bind(wxEVT_ENTER_WINDOW, childEnter);
-    m_bitmap->Bind(wxEVT_LEAVE_WINDOW, childLeave);
-    m_label->Bind(wxEVT_LEAVE_WINDOW, childLeave);
+    wxcBind(*m_bitmap, wxEVT_ENTER_WINDOW, childEnter);
+    wxcBind(*m_label, wxEVT_ENTER_WINDOW, childEnter);
+    wxcBind(*m_bitmap, wxEVT_LEAVE_WINDOW, childLeave);
+    wxcBind(*m_label, wxEVT_LEAVE_WINDOW, childLeave);
 }
 
 void LabeledIcon::setBitmap(const wxBitmap& bitmap) {

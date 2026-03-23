@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cassert>
 #include <memory>
+#include <stdexcept>
 #include <string>
 
 std::string normalizePath(std::string_view path) {
@@ -26,14 +27,16 @@ std::string getParentPath(std::string_view path) {
 
 Location::Location(Volume* volume, std::string_view path) : volume(volume), path(path) {
     if (volume == nullptr)
-        throw "volume NPE";
-    assert(!path.empty());
+        throw std::invalid_argument("Location: null volume");
+    if (path.empty())
+        throw std::invalid_argument("Location: empty path");
 }
 
 Location::Location(const Volume* volume, std::string_view path) : volume(const_cast<Volume*>(volume)), path(path) {
     if (volume == nullptr)
-        throw "volume NPE";
-    assert(!path.empty());
+        throw std::invalid_argument("Location: null volume");
+    if (path.empty())
+        throw std::invalid_argument("Location: empty path");
 }
 
 std::unique_ptr<VolumeFile> Location::toFile() const {

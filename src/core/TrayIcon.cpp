@@ -1,5 +1,7 @@
 #include "TrayIcon.hpp"
 
+#include "../wx/WxChecked.hpp"
+
 #include <wx/icon.h>
 #include <wx/log.h>
 
@@ -88,24 +90,26 @@ wxMenu* TrayIcon::CreatePopupMenu() {
 }
 
 void TrayIcon::OnTrayIconLeftClick(wxTaskBarIconEvent& event) {
-    if (m_onClickHandler) {
-        m_onClickHandler();
-    }
+    wxInvokeChecked(this, &event, [&] {
+        if (m_onClickHandler)
+            m_onClickHandler();
+    });
     event.Skip();
 }
 
 void TrayIcon::OnTrayIconRightClick(wxTaskBarIconEvent& event) {
-    if (m_onRightClickHandler) {
-        m_onRightClickHandler();
-    }
+    wxInvokeChecked(this, &event, [&] {
+        if (m_onRightClickHandler)
+            m_onRightClickHandler();
+    });
     event.Skip();
 }
 
 void TrayIcon::OnTrayIconDoubleClick(wxTaskBarIconEvent& event) {
-    // Double click treated as left click
-    if (m_onClickHandler) {
-        m_onClickHandler();
-    }
+    wxInvokeChecked(this, &event, [&] {
+        if (m_onClickHandler)
+            m_onClickHandler();
+    });
     event.Skip();
 }
 

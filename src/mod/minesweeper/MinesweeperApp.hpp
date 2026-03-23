@@ -12,7 +12,7 @@ class MinesweeperApp : public Module {
     explicit MinesweeperApp(CreateModuleContext* ctx);
     virtual ~MinesweeperApp();
 
-    virtual ProcessPtr run() override;
+    ProcessPtr run(const RunConfig& config) override;
 
     void initializeMetadata();
 

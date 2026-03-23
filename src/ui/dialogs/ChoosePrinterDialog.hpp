@@ -1,6 +1,8 @@
 #ifndef OMNISHELL_UI_CHOOSE_PRINTER_DIALOG_HPP
 #define OMNISHELL_UI_CHOOSE_PRINTER_DIALOG_HPP
 
+#include "../../wx/wxcWindow.hpp"
+
 #include <wx/listctrl.h>
 #include <wx/print.h>
 #include <wx/wx.h>
@@ -54,7 +56,7 @@ struct PrinterInfo {
  * }
  * ```
  */
-class ChoosePrinterDialog : public wxDialog {
+class ChoosePrinterDialog : public wxcDialog {
 public:
     /**
      * Constructor

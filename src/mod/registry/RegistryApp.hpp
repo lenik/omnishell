@@ -17,7 +17,7 @@ class RegistryApp : public Module {
     explicit RegistryApp(CreateModuleContext* ctx);
     virtual ~RegistryApp();
 
-    virtual ProcessPtr run() override;
+    ProcessPtr run(const RunConfig& config) override;
 
     void initializeMetadata();
 

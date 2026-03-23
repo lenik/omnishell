@@ -12,6 +12,8 @@
 #include <wx/log.h>
 #include <wx/msgdlg.h>
 
+#include <optional>
+
 namespace os {
 
 ChooseFolderDialog::ChooseFolderDialog(
@@ -21,7 +23,7 @@ ChooseFolderDialog::ChooseFolderDialog(
     const wxString& message,
     const wxString& defaultPath
 )
-    : wxDialog(parent, wxID_ANY, title,
+    : wxcDialog(parent, wxID_ANY, title,
                wxDefaultPosition, wxSize(520, 480),
                wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER)
     , m_volumeManager(volumeManager)
@@ -45,19 +47,19 @@ void ChooseFolderDialog::setPath(const wxString& path) {
     syncTree();
 }
 
-VolumeFile ChooseFolderDialog::getVolumeFile() const {
+std::optional<VolumeFile> ChooseFolderDialog::getVolumeFile() const {
     if (!m_volumeManager || m_selectedVolumeIndex < 0 ||
         m_selectedVolumeIndex >= (int)m_volumeManager->getVolumeCount()) {
-        return VolumeFile();
+        return std::nullopt;
     }
     Volume* vol = m_volumeManager->getVolume(m_selectedVolumeIndex);
     if (!vol)
-        return VolumeFile();
+        return std::nullopt;
     try {
         std::string path = vol->normalize(m_currentPath, false);
         return VolumeFile(vol, path);
     } catch (...) {
-        return VolumeFile();
+        return std::nullopt;
     }
 }
 

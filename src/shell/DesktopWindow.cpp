@@ -2,6 +2,7 @@
 
 #include "Shell.hpp"
 
+#include "../core/App.hpp"
 #include "../core/ModuleRegistry.hpp"
 #include "../core/RegistryDb.hpp"
 #include "../mod/explorer/ExplorerApp.hpp"
@@ -73,20 +74,18 @@ std::string escapeJson(const std::string& in) {
 
 namespace os {
 
-BEGIN_EVENT_TABLE(DesktopWindow, wxPanel)
-EVT_PAINT(DesktopWindow::OnPaint)
-EVT_SIZE(DesktopWindow::OnSize)
-EVT_LEFT_DOWN(DesktopWindow::OnDesktopLeftDown)
-EVT_LEFT_DCLICK(DesktopWindow::OnLeftDoubleClick)
-EVT_RIGHT_DOWN(DesktopWindow::OnRightClick)
-EVT_ERASE_BACKGROUND(DesktopWindow::OnEraseBackground)
-END_EVENT_TABLE()
-
 DesktopWindow::DesktopWindow(wxWindow* parent)
-    : wxPanel(parent, wxID_ANY), m_volumeManager(nullptr), m_backgroundColor(*wxLIGHT_GREY),
+    : wxcPanel(parent, wxID_ANY), m_volumeManager(nullptr), m_backgroundColor(*wxLIGHT_GREY),
       m_iconSize(64, 80), m_iconSpacing(10), m_margin(20) {
+    SetName(wxT("desktop"));
     SetBackgroundStyle(wxBG_STYLE_PAINT);
     SetMinSize(wxSize(800, 600));
+    Bind(wxEVT_PAINT, &DesktopWindow::OnPaint, this);
+    Bind(wxEVT_SIZE, &DesktopWindow::OnSize, this);
+    Bind(wxEVT_LEFT_DOWN, &DesktopWindow::OnDesktopLeftDown, this);
+    Bind(wxEVT_LEFT_DCLICK, &DesktopWindow::OnLeftDoubleClick, this);
+    Bind(wxEVT_RIGHT_DOWN, &DesktopWindow::OnRightClick, this);
+    Bind(wxEVT_ERASE_BACKGROUND, &DesktopWindow::OnEraseBackground, this);
 }
 
 DesktopWindow::~DesktopWindow() { clearIcons(); }
@@ -305,9 +304,15 @@ void DesktopWindow::launchModule(ModulePtr module) {
         return;
     }
 
+    ShellApp* shell = ShellApp::getInstance();
+    if (shell) {
+        shell->launchModule(module);
+        return;
+    }
+
     try {
         module->recordExecution();
-        (void)module->run();
+        (void)module->run(os::app.makeRunConfig());
     } catch (const std::exception& e) {
         wxLogError("Failed to launch module %s: %s", module->getFullUri(), e.what());
         wxMessageBox("Failed to launch " + module->label + ": " + e.what(), "Error",
@@ -468,14 +473,10 @@ void DesktopWindow::OnSize(wxSizeEvent& event) {
 }
 
 void DesktopWindow::OnLeftDoubleClick(wxMouseEvent& event) {
-    // Check if double-clicked on an icon
     wxPoint pos = event.GetPosition();
     DesktopModuleIcon* icon = dynamic_cast<DesktopModuleIcon*>(FindIconAt(pos));
-
-    if (icon && icon->module) {
+    if (icon && icon->module)
         launchModule(icon->module);
-    }
-
     event.Skip();
 }
 
@@ -504,7 +505,8 @@ void DesktopWindow::OnRightClick(wxMouseEvent& event) {
         menu.FindItemByPosition(0)->GetId());
 
     Bind(
-        wxEVT_MENU, [this](wxCommandEvent&) { arrangeIcons(); },
+        wxEVT_MENU,
+        [this](wxCommandEvent&) { arrangeIcons(); },
         menu.FindItemByPosition(1)->GetId());
 
     PopupMenu(&menu, event.GetPosition());
@@ -584,16 +586,11 @@ void DesktopWindow::CreateIconControls(DesktopIcon& icon) {
 
 void DesktopWindow::OnIconLeftDoubleClick(wxMouseEvent& event) {
     wxWindow* child = dynamic_cast<wxWindow*>(event.GetEventObject());
-    if (!child) {
-        event.Skip();
-        return;
+    if (child) {
+        DesktopModuleIcon* clickedIcon = dynamic_cast<DesktopModuleIcon*>(FindIconByWindow(child));
+        if (clickedIcon && clickedIcon->module)
+            launchModule(clickedIcon->module);
     }
-
-    DesktopModuleIcon* clickedIcon = dynamic_cast<DesktopModuleIcon*>(FindIconByWindow(child));
-    if (clickedIcon && clickedIcon->module) {
-        launchModule(clickedIcon->module);
-    }
-
     event.Skip();
 }
 
@@ -618,11 +615,13 @@ void DesktopWindow::OnIconRightClick(wxMouseEvent& event) {
     ModulePtr module = clickedIcon->module;
 
     Bind(
-        wxEVT_MENU, [this, module](wxCommandEvent&) { launchModule(module); },
+        wxEVT_MENU,
+        [this, module](wxCommandEvent&) { launchModule(module); },
         menu.FindItemByPosition(0)->GetId());
 
     Bind(
-        wxEVT_MENU, [this, module](wxCommandEvent&) { launchModule(module); },
+        wxEVT_MENU,
+        [this, module](wxCommandEvent&) { launchModule(module); },
         menu.FindItemByPosition(1)->GetId());
 
     PopupMenu(&menu, event.GetPosition());
@@ -667,36 +666,27 @@ void DesktopWindow::OnIconLeftDown(wxMouseEvent& event) {
 void DesktopWindow::OnIconLeftUp(wxMouseEvent& event) {
     wxWindow* window = dynamic_cast<wxWindow*>(event.GetEventObject());
 
-    // Handle end of drag
     if (m_isDragging && m_draggingIcon) {
         if (m_draggingIcon->widget && m_draggingIcon->widget->HasCapture()) {
             m_draggingIcon->widget->ReleaseMouse();
         }
-
         m_isDragging = false;
         m_draggingIcon = nullptr;
-
-        // Persist new layout after drag ends
         saveLayout();
     }
 
-    // Handle "open on second button release" for double-click
     if (event.ButtonDClick()) {
         if (window) {
             DesktopModuleIcon* icon = dynamic_cast<DesktopModuleIcon*>(FindIconByWindow(window));
-            if (icon && icon->module) {
+            if (icon && icon->module)
                 launchModule(icon->module);
-            }
         } else {
-            // Fallback: use position
             wxPoint pos = event.GetPosition();
             DesktopModuleIcon* icon = dynamic_cast<DesktopModuleIcon*>(FindIconAt(pos));
-            if (icon && icon->module) {
+            if (icon && icon->module)
                 launchModule(icon->module);
-            }
         }
     }
-
     event.Skip();
 }
 

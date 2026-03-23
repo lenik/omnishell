@@ -36,7 +36,8 @@ void MinesweeperApp::initializeMetadata() {
     image = ImageSet(Path(slv_core_pop, "interface-essential/bomb.svg"));
 }
 
-ProcessPtr MinesweeperApp::run() {
+ProcessPtr MinesweeperApp::run(const RunConfig& config) {
+    (void)config;
     if (m_frame) {
         m_frame->Raise();
         m_frame->SetFocus();

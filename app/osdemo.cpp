@@ -27,6 +27,8 @@ int main(int argc, char** argv) {
     stackdump_install_crash_handler(&stackdump_color_schema_default);
     stackdump_set_interactive(1);
 
+    os::app.captureLaunchContext(argc, argv);
+
     os::app.volumeManager = std::make_unique<VolumeManager>();
     os::app.startFiles.clear();
 

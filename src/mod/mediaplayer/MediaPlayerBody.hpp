@@ -6,6 +6,8 @@
 #include <bas/volume/VolumeFile.hpp>
 #include <bas/wx/uiframe.hpp>
 
+#include <optional>
+
 #include <wx/event.h>
 #include <wx/longlong.h>
 #include <wx/timer.h>
@@ -62,7 +64,7 @@ class MediaPlayerBody : public UIFragment {
 #endif
     wxTimer m_vizTimer;
 
-    VolumeFile m_file;
+    std::optional<VolumeFile> m_file;
     bool m_repeat = false;
     bool m_audioSpectrum = false;
 

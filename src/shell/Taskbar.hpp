@@ -3,6 +3,7 @@
 
 #include "../core/Module.hpp"
 #include "../core/Process.hpp"
+#include "../wx/wxcWindow.hpp"
 
 #include <wx/taskbar.h>
 #include <wx/wx.h>
@@ -46,7 +47,7 @@ struct TaskbarButton {
  * - Minimize/restore windows
  * - Active window indication
  */
-class Taskbar : public wxPanel {
+class Taskbar : public wxcPanel {
 public:
     Taskbar(wxWindow* parent);
     virtual ~Taskbar();
@@ -106,8 +107,6 @@ protected:
     void SetButtonVisual(TaskbarButton& b);
 
 private:
-    DECLARE_EVENT_TABLE()
-    
     wxWindow* m_startButton;
     wxPanel* m_appListPanel;
     wxPanel* m_trayPanel;

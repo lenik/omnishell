@@ -12,6 +12,7 @@
 #include <algorithm>
 
 #include "../ui/ThemeStyles.hpp"
+#include "../wx/wxcWindow.hpp"
 using namespace ThemeStyles;
 
 namespace {
@@ -22,10 +23,11 @@ const wxColour kTaskbarStartBlue(0x0A, 0x24, 0x6A);
  * GTK wxButton reapplies theme colours when focus/active state changes, so the Start label
  * can turn black. Owner-drawn panel keeps white text on the blue bar.
  */
-class TaskbarStartPlate : public wxPanel {
+class TaskbarStartPlate : public os::wxcPanel {
   public:
     TaskbarStartPlate(wxWindow* parent, int barHeight, wxBitmap icon)
-        : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize), m_icon(std::move(icon)) {
+        : os::wxcPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize), m_icon(std::move(icon)) {
+        SetName(wxT("start"));
         SetMinSize(wxSize(60, barHeight));
         SetBackgroundStyle(wxBG_STYLE_PAINT);
         SetCursor(wxCursor(wxCURSOR_HAND));
@@ -60,14 +62,10 @@ class TaskbarStartPlate : public wxPanel {
 
 namespace os {
 
-BEGIN_EVENT_TABLE(Taskbar, wxPanel)
-EVT_SIZE(Taskbar::OnSize)
-EVT_PAINT(Taskbar::OnPaint)
-END_EVENT_TABLE()
-
 Taskbar::Taskbar(wxWindow* parent)
-    : wxPanel(parent, wxID_ANY), m_startMenu(nullptr), m_buttonWidth(150), m_buttonSpacing(2),
+    : wxcPanel(parent, wxID_ANY), m_startMenu(nullptr), m_buttonWidth(150), m_buttonSpacing(2),
       m_margin(0) {
+    SetName(wxT("taskbar"));
     SetMinSize(wxSize(-1, GetDefaultHeight()));
     SetMaxSize(wxSize(-1, GetDefaultHeight()));
 
@@ -79,21 +77,26 @@ Taskbar::Taskbar(wxWindow* parent)
     m_startButton = new TaskbarStartPlate(this, h, startBmp);
     m_startButton->SetPosition(wxPoint(0, 0));
     m_startButton->SetSize(wxSize(100, h));
-    m_startButton->Bind(wxEVT_LEFT_UP, [this](wxMouseEvent& e) {
+    wxcBind(*m_startButton, wxEVT_LEFT_UP, [this](wxMouseEvent& e) {
         wxCommandEvent dummy;
         OnStartButtonClick(dummy);
         e.Skip(false);
     });
 
     m_appListPanel = new wxPanel(this, wxID_ANY, wxPoint(100, 0), wxSize(100, h));
+    m_appListPanel->SetName(wxT("application_list"));
     m_appListPanel->SetBackgroundColour(*wxWHITE);
 
     m_trayPanel = new wxPanel(this, wxID_ANY);
+    m_trayPanel->SetName(wxT("tray"));
     m_trayPanel->SetBackgroundColour(*wxWHITE);
 
     m_clock = new wxStaticText(m_trayPanel, wxID_ANY, "", wxPoint(5, 5), wxSize(100, 20),
                                wxALIGN_RIGHT | wxALIGN_CENTRE_VERTICAL);
     m_clock->SetForegroundColour(*wxBLACK);
+
+    Bind(wxEVT_SIZE, &Taskbar::OnSize, this);
+    Bind(wxEVT_PAINT, &Taskbar::OnPaint, this);
 
     // Start timer for clock
     Bind(
@@ -126,7 +129,7 @@ void Taskbar::addApplication(ModulePtr module, wxWindow* window) {
     // Create button
     button.button =
         new wxButton(m_appListPanel, wxID_ANY, module->label, wxDefaultPosition, wxSize(140, 28));
-    button.button->Bind(wxEVT_BUTTON, &Taskbar::OnAppButtonClick, this);
+    wxcBind(*button.button, wxEVT_BUTTON, &Taskbar::OnAppButtonClick, this);
 
     m_applications.push_back(button);
     UpdateButtonLayout();
@@ -156,44 +159,48 @@ void Taskbar::addProcess(ProcessPtr process) {
             button.button->SetBitmap(bmp, wxLEFT);
             button.button->SetBitmapMargins(4, 0);
         }
-        button.button->Bind(wxEVT_BUTTON, &Taskbar::OnAppButtonClick, this);
+        wxcBind(*button.button, wxEVT_BUTTON, &Taskbar::OnAppButtonClick,
+                this);
 
         m_applications.push_back(button);
         SetButtonVisual(m_applications.back());
 
         // Sync taskbar state with window lifecycle.
         if (auto* tlw = dynamic_cast<wxTopLevelWindow*>(window)) {
-            tlw->Bind(wxEVT_ACTIVATE, [this, window](wxActivateEvent& e) {
-                for (auto& b : m_applications) {
-                    if (b.window == window) {
-                        b.active = e.GetActive();
-                        SetButtonVisual(b);
-                    } else if (e.GetActive()) {
-                        b.active = false;
-                        SetButtonVisual(b);
-                    }
-                }
-                e.Skip();
-            });
-            tlw->Bind(wxEVT_ICONIZE, [this, window](wxIconizeEvent& e) {
-                for (auto& b : m_applications) {
-                    if (b.window == window) {
-                        b.minimized = e.IsIconized();
-                        SetButtonVisual(b);
-                        break;
-                    }
-                }
-                e.Skip();
-            });
-            tlw->Bind(wxEVT_CLOSE_WINDOW, [this, window](wxCloseEvent& e) {
-                for (size_t i = 0; i < m_applications.size(); ++i) {
-                    if (m_applications[i].window == window) {
-                        RemoveButtonByIndex(i);
-                        break;
-                    }
-                }
-                e.Skip();
-            });
+            wxcBind(*tlw, wxEVT_ACTIVATE,
+                    [this, window](wxActivateEvent& e) {
+                        for (auto& b : m_applications) {
+                            if (b.window == window) {
+                                b.active = e.GetActive();
+                                SetButtonVisual(b);
+                            } else if (e.GetActive()) {
+                                b.active = false;
+                                SetButtonVisual(b);
+                            }
+                        }
+                        e.Skip();
+                    });
+            wxcBind(*tlw, wxEVT_ICONIZE,
+                    [this, window](wxIconizeEvent& e) {
+                        for (auto& b : m_applications) {
+                            if (b.window == window) {
+                                b.minimized = e.IsIconized();
+                                SetButtonVisual(b);
+                                break;
+                            }
+                        }
+                        e.Skip();
+                    });
+            wxcBind(*tlw, wxEVT_CLOSE_WINDOW,
+                    [this, window](wxCloseEvent& e) {
+                        for (size_t i = 0; i < m_applications.size(); ++i) {
+                            if (m_applications[i].window == window) {
+                                RemoveButtonByIndex(i);
+                                break;
+                            }
+                        }
+                        e.Skip();
+                    });
         }
         UpdateButtonLayout();
     };
@@ -271,36 +278,31 @@ void Taskbar::SetButtonVisual(TaskbarButton& b) {
 void Taskbar::setStartMenu(wxMenu* menu) { m_startMenu = menu; }
 
 void Taskbar::OnStartButtonClick(wxCommandEvent& event) {
+    (void)event;
     ShellApp* shell = ShellApp::getInstance();
     if (shell)
         shell->toggleStartMenu();
 }
 
 void Taskbar::OnAppButtonClick(wxCommandEvent& event) {
-    // Find which button was clicked
     wxObject* obj = event.GetEventObject();
-
     for (auto& app : m_applications) {
         if (app.button == obj) {
             if (app.window) {
                 if (app.minimized) {
-                    // Restore window
                     app.window->Show(true);
                     app.window->Raise();
                     app.window->SetFocus();
                 } else if (!app.active) {
-                    // Raise window
                     app.window->Raise();
                     app.window->SetFocus();
                 } else {
-                    // Minimize window (hide for now)
                     app.window->Show(false);
                 }
             }
             break;
         }
     }
-
     event.Skip();
 }
 

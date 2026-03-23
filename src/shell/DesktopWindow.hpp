@@ -3,6 +3,7 @@
 
 #include "../core/Module.hpp"
 #include "../wx/LabeledIcon.hpp"
+#include "../wx/wxcWindow.hpp"
 
 #include <wx/dnd.h>
 #include <wx/wx.h>
@@ -57,7 +58,7 @@ struct VolumeDesktopIcon : public DesktopIcon {
  * - Double-click to launch
  * - Right-click context menu
  */
-class DesktopWindow : public wxPanel {
+class DesktopWindow : public wxcPanel {
   public:
     DesktopWindow(wxWindow* parent);
     virtual ~DesktopWindow();
@@ -141,8 +142,6 @@ class DesktopWindow : public wxPanel {
     DesktopIcon* FindIconByWindow(wxWindow* window);
 
   private:
-    DECLARE_EVENT_TABLE()
-
     VolumeManager* m_volumeManager;
     std::vector<DesktopModuleIcon> m_icons;
     std::vector<VolumeDesktopIcon> m_volumeIcons;

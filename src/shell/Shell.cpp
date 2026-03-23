@@ -3,8 +3,12 @@
 #include "../core/App.hpp"
 #include "../core/ModuleRegistry.hpp"
 #include "../core/ServiceManager.hpp"
+#include "../core/registry/FileAssociations.hpp"
+#include "../core/VolUrl.hpp"
 #include "../mod/explorer/ExplorerApp.hpp"
 
+#include <bas/volume/Volume.hpp>
+#include <bas/volume/VolumeFile.hpp>
 #include <bas/volume/VolumeManager.hpp>
 
 #include <wx/image.h>
@@ -63,6 +67,7 @@ bool ShellApp::OnUserInit() {
     setupEventHandlers();
     ServiceManager::getInstance().startAllServices(*m_moduleRegistry);
     refreshDesktop();
+    processStartFiles();
 
     return true;
 }
@@ -75,6 +80,10 @@ int ShellApp::OnExit() {
 ShellApp* ShellApp::getInstance() { return m_instance; }
 
 void ShellApp::launchModule(ModulePtr module) {
+    launchModule(module, {});
+}
+
+void ShellApp::launchModule(ModulePtr module, std::vector<std::string> args) {
     if (!module) {
         wxLogError("Cannot launch null module");
         return;
@@ -89,7 +98,7 @@ void ShellApp::launchModule(ModulePtr module) {
     try {
         wxLogInfo("Launching module: %s", module->label);
         module->recordExecution();
-        ProcessPtr p = module->run();
+        ProcessPtr p = module->run(app.makeRunConfig(std::move(args)));
         if (p && m_taskbar) {
             wxWindow* w = p->primaryWindow();
             if (w) {
@@ -100,6 +109,45 @@ void ShellApp::launchModule(ModulePtr module) {
         wxLogError("Failed to launch module %s: %s", module->getFullUri(), e.what());
         wxMessageBox("Failed to launch " + module->label + ": " + e.what(), "Error",
                      wxOK | wxICON_ERROR);
+    }
+}
+
+void ShellApp::processStartFiles() {
+    if (!m_volumeManager || !m_moduleRegistry || app.startFiles.empty())
+        return;
+
+    for (const std::string& spec : app.startFiles) {
+        if (spec.rfind("vol://", 0) != 0)
+            continue;
+
+        Volume* anchor = m_volumeManager->getDefaultVolume();
+        if (!anchor)
+            continue;
+        VolumeFile vf(anchor, "/");
+        if (!parseVolUrl(m_volumeManager, spec, vf))
+            continue;
+
+        std::string path = vf.getPath();
+        size_t slash = path.rfind('/');
+        std::string ext;
+        if (slash != std::string::npos && slash + 1 < path.size()) {
+            const std::string base = path.substr(slash + 1);
+            const size_t dot = base.rfind('.');
+            if (dot != std::string::npos && dot + 1 < base.size()) {
+                ext = base.substr(dot + 1);
+                for (auto& c : ext) {
+                    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+                }
+            }
+        }
+
+        const auto modUri = getFirstOpenWithModuleForExtension(ext);
+        if (!modUri)
+            continue;
+
+        ModulePtr m = m_moduleRegistry->getOrCreateModule(*modUri);
+        if (m && m->isEnabled())
+            launchModule(m, {spec});
     }
 }
 
@@ -133,8 +181,9 @@ void ShellApp::createUI() {
     wxLogInfo("Creating shell UI");
 
     // Create main frame
-    m_mainWindow = new wxFrame(nullptr, wxID_ANY, "OmniShell", //
-                              wxDefaultPosition, wxSize(1024, 768));
+    m_mainWindow = new wxcFrame(nullptr, wxID_ANY, "OmniShell", //
+                                wxDefaultPosition, wxSize(1024, 768));
+    m_mainWindow->SetName(wxT("shell"));
     m_mainWindow->SetMinSize(wxSize(800, 600));
     m_mainWindow->SetBackgroundColour(*wxWHITE);
 
@@ -174,9 +223,8 @@ void ShellApp::createUI() {
             return;
         }
         wxPoint screenClick = source->ClientToScreen(e.GetPosition());
-        if (!m_startMenu->ContainsScreenPoint(screenClick)) {
+        if (!m_startMenu->ContainsScreenPoint(screenClick))
             m_startMenu->HideMenu();
-        }
         e.Skip();
     };
 
@@ -202,11 +250,11 @@ void ShellApp::createUI() {
 
     // When start menu is visible, route character input to it so typing opens the search box.
     m_mainWindow->Bind(wxEVT_CHAR_HOOK, [this](wxKeyEvent& e) {
-        if (m_startMenu && m_startMenu->IsShown()) {
-            if (m_startMenu->HandleGlobalKey(e))
-                return;
-        }
-        e.Skip();
+        bool forwardKey = true;
+        if (m_startMenu && m_startMenu->IsShown() && m_startMenu->HandleGlobalKey(e))
+            forwardKey = false;
+        if (forwardKey)
+            e.Skip();
     });
 
     m_mainWindow->Bind(wxEVT_SIZE, [this](wxSizeEvent& e) {

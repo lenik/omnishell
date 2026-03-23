@@ -1,5 +1,7 @@
 #include "DirTreeView.hpp"
 
+#include "../../wx/WxChecked.hpp"
+
 #include <bas/volume/Volume.hpp>
 
 #include <wx/menu.h>
@@ -17,7 +19,8 @@ DirTreeView::DirTreeView(wxWindow* parent, const Location& location)
     : wxTreeCtrl(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize,
                  wxTR_DEFAULT_STYLE | wxTR_SINGLE | wxTR_LINES_AT_ROOT),
       m_location(location) {
-    
+
+    SetName(wxT("dir_tree"));
     populateTree();
 }
 
@@ -170,65 +173,69 @@ wxTreeItemId DirTreeView::findItemByPath(const std::string& path) {
 }
 
 void DirTreeView::OnSelectionChanged(wxTreeEvent& event) {
-    wxTreeItemId item = event.GetItem();
-    if (item.IsOk()) {
-        TreeItemData* data = dynamic_cast<TreeItemData*>(GetItemData(item));
-        if (data) {
-            notifyLocationChange(Location(m_location.volume, data->path));
+    os::wxInvokeChecked(this, &event, [&] {
+        wxTreeItemId item = event.GetItem();
+        if (item.IsOk()) {
+            TreeItemData* data = dynamic_cast<TreeItemData*>(GetItemData(item));
+            if (data) {
+                notifyLocationChange(Location(m_location.volume, data->path));
+            }
         }
-    }
+    });
     event.Skip();
 }
 
 void DirTreeView::OnItemActivated(wxTreeEvent& event) {
-    wxTreeItemId item = event.GetItem();
-    if (item.IsOk()) {
-        TreeItemData* data = dynamic_cast<TreeItemData*>(GetItemData(item));
-        if (data) {
-            notifyLocationChange(Location(m_location.volume, data->path));
+    os::wxInvokeChecked(this, &event, [&] {
+        wxTreeItemId item = event.GetItem();
+        if (item.IsOk()) {
+            TreeItemData* data = dynamic_cast<TreeItemData*>(GetItemData(item));
+            if (data) {
+                notifyLocationChange(Location(m_location.volume, data->path));
+            }
         }
-    }
+    });
     event.Skip();
 }
 
 void DirTreeView::OnItemExpanding(wxTreeEvent& event) {
-    wxTreeItemId item = event.GetItem();
-    if (!item.IsOk()) return;
-    
-    TreeItemData* data = dynamic_cast<TreeItemData*>(GetItemData(item));
-    if (!data) return;
-    
-    // Check if this item has already been populated
-    wxTreeItemIdValue cookie;
-    wxTreeItemId firstChild = GetFirstChild(item, cookie);
-    
-    if (firstChild.IsOk() && GetItemText(firstChild) == "Loading...") {
-        // Remove the dummy child
-        Delete(firstChild);
-        
-        // Populate with actual children
-        populateNode(item, data->path);
-    }
-    
+    os::wxInvokeChecked(this, &event, [&] {
+        wxTreeItemId item = event.GetItem();
+        if (!item.IsOk())
+            return;
+
+        TreeItemData* data = dynamic_cast<TreeItemData*>(GetItemData(item));
+        if (!data)
+            return;
+
+        wxTreeItemIdValue cookie;
+        wxTreeItemId firstChild = GetFirstChild(item, cookie);
+
+        if (firstChild.IsOk() && GetItemText(firstChild) == "Loading...") {
+            Delete(firstChild);
+            populateNode(item, data->path);
+        }
+    });
     event.Skip();
 }
 
 void DirTreeView::OnRightClick(wxTreeEvent& event) {
-    wxTreeItemId item = event.GetItem();
-    if (!item.IsOk()) return;
-    
-    TreeItemData* data = dynamic_cast<TreeItemData*>(GetItemData(item));
-    if (!data) return;
-    
-    // Create context menu
-    wxMenu contextMenu;
-    contextMenu.Append(wxID_OPEN, "Open");
-    contextMenu.Append(wxID_REFRESH, "Refresh");
-    contextMenu.AppendSeparator();
-    contextMenu.Append(wxID_PROPERTIES, "Properties");
-    
-    // Show context menu
-    PopupMenu(&contextMenu);
-    
+    os::wxInvokeChecked(this, &event, [&] {
+        wxTreeItemId item = event.GetItem();
+        if (!item.IsOk())
+            return;
+
+        TreeItemData* data = dynamic_cast<TreeItemData*>(GetItemData(item));
+        if (!data)
+            return;
+
+        wxMenu contextMenu;
+        contextMenu.Append(wxID_OPEN, "Open");
+        contextMenu.Append(wxID_REFRESH, "Refresh");
+        contextMenu.AppendSeparator();
+        contextMenu.Append(wxID_PROPERTIES, "Properties");
+
+        PopupMenu(&contextMenu);
+    });
     event.Skip();
 }

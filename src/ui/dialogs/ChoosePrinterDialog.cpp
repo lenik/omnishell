@@ -9,7 +9,7 @@ ChoosePrinterDialog::ChoosePrinterDialog(
     const wxString& title,
     const wxString& message
 )
-    : wxDialog(parent, wxID_ANY, title,
+    : wxcDialog(parent, wxID_ANY, title,
                 wxDefaultPosition, wxSize(500, 400),
                 wxDEFAULT_DIALOG_STYLE)
     , m_selectedIndex(-1)

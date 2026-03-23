@@ -42,7 +42,8 @@ void ExplorerApp::initializeMetadata() {
     image = ImageSet(Path(slv_core_pop, "interface-essential/folder-add.svg"));
 }
 
-ProcessPtr ExplorerApp::run() {
+ProcessPtr ExplorerApp::run(const RunConfig& config) {
+    (void)config;
     VolumeManager* vm =
         ShellApp::getInstance() ? ShellApp::getInstance()->getVolumeManager() : nullptr;
     if (!vm) {

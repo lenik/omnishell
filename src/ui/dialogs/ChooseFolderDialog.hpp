@@ -2,15 +2,18 @@
 #define OMNISHELL_UI_CHOOSE_FOLDER_DIALOG_HPP
 
 #include "../widget/DirTreeView.hpp"
+#include "../../wx/wxcWindow.hpp"
 
 #include <wx/combobox.h>
 #include <wx/textctrl.h>
 #include <wx/wx.h>
 
+#include <bas/volume/VolumeFile.hpp>
+
+#include <optional>
 #include <string>
 
 class VolumeManager;
-struct VolumeFile;
 
 namespace os {
 
@@ -18,7 +21,7 @@ namespace os {
  * VFS-based folder selection dialog.
  * Uses VolumeManager and Volume API only.
  */
-class ChooseFolderDialog : public wxDialog {
+class ChooseFolderDialog : public wxcDialog {
 public:
     ChooseFolderDialog(
         wxWindow* parent,
@@ -30,8 +33,8 @@ public:
     virtual ~ChooseFolderDialog();
 
     void setPath(const wxString& path);
-    /** Selected folder as VolumeFile. Empty if cancelled. */
-    VolumeFile getVolumeFile() const;
+    /** Selected folder as VolumeFile. Nullopt if invalid / no volume. */
+    std::optional<VolumeFile> getVolumeFile() const;
     wxString getPath() const;
     void setShowNewFolderButton(bool show);
     void setMustExist(bool mustExist);

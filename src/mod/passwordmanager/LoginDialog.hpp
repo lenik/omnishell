@@ -1,6 +1,8 @@
 #ifndef OMNISHELL_MOD_PASSWORDMANAGER_LOGIN_DIALOG_HPP
 #define OMNISHELL_MOD_PASSWORDMANAGER_LOGIN_DIALOG_HPP
 
+#include "../../wx/wxcWindow.hpp"
+
 #include <wx/dialog.h>
 
 #include <string>
@@ -9,7 +11,7 @@ class wxTextCtrl;
 
 namespace os {
 
-class LoginDialog : public wxDialog {
+class LoginDialog : public wxcDialog {
   public:
     LoginDialog(wxWindow* parent, const wxString& title, const wxString& message = {});
 

@@ -73,6 +73,7 @@ cpp_sources = files(
   'src/core/registry/FileAssociations.cpp',
   'src/core/registry/RegistryService.cpp',
   'src/core/App.cpp',
+  'src/core/VolUrl.cpp',
   'src/core/TrayIcon.cpp',
   'src/core/ServiceManager.cpp',
   'src/daemon/ApiDirIndex.cpp',
@@ -143,6 +144,7 @@ cpp_sources = files(
   'src/ui/dialogs/ChooseFolderDialog.cpp',
   'src/ui/dialogs/ChoosePrinterDialog.cpp',
   'src/wx/LabeledIcon.cpp',
+  'src/wx/WxChecked.cpp',
 )
 
 # Assets will be zipped and linked as a section in the executable
@@ -226,6 +228,7 @@ lib_omnishell = library('omnishell',
     include_directories : exe_inc,
     cpp_args : lib_omnishell_cpp_args,
     cpp_pch: wx_pch,
+    link_args : ['-rdynamic'],
     override_options: ['b_lundef=false'], # Allows undefined symbols at link time
     version : meson.project_version(),
     soversion : meson.project_version().split('.')[0],

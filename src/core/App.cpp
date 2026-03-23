@@ -9,12 +9,39 @@
 
 #include <getopt.h>
 
+#if defined(__unix__) || defined(__APPLE__)
+extern char** environ;
+#endif
+
 namespace os {
 
 App app;
 
 App::App() : volumeManager(std::make_unique<VolumeManager>()), startFiles() {}
 App::~App() {}
+
+void App::captureLaunchContext(int argc, char** argv) {
+    programSelf = (argc > 0 && argv && argv[0]) ? argv[0] : "omnishell";
+    runtimeEnv.clear();
+#if defined(__unix__) || defined(__APPLE__)
+    if (environ) {
+        for (char** e = environ; *e; ++e) {
+            std::string entry = *e;
+            const size_t eq = entry.find('=');
+            if (eq != std::string::npos)
+                runtimeEnv.emplace(entry.substr(0, eq), entry.substr(eq + 1));
+        }
+    }
+#endif
+}
+
+RunConfig App::makeRunConfig(std::vector<std::string> args) const {
+    RunConfig rc;
+    rc.self = programSelf;
+    rc.args = std::move(args);
+    rc.env = &runtimeEnv;
+    return rc;
+}
 
 void App::addDefaultLocalVolumesIfEmpty() {
     if (!volumeManager || volumeManager->getVolumeCount() != 0)

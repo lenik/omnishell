@@ -28,7 +28,8 @@ void CalendarApp::initializeMetadata() {
     image = ImageSet(Path(slv_core_pop, "interface-essential/blank-calendar.svg"));
 }
 
-ProcessPtr CalendarApp::run() {
+ProcessPtr CalendarApp::run(const RunConfig& config) {
+    (void)config;
     auto proc = std::make_shared<Process>();
     proc->uri = uri;
     proc->name = name;

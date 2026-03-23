@@ -12,7 +12,7 @@ class StopWatchApp : public Module {
     explicit StopWatchApp(CreateModuleContext* ctx);
     virtual ~StopWatchApp();
 
-    virtual ProcessPtr run() override;
+    ProcessPtr run(const RunConfig& config) override;
 
     void initializeMetadata();
 

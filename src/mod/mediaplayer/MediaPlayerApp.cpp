@@ -5,6 +5,7 @@
 #include "../../core/App.hpp"
 #include "../../core/ModuleRegistry.hpp"
 #include "../../core/registry/RegistryService.hpp"
+#include "../../core/VolUrl.hpp"
 #include "../../shell/Shell.hpp"
 
 #include "../../ui/ThemeStyles.hpp"
@@ -99,11 +100,20 @@ void MediaPlayerApp::install() {
     r.save();
 }
 
-ProcessPtr MediaPlayerApp::run() {
+ProcessPtr MediaPlayerApp::run(const RunConfig& config) {
     VolumeManager* vm = ShellApp::getInstance() ? ShellApp::getInstance()->getVolumeManager() : nullptr;
     if (!vm) {
         wxMessageBox("No volume manager", "Media Player", wxOK | wxICON_ERROR);
         return nullptr;
+    }
+
+    if (!config.args.empty()) {
+        Volume* anchor = vm->getDefaultVolume();
+        if (anchor) {
+            VolumeFile vf(anchor, "/");
+            if (parseVolUrl(vm, config.args[0], vf))
+                return open(vm, vf);
+        }
     }
 
     auto proc = std::make_shared<Process>();

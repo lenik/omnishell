@@ -8,7 +8,7 @@
 namespace os {
 
 LoginDialog::LoginDialog(wxWindow* parent, const wxString& title, const wxString& message)
-    : wxDialog(parent, wxID_ANY, title, wxDefaultPosition, wxDefaultSize,
+    : wxcDialog(parent, wxID_ANY, title, wxDefaultPosition, wxDefaultSize,
                wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER) {
     auto* root = new wxBoxSizer(wxVERTICAL);
     if (!message.IsEmpty()) {

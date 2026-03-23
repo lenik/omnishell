@@ -15,7 +15,7 @@ class ControlPanelApp : public Module {
     explicit ControlPanelApp(CreateModuleContext* ctx);
     virtual ~ControlPanelApp();
 
-    virtual ProcessPtr run() override;
+    ProcessPtr run(const RunConfig& config) override;
 
     void initializeMetadata();
 

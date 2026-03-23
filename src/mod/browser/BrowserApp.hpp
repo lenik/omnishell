@@ -15,7 +15,7 @@ class BrowserApp : public Module {
 
     void install() override;
 
-    ProcessPtr run() override;
+    ProcessPtr run(const RunConfig& config) override;
 
     /** Open a file as vol://<volumeIndex><path> in the browser. */
     static ProcessPtr open(VolumeManager* vm, VolumeFile file);

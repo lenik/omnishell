@@ -118,18 +118,12 @@ VolumeRegistry::VolumeRegistry(VolumeFile root) : m_root(std::move(root)) {}
 void VolumeRegistry::ensureLoaded() const {
     if (m_loaded)
         return;
-    if (!m_root.isNotEmpty()) {
-        const_cast<VolumeRegistry*>(this)->m_loaded = true;
-        return;
-    }
     const_cast<VolumeRegistry*>(this)->loadFromVolume();
     const_cast<VolumeRegistry*>(this)->m_loaded = true;
 }
 
 void VolumeRegistry::loadFromVolume() {
     m_data.clear();
-    if (!m_root.isNotEmpty())
-        return;
 
     std::function<void(const VolumeFile&, const std::string&)> walk;
     walk = [&](const VolumeFile& dir, const std::string& prefix) {
@@ -140,7 +134,7 @@ void VolumeRegistry::loadFromVolume() {
                 continue;
             if (es->isDirectory()) {
                 auto sub = dir.resolve(es->name);
-                if (sub && sub->isNotEmpty()) {
+                if (sub) {
                     std::string next =
                         prefix.empty() ? std::string(es->name) : prefix + "." + std::string(es->name);
                     walk(*sub, next);
@@ -150,7 +144,7 @@ void VolumeRegistry::loadFromVolume() {
                 std::string stem = name.substr(0, name.size() - 5);
                 std::string key = prefix.empty() ? stem : prefix + "." + stem;
                 auto f = dir.resolve(es->name);
-                if (f && f->isNotEmpty() && f->isFile()) {
+                if (f && f->isFile()) {
                     try {
                         m_data[key] = parseJsonStringLiteral(f->readFileString("UTF-8"));
                     } catch (...) {
@@ -166,7 +160,7 @@ void VolumeRegistry::loadFromVolume() {
         wxLogWarning("VolumeRegistry: load walk failed");
     }
 
-    if (m_data.empty() && m_root.isNotEmpty()) {
+    if (m_data.empty()) {
         m_data["System.OS.Name"] = "Omnishell";
         m_data["System.OS.Version"] = "1.1.1";
         m_data["User.Name"] = "Guest";
@@ -181,8 +175,6 @@ void VolumeRegistry::loadFromVolume() {
 }
 
 std::unique_ptr<VolumeFile> VolumeRegistry::fileForKey(const std::string& key) const {
-    if (!m_root.isNotEmpty())
-        return nullptr;
     std::string rel = keyToRelPath(key);
     if (rel.empty())
         return nullptr;
@@ -190,11 +182,9 @@ std::unique_ptr<VolumeFile> VolumeRegistry::fileForKey(const std::string& key) c
 }
 
 bool VolumeRegistry::writeAllToVolume() const {
-    if (!m_root.isNotEmpty())
-        return false;
     for (const auto& kv : m_data) {
         auto f = fileForKey(kv.first);
-        if (!f || !f->isNotEmpty())
+        if (!f)
             return false;
         if (!f->createParentDirectories())
             return false;
@@ -243,7 +233,7 @@ void VolumeRegistry::setVariant(const std::string& key, reg::variant_t value) {
     if (!value.has_value()) {
         if (m_data.erase(key)) {
             auto f = fileForKey(key);
-            if (f && f->isNotEmpty())
+            if (f)
                 f->removeFile();
             emitChanged(key, std::nullopt, old);
         }
@@ -266,7 +256,7 @@ bool VolumeRegistry::remove(const std::string& key) {
     reg::variant_t oldv = reg::parseValue(it->second);
     m_data.erase(it);
     auto f = fileForKey(key);
-    if (f && f->isNotEmpty())
+    if (f)
         f->removeFile();
     emitChanged(key, std::nullopt, oldv);
     return true;
@@ -284,7 +274,7 @@ bool VolumeRegistry::delTree(const std::string& key) {
         reg::variant_t oldv = reg::parseValue(it->second);
         m_data.erase(it);
         auto f = fileForKey(k);
-        if (f && f->isNotEmpty())
+        if (f)
             f->removeFile();
         emitChanged(k, std::nullopt, oldv);
     }

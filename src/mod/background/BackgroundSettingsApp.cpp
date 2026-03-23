@@ -29,7 +29,8 @@ void BackgroundSettingsApp::initializeMetadata() {
     image = ImageSet(Path(slv_core_pop, "interface-essential/image-blur.svg"));
 }
 
-ProcessPtr BackgroundSettingsApp::run() {
+ProcessPtr BackgroundSettingsApp::run(const RunConfig& config) {
+    (void)config;
     auto proc = std::make_shared<Process>();
     proc->uri = uri;
     proc->name = name;

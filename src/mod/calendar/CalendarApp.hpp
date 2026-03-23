@@ -12,7 +12,7 @@ class CalendarApp : public Module {
     explicit CalendarApp(CreateModuleContext* ctx);
     virtual ~CalendarApp();
 
-    virtual ProcessPtr run() override;
+    ProcessPtr run(const RunConfig& config) override;
 
     void initializeMetadata();
 

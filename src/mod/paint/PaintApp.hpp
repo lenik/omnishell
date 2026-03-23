@@ -16,7 +16,7 @@ class PaintApp : public Module {
     explicit PaintApp(CreateModuleContext* ctx);
     virtual ~PaintApp();
 
-    virtual ProcessPtr run() override;
+    ProcessPtr run(const RunConfig& config) override;
 
     void initializeMetadata();
 

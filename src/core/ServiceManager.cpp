@@ -1,5 +1,6 @@
 #include "ServiceManager.hpp"
 
+#include "App.hpp"
 #include "ModuleRegistry.hpp"
 
 #include <wx/log.h>
@@ -58,7 +59,7 @@ void ServiceManager::startService(ModulePtr module, bool autoRestart) {
     } else {
         // Run in UI thread - just call run() once
         try {
-            (void)module->run();
+            (void)module->run(app.makeRunConfig());
         } catch (const std::exception& e) {
             wxLogError("Service %s threw exception: %s", uri, e.what());
             if (autoRestart) {
@@ -184,7 +185,7 @@ void ServiceManager::runServiceThread(ServiceState& state) {
     
     while (!state.shouldStop && state.running) {
         try {
-            (void)state.module->run();
+            (void)state.module->run(app.makeRunConfig());
         } catch (const std::exception& e) {
             wxLogError("Service %s threw exception: %s", uri, e.what());
             

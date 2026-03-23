@@ -13,6 +13,7 @@
 
 #include <algorithm>
 #include <cstring>
+#include <optional>
 
 namespace os {
 
@@ -24,7 +25,7 @@ ChooseFileDialog::ChooseFileDialog(
     const wxString& defaultPath,
     const wxString& defaultFile
 )
-    : wxDialog(parent, wxID_ANY, title,
+    : wxcDialog(parent, wxID_ANY, title,
                wxDefaultPosition, wxSize(720, 520),
                wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER)
     , m_volumeManager(volumeManager)
@@ -70,16 +71,18 @@ void ChooseFileDialog::setFileMustExist(bool mustExist) {
     m_fileMustExist = mustExist;
 }
 
-VolumeFile ChooseFileDialog::getVolumeFile() const {
+std::optional<VolumeFile> ChooseFileDialog::getVolumeFile() const {
     auto vfs = getVolumeFiles();
-    return vfs.empty() ? VolumeFile() : vfs[0];
+    if (vfs.empty())
+        return std::nullopt;
+    return vfs[0];
 }
 
 wxString ChooseFileDialog::getPath() const {
-    VolumeFile vf = getVolumeFile();
-    if (vf.isEmpty())
+    auto vf = getVolumeFile();
+    if (!vf)
         return wxString();
-    return wxString(vf.getPath());
+    return wxString(vf->getPath());
 }
 
 std::vector<VolumeFile> ChooseFileDialog::getVolumeFiles() const {

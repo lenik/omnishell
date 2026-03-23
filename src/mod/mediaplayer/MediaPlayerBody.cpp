@@ -335,7 +335,7 @@ void MediaPlayerBody::refreshVisualizer() {
 void MediaPlayerBody::syncVisualizerLayout() {
     if (!m_visualizer)
         return;
-    const bool audio = m_file.isNotEmpty() && extensionIsAudio(m_file.getPath());
+    const bool audio = m_file.has_value() && extensionIsAudio(m_file->getPath());
     m_visualizer->Show(audio);
     if (m_root)
         m_root->Layout();
@@ -344,10 +344,10 @@ void MediaPlayerBody::syncVisualizerLayout() {
 void MediaPlayerBody::updateFrameTitle() {
     if (!m_frame)
         return;
-    if (m_file.isEmpty())
+    if (!m_file)
         m_frame->SetTitle("Media Player");
     else
-        m_frame->SetTitle(wxString("Media Player — ") + displayNameFromPath(m_file.getPath()));
+        m_frame->SetTitle(wxString("Media Player — ") + displayNameFromPath(m_file->getPath()));
 }
 
 void MediaPlayerBody::loadVolumeFile(const VolumeFile& file, bool autoplay) {
@@ -356,7 +356,7 @@ void MediaPlayerBody::loadVolumeFile(const VolumeFile& file, bool autoplay) {
     syncVisualizerLayout();
 
 #if HAVE_WX_MEDIA
-    if (!m_media || !m_vm || file.isEmpty())
+    if (!m_media || !m_vm)
         return;
     ShellApp* sh = ShellApp::getInstance();
     if (!sh || !sh->vfsDaemon().isRunning()) {
@@ -414,8 +414,8 @@ void MediaPlayerBody::onOpen(PerformContext*) {
         return;
     }
     wxString startDir = "/";
-    if (m_file.isNotEmpty()) {
-        std::string path = m_file.getPath();
+    if (m_file) {
+        std::string path = m_file->getPath();
         size_t slash = path.rfind('/');
         if (slash != std::string::npos && slash > 0)
             startDir = utf8Wx(path.substr(0, slash));
@@ -429,10 +429,10 @@ void MediaPlayerBody::onOpen(PerformContext*) {
     dlg.setFileMustExist(true);
     if (dlg.ShowModal() != wxID_OK)
         return;
-    VolumeFile vf = dlg.getVolumeFile();
-    if (vf.isEmpty())
+    auto vf = dlg.getVolumeFile();
+    if (!vf)
         return;
-    loadVolumeFile(vf, true);
+    loadVolumeFile(*vf, true);
 }
 
 void MediaPlayerBody::onPlay(PerformContext*) {
@@ -440,7 +440,7 @@ void MediaPlayerBody::onPlay(PerformContext*) {
     if (m_media)
         m_media->Play();
 #endif
-    if (m_file.isNotEmpty() && extensionIsAudio(m_file.getPath()) && !m_vizTimer.IsRunning())
+    if (m_file && extensionIsAudio(m_file->getPath()) && !m_vizTimer.IsRunning())
         m_vizTimer.Start(kVizTimerMs);
     refreshVisualizer();
 }

@@ -26,7 +26,8 @@ void SudokuApp::initializeMetadata() {
     image = ImageSet(Path(slv_core_pop, "interface-essential/layout-window-8.svg"));
 }
 
-ProcessPtr SudokuApp::run() {
+ProcessPtr SudokuApp::run(const RunConfig& config) {
+    (void)config;
     auto proc = std::make_shared<Process>();
     proc->uri = uri;
     proc->name = name;

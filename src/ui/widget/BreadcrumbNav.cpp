@@ -4,16 +4,14 @@
 #include <wx/sizer.h>
 #include <wx/stattext.h>
 
-wxBEGIN_EVENT_TABLE(BreadcrumbNav, wxPanel)
-    EVT_BUTTON(wxID_ANY, BreadcrumbNav::OnBreadcrumbClicked)
-wxEND_EVENT_TABLE()
-
 BreadcrumbNav::BreadcrumbNav(wxWindow* parent, const std::string& location)
-    : wxPanel(parent, wxID_ANY), m_location(location) {
-    
+    : os::wxcPanel(parent, wxID_ANY), m_location(location) {
+
     m_sizer = new wxBoxSizer(wxHORIZONTAL);
     SetSizer(m_sizer);
-    
+
+    Bind(wxEVT_BUTTON, &BreadcrumbNav::OnBreadcrumbClicked, this);
+
     updateBreadcrumbs();
 }
 
@@ -70,15 +68,15 @@ void BreadcrumbNav::updateBreadcrumbs() {
 }
 
 void BreadcrumbNav::clearBreadcrumbs() {
-    // Clear existing buttons
+    // Free client-owned path strings; window destruction is done once via sizer->Clear(true).
+    // Do not call Destroy() on each button here — Clear(true) already deletes all sizer children,
+    // and double-destroying causes heap corruption / std::terminate on the next GTK event.
     for (wxButton* button : m_breadcrumbButtons) {
-        std::string* path = static_cast<std::string*>(button->GetClientData());
+        auto* path = static_cast<std::string*>(button->GetClientData());
         delete path;
-        button->Destroy();
+        button->SetClientData(nullptr);
     }
     m_breadcrumbButtons.clear();
-    
-    // Clear all sizer items
     m_sizer->Clear(true);
 }
 
@@ -121,10 +119,12 @@ std::vector<std::string> BreadcrumbNav::splitPath(const std::string& path) {
 
 void BreadcrumbNav::OnBreadcrumbClicked(wxCommandEvent& event) {
     wxButton* button = dynamic_cast<wxButton*>(event.GetEventObject());
-    if (!button) return;
-    
+    if (!button)
+        return;
+
     std::string* path = static_cast<std::string*>(button->GetClientData());
-    if (!path) return;
+    if (!path)
+        return;
     notifyPathSelected(*path);
     event.Skip();
 }

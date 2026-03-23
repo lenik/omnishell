@@ -31,7 +31,8 @@ void StopWatchApp::initializeMetadata() {
     image = ImageSet(Path(slv_core_pop, "interface-essential/circle-clock.svg"));
 }
 
-ProcessPtr StopWatchApp::run() {
+ProcessPtr StopWatchApp::run(const RunConfig& config) {
+    (void)config;
     auto proc = std::make_shared<Process>();
     proc->uri = uri;
     proc->name = name;

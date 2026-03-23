@@ -12,7 +12,7 @@ class SolitaireApp : public Module {
     explicit SolitaireApp(CreateModuleContext* ctx);
     ~SolitaireApp() override = default;
 
-    ProcessPtr run() override;
+    ProcessPtr run(const RunConfig& config) override;
     void initializeMetadata();
 
   private:

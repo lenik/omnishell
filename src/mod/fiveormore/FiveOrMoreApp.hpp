@@ -12,7 +12,7 @@ class FiveOrMoreApp : public Module {
     explicit FiveOrMoreApp(CreateModuleContext* ctx);
     ~FiveOrMoreApp() override = default;
 
-    ProcessPtr run() override;
+    ProcessPtr run(const RunConfig& config) override;
     void initializeMetadata();
 
   private:

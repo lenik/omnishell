@@ -3,6 +3,7 @@
 
 #include "../core/Category.hpp"
 #include "../core/Module.hpp"
+#include "../wx/wxcWindow.hpp"
 
 #include <wx/textctrl.h>
 #include <wx/wx.h>
@@ -20,7 +21,7 @@ namespace os {
  * - Hides when mouse leaves or user clicks outside
  * - Menu-style rows: icon + label, submenu ">", expandable sections
  */
-class StartMenu : public wxPanel {
+class StartMenu : public wxcPanel {
 public:
     StartMenu(wxWindow* parent);
     virtual ~StartMenu();

@@ -1,6 +1,8 @@
 #ifndef BREADCRUMBNAV_H
 #define BREADCRUMBNAV_H
 
+#include "../../wx/wxcWindow.hpp"
+
 #include <wx/panel.h>
 #include <wx/sizer.h>
 #include <wx/wx.h>
@@ -13,7 +15,7 @@
  * Breadcrumb navigation widget for displaying current path
  * Converted from QML BreadcrumbNav to wxWidgets
  */
-class BreadcrumbNav : public wxPanel {
+class BreadcrumbNav : public os::wxcPanel {
 private:
     std::string m_location;
     std::vector<wxButton*> m_breadcrumbButtons;
@@ -45,10 +47,7 @@ public:
     }
     
 private:
-    // Event handlers
     void OnBreadcrumbClicked(wxCommandEvent& event);
-    
-    DECLARE_EVENT_TABLE()
 };
 
 #endif // BREADCRUMBNAV_H

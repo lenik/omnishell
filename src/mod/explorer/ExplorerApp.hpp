@@ -20,7 +20,7 @@ class ExplorerApp : public Module {
     explicit ExplorerApp(CreateModuleContext* ctx);
     virtual ~ExplorerApp();
 
-    virtual ProcessPtr run() override;
+    ProcessPtr run(const RunConfig& config) override;
 
     void initializeMetadata();
 

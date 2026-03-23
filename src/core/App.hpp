@@ -1,8 +1,11 @@
 #ifndef OMNISHELL_CORE_APP_HPP
 #define OMNISHELL_CORE_APP_HPP
 
+#include "RunConfig.hpp"
+
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 class VolumeManager;
@@ -14,6 +17,11 @@ class App {
     std::unique_ptr<VolumeManager> volumeManager;
     std::vector<std::string> startFiles;
 
+    /** argv[0] captured at startup (for RunConfig::self). */
+    std::string programSelf;
+    /** Environment snapshot at startup (pointer target of RunConfig::env). */
+    std::unordered_map<std::string, std::string> runtimeEnv;
+
     App();
     ~App();
 
@@ -24,6 +32,15 @@ class App {
 
     /** If no volumes yet: optional dev testdrive, then addLocalVolumes(). */
     void addDefaultLocalVolumesIfEmpty();
+
+    /**
+     * Record argv[0] and copy the process environment into runtimeEnv.
+     * Call once from main() before other argv parsing mutates the process.
+     */
+    void captureLaunchContext(int argc, char** argv);
+
+    /** Build a RunConfig for module.run(); env points at runtimeEnv. */
+    RunConfig makeRunConfig(std::vector<std::string> args = {}) const;
 };
 
 extern App app;

@@ -12,7 +12,7 @@ class SudokuApp : public Module {
     explicit SudokuApp(CreateModuleContext* ctx);
     ~SudokuApp() override = default;
 
-    ProcessPtr run() override;
+    ProcessPtr run(const RunConfig& config) override;
     void initializeMetadata();
 
   private:

@@ -4,7 +4,9 @@
 
 #include "../../core/App.hpp"
 #include "../../core/ModuleRegistry.hpp"
+#include "../../core/VolUrl.hpp"
 
+#include <bas/volume/Volume.hpp>
 #include <bas/volume/VolumeFile.hpp>
 #include <bas/volume/VolumeManager.hpp>
 
@@ -35,7 +37,16 @@ void NotepadApp::initializeMetadata() {
     image = ImageSet(Path(slv_core_pop, "interface-essential/blank-notepad.svg"));
 }
 
-ProcessPtr NotepadApp::run() {
+ProcessPtr NotepadApp::run(const RunConfig& config) {
+    if (m_app && m_app->volumeManager && !config.args.empty()) {
+        Volume* anchor = m_app->volumeManager->getDefaultVolume();
+        if (anchor) {
+            VolumeFile vf(anchor, "/");
+            if (parseVolUrl(m_app->volumeManager.get(), config.args[0], vf))
+                return open(m_app->volumeManager.get(), vf);
+        }
+    }
+
     auto proc = std::make_shared<Process>();
     proc->uri = uri;
     proc->name = name;

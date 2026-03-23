@@ -18,7 +18,7 @@ class MediaPlayerApp : public Module {
     void install() override;
 
     void initializeMetadata();
-    ProcessPtr run() override;
+    ProcessPtr run(const RunConfig& config) override;
 
     /** Open a media file on a volume (VFS HTTP URL in player). */
     static ProcessPtr open(VolumeManager* vm, VolumeFile file);

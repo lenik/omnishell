@@ -9,6 +9,8 @@
 #include <bas/volume/VolumeFile.hpp>
 #include <bas/volume/VolumeManager.hpp>
 
+#include <optional>
+
 #include <wx/choicdlg.h>
 #include <wx/event.h>
 #include <wx/string.h>
@@ -33,7 +35,7 @@ class NotepadBody : public UIFragment, public IFileForm {
     VolumeManager* volumeManager() const { return m_app ? m_app->volumeManager.get() : nullptr; }
 
     App* m_app;
-    VolumeFile m_file;
+    std::optional<VolumeFile> m_file;
     bool m_loaded{false};
     bool m_modified{false};
 

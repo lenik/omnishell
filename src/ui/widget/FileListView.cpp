@@ -1,6 +1,8 @@
 #include "FileListView.hpp"
 #include "wx/artprov.h"
 
+#include "../../wx/WxChecked.hpp"
+
 #include <bas/ui/arch/ImageSet.hpp>
 #include <bas/util/FileTypeDetector.hpp>
 #include <bas/volume/Volume.hpp>
@@ -51,7 +53,8 @@ FileListView::FileListView(wxWindow* parent, const Location& location)
       m_imageListSmall(nullptr), m_imageListLarge(nullptr),
       m_sortColumn(0), m_sortAscending(true),
       m_rectSelecting(false), m_rectStartItem(-1) {
-    
+
+    SetName(wxT("file_list"));
     setupImageLists();
     AssignImageList(m_imageListSmall, wxIMAGE_LIST_SMALL);
     AssignImageList(m_imageListLarge, wxIMAGE_LIST_NORMAL);
@@ -386,120 +389,125 @@ std::string FileListView::formatDateTime(std::uint64_t timestamp) {
 }
 
 void FileListView::OnItemSelected(wxListEvent& event) {
-    long index = event.GetIndex();
-    if (index >= 0 && index < static_cast<long>(m_entries.size())) {
-        VolumeFile file(m_location.volume, joinVolumePath(m_location.path, m_entries[index].name));
-        notifyFileSelected(file);
-    }
-    
-    std::vector<VolumeFile> files;
-    std::vector<std::string> selected = getSelectedFiles();
-    for (const auto& name : selected) {
-        VolumeFile file(m_location.volume, joinVolumePath(m_location.path, name));
-        files.push_back(file);
-    }
-    notifySelectionChanged(files);
+    os::wxInvokeChecked(this, &event, [&] {
+        long index = event.GetIndex();
+        if (index >= 0 && index < static_cast<long>(m_entries.size())) {
+            VolumeFile file(m_location.volume, joinVolumePath(m_location.path, m_entries[index].name));
+            notifyFileSelected(file);
+        }
+
+        std::vector<VolumeFile> files;
+        std::vector<std::string> selected = getSelectedFiles();
+        for (const auto& name : selected) {
+            VolumeFile file(m_location.volume, joinVolumePath(m_location.path, name));
+            files.push_back(file);
+        }
+        notifySelectionChanged(files);
+    });
     event.Skip();
 }
 
 void FileListView::OnItemActivated(wxListEvent& event) {
-    long index = event.GetIndex();
-    if (index >= 0 && index < static_cast<long>(m_entries.size())) {
-        VolumeFile file(m_location.volume, joinVolumePath(m_location.path, m_entries[index].name));
-        notifyFileActivated(file);
-    }
+    os::wxInvokeChecked(this, &event, [&] {
+        long index = event.GetIndex();
+        if (index >= 0 && index < static_cast<long>(m_entries.size())) {
+            VolumeFile file(m_location.volume, joinVolumePath(m_location.path, m_entries[index].name));
+            notifyFileActivated(file);
+        }
+    });
     event.Skip();
 }
 
 void FileListView::OnItemRightClick(wxListEvent& event) {
-    long index = event.GetIndex();
-    if (index < 0 || index >= static_cast<long>(m_entries.size())) return;
-    
-    const DirEntry& entry = m_entries[index];
-    
-    // Create context menu
-    wxMenu contextMenu;
-    
-    if (entry.isDirectory()) {
-        contextMenu.Append(wxID_OPEN, "Open");
+    os::wxInvokeChecked(this, &event, [&] {
+        long index = event.GetIndex();
+        if (index < 0 || index >= static_cast<long>(m_entries.size()))
+            return;
+
+        const DirEntry& entry = m_entries[index];
+
+        wxMenu contextMenu;
+
+        if (entry.isDirectory()) {
+            contextMenu.Append(wxID_OPEN, "Open");
+            contextMenu.AppendSeparator();
+        } else {
+            contextMenu.Append(wxID_OPEN, "Open");
+            contextMenu.Append(wxID_EDIT, "Edit");
+            contextMenu.AppendSeparator();
+        }
+
+        contextMenu.Append(wxID_COPY, "Copy");
+        contextMenu.Append(wxID_CUT, "Cut");
+        contextMenu.Append(wxID_DELETE, "Delete");
         contextMenu.AppendSeparator();
-    } else {
-        contextMenu.Append(wxID_OPEN, "Open");
-        contextMenu.Append(wxID_EDIT, "Edit");
-        contextMenu.AppendSeparator();
-    }
-    
-    contextMenu.Append(wxID_COPY, "Copy");
-    contextMenu.Append(wxID_CUT, "Cut");
-    contextMenu.Append(wxID_DELETE, "Delete");
-    contextMenu.AppendSeparator();
-    contextMenu.Append(wxID_PROPERTIES, "Properties");
-    
-    // Show context menu
-    PopupMenu(&contextMenu);
-    
+        contextMenu.Append(wxID_PROPERTIES, "Properties");
+
+        PopupMenu(&contextMenu);
+    });
     event.Skip();
 }
 
 void FileListView::OnColumnClick(wxListEvent& event) {
-    int column = event.GetColumn();
-    
-    if (column == m_sortColumn) {
-        m_sortAscending = !m_sortAscending;
-    } else {
-        m_sortAscending = true;
-        m_sortColumn = column;
-    }
-    
-    switch (column) {
-        case 0: sortByName(m_sortAscending); break;
-        case 1: sortBySize(m_sortAscending); break;
-        case 2: sortByType(m_sortAscending); break;
-        case 3: sortByDate(m_sortAscending); break;
-        default: break;
-    }
-    updateColumnHeaders();
+    os::wxInvokeChecked(this, &event, [&] {
+        int column = event.GetColumn();
+
+        if (column == m_sortColumn) {
+            m_sortAscending = !m_sortAscending;
+        } else {
+            m_sortAscending = true;
+            m_sortColumn = column;
+        }
+
+        switch (column) {
+            case 0: sortByName(m_sortAscending); break;
+            case 1: sortBySize(m_sortAscending); break;
+            case 2: sortByType(m_sortAscending); break;
+            case 3: sortByDate(m_sortAscending); break;
+            default: break;
+        }
+        updateColumnHeaders();
+    });
     event.Skip();
 }
 
 void FileListView::OnKeyDown(wxKeyEvent& event) {
-    int keyCode = event.GetKeyCode();
-    
-    switch (keyCode) {
-        case WXK_DELETE:
-            if (!getSelectedFiles().empty()) {
-                std::vector<VolumeFile> files;
-                for (const auto& item : getSelectedFiles()) {
-                    VolumeFile file(m_location.volume, joinVolumePath(m_location.path, item));
-                    files.push_back(file);
+    os::wxInvokeChecked(this, &event, [&] {
+        int keyCode = event.GetKeyCode();
+
+        switch (keyCode) {
+            case WXK_DELETE:
+                if (!getSelectedFiles().empty()) {
+                    std::vector<VolumeFile> files;
+                    for (const auto& item : getSelectedFiles()) {
+                        VolumeFile file(m_location.volume, joinVolumePath(m_location.path, item));
+                        files.push_back(file);
+                    }
+                    notifySelectionChanged(files);
                 }
-                notifySelectionChanged(files);
-            }
-            event.Skip();
-            break;
-            
-        case WXK_F2:
-            if (getSelectedFiles().size() == 1) {
-                // TODO: Implement rename functionality
-            }
-            event.Skip();
-            break;
-            
-        case WXK_RETURN:
-            if (!getSelectedFiles().empty()) {
-                auto selected = getSelectedFiles();
-                for (const auto& item : selected) {
-                    VolumeFile file(m_location.volume, joinVolumePath(m_location.path, item));
-                    notifyFileActivated(file);
+                break;
+
+            case WXK_F2:
+                if (getSelectedFiles().size() == 1) {
+                    // TODO: Implement rename functionality
                 }
-            }
-            event.Skip();
-            break;
-            
-        default:
-            event.Skip();
-            break;
-    }
+                break;
+
+            case WXK_RETURN:
+                if (!getSelectedFiles().empty()) {
+                    auto selected = getSelectedFiles();
+                    for (const auto& item : selected) {
+                        VolumeFile file(m_location.volume, joinVolumePath(m_location.path, item));
+                        notifyFileActivated(file);
+                    }
+                }
+                break;
+
+            default:
+                break;
+        }
+    });
+    event.Skip();
 }
 
 void FileListView::OnLeftDown(wxMouseEvent& event) {
@@ -511,15 +519,17 @@ void FileListView::OnLeftDown(wxMouseEvent& event) {
 }
 
 void FileListView::OnLeftUp(wxMouseEvent& event) {
-    if (m_rectSelecting) {
-        m_rectSelecting = false;
-        std::vector<VolumeFile> files;
-        for (const auto& name : getSelectedFiles()) {
-            VolumeFile file(m_location.volume, joinVolumePath(m_location.path, name));
-            files.push_back(file);
+    os::wxInvokeChecked(this, &event, [&] {
+        if (m_rectSelecting) {
+            m_rectSelecting = false;
+            std::vector<VolumeFile> files;
+            for (const auto& name : getSelectedFiles()) {
+                VolumeFile file(m_location.volume, joinVolumePath(m_location.path, name));
+                files.push_back(file);
+            }
+            notifySelectionChanged(files);
         }
-        notifySelectionChanged(files);
-    }
+    });
     event.Skip();
 }
 

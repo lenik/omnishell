@@ -3,17 +3,20 @@
 
 #include "../widget/DirTreeView.hpp"
 #include "../widget/FileListView.hpp"
+#include "../../wx/wxcWindow.hpp"
 
 #include <wx/combobox.h>
 #include <wx/splitter.h>
 #include <wx/textctrl.h>
 #include <wx/wx.h>
 
+#include <bas/volume/VolumeFile.hpp>
+
+#include <optional>
 #include <string>
 #include <vector>
 
 class VolumeManager;
-struct VolumeFile;
 
 namespace os {
 
@@ -26,7 +29,7 @@ enum class FileDialogMode {
  * VFS-based file selection dialog.
  * Uses VolumeManager and Volume API only (no local filesystem).
  */
-class ChooseFileDialog : public wxDialog {
+class ChooseFileDialog : public wxcDialog {
 public:
     ChooseFileDialog(
         wxWindow* parent,
@@ -42,8 +45,8 @@ public:
     void setMultiSelect(bool enable);
     void setFileMustExist(bool mustExist);
 
-    /** Selected file as VolumeFile (volume + path). Empty if cancelled or none. */
-    VolumeFile getVolumeFile() const;
+    /** Selected file as VolumeFile (volume + path). Nullopt if cancelled or none. */
+    std::optional<VolumeFile> getVolumeFile() const;
     wxString getPath() const;  // legacy: returns "volumeIndex:/path" or empty
     std::vector<VolumeFile> getVolumeFiles() const;
     int getFilterIndex() const;

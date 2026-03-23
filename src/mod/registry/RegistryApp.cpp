@@ -30,7 +30,8 @@ void RegistryApp::initializeMetadata() {
     image = ImageSet(Path(slv_core_pop, "interface-essential/filter-2.svg"));
 }
 
-ProcessPtr RegistryApp::run() {
+ProcessPtr RegistryApp::run(const RunConfig& config) {
+    (void)config;
     auto proc = std::make_shared<Process>();
     proc->uri = uri;
     proc->name = name;

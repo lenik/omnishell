@@ -30,7 +30,8 @@ void FiveOrMoreApp::initializeMetadata() {
     image = ImageSet(Path(slv_core_pop, "interface-essential/horizontal-menu-circle.svg"));
 }
 
-ProcessPtr FiveOrMoreApp::run() {
+ProcessPtr FiveOrMoreApp::run(const RunConfig& config) {
+    (void)config;
     auto proc = std::make_shared<Process>();
     proc->uri = uri;
     proc->name = name;

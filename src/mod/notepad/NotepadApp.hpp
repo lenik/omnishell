@@ -21,7 +21,7 @@ class NotepadApp : public Module {
     NotepadApp(CreateModuleContext* ctx);
     virtual ~NotepadApp();
 
-    virtual ProcessPtr run() override;
+    ProcessPtr run(const RunConfig& config) override;
 
     void initializeMetadata();
 

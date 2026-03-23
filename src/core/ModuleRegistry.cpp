@@ -206,15 +206,15 @@ void ModuleRegistry::startServices() {
             wxLogInfo("Starting service: %s", pair.first);
             // Services may run in separate threads based on isThreadOwned()
             if (pair.second.instance->isThreadOwned()) {
-                std::thread([m = pair.second.instance]() {
+                std::thread([this, m = pair.second.instance]() {
                     try {
-                        (void)m->run();
+                        (void)m->run(m_app->makeRunConfig());
                     } catch (...) {
                     }
                 }).detach();
             } else {
                 // Run in UI thread
-                (void)pair.second.instance->run();
+                (void)pair.second.instance->run(m_app->makeRunConfig());
             }
         }
     }

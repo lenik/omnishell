@@ -16,6 +16,7 @@
 #include <set>
 
 #include "../ui/ThemeStyles.hpp"
+#include "../wx/wxcWindow.hpp"
 using namespace ThemeStyles;
 
 namespace os {
@@ -72,20 +73,22 @@ static wxBitmap ChevronBitmap(bool hover) {
 }
 
 StartMenu::StartMenu(wxWindow* parent)
-    : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxSize(kMenuWidth, kMenuHeight)),
+    : wxcPanel(parent, wxID_ANY, wxDefaultPosition, wxSize(kMenuWidth, kMenuHeight)),
       m_searchBox(nullptr), m_scrollArea(nullptr), m_categoryPanel(nullptr),
       m_launchCallback(nullptr), m_activeCategoryId(ID_CATEGORY_NONE), m_subMenu(nullptr),
       m_subScrollArea(nullptr), m_subSizer(nullptr), m_subMenuKind(ROW_LEAF),
       m_subMenuCategoryId(ID_CATEGORY_NONE), m_menuWidth(kMenuWidth), m_menuHeight(kMenuHeight) {
     SetBackgroundColour(kMenuBg);
     SetMinSize(wxSize(m_menuWidth, 200));
+    SetName(wxT("start_menu"));
 
     // Root layout: left branding strip + right content with padding.
     wxBoxSizer* rootSizer = new wxBoxSizer(wxHORIZONTAL);
 
     wxPanel* branding = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxSize(40, -1));
     branding->SetBackgroundColour(kItemHover);
-    branding->Bind(wxEVT_PAINT, [](wxPaintEvent& e) {
+    branding->SetName(wxT("branding"));
+    wxcBind(*branding, wxEVT_PAINT, [](wxPaintEvent& e) {
         wxWindow* w = static_cast<wxWindow*>(e.GetEventObject());
         wxPaintDC dc(w);
         wxRect rect = w->GetClientRect();
@@ -109,6 +112,7 @@ StartMenu::StartMenu(wxWindow* parent)
 
     wxPanel* contentPanel = new wxPanel(this, wxID_ANY);
     contentPanel->SetBackgroundColour(kMenuBg);
+    contentPanel->SetName(wxT("content"));
 
     wxBoxSizer* mainSizer = new wxBoxSizer(wxVERTICAL);
     // Always keep a top padding even when search box is hidden.
@@ -116,14 +120,15 @@ StartMenu::StartMenu(wxWindow* parent)
 
     m_searchBox = new wxTextCtrl(contentPanel, wxID_ANY, "Search programs...", wxDefaultPosition,
                                  wxSize(-1, 28), wxTE_PROCESS_ENTER);
-    m_searchBox->Bind(wxEVT_TEXT, &StartMenu::OnSearch, this);
-    m_searchBox->Bind(wxEVT_TEXT_ENTER, [this](wxCommandEvent&) {
+    m_searchBox->SetName(wxT("search"));
+    wxcBind(*m_searchBox, wxEVT_TEXT, &StartMenu::OnSearch, this);
+    wxcBind(*m_searchBox, wxEVT_TEXT_ENTER, [this](wxCommandEvent&) {
         if (!m_filteredModules.empty() && m_launchCallback) {
             m_launchCallback(m_filteredModules[0]);
         }
         HideMenu();
     });
-    m_searchBox->Bind(wxEVT_KEY_DOWN, &StartMenu::OnKeyDown, this);
+    wxcBind(*m_searchBox, wxEVT_KEY_DOWN, &StartMenu::OnKeyDown, this);
     mainSizer->Add(m_searchBox, 0, wxEXPAND | wxALL, 10);
     // Start hidden; it will appear on first key press via HandleGlobalKey.
     m_searchBox->Show(false);
@@ -131,11 +136,13 @@ StartMenu::StartMenu(wxWindow* parent)
     m_scrollArea =
         new wxPanel(contentPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_NONE);
     m_scrollArea->SetBackgroundColour(kMenuBg);
+    m_scrollArea->SetName(wxT("program_list"));
     // Stretch the list area so the category strip stays pinned to the bottom.
     // (The empty space, if any, lives inside the list area.)
     mainSizer->Add(m_scrollArea, 1, wxEXPAND | wxLEFT | wxRIGHT, 10);
 
     m_categoryPanel = new wxPanel(contentPanel, wxID_ANY);
+    m_categoryPanel->SetName(wxT("category_bar"));
     wxBoxSizer* catSizer = new wxBoxSizer(wxHORIZONTAL);
     // Top category strip: icon-only buttons with tooltips.
     wxButton* allBtn = new wxButton(m_categoryPanel, wxID_ANY, "", wxDefaultPosition, wxDefaultSize,
@@ -151,18 +158,19 @@ StartMenu::StartMenu(wxWindow* parent)
         }
     }
     allBtn->SetToolTip("All programs");
-    allBtn->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) {
+    allBtn->SetName(wxT("category_all"));
+    wxcBind(*allBtn, wxEVT_BUTTON, [this](wxCommandEvent&) {
         m_activeCategoryId = ID_CATEGORY_NONE;
         wxString t = m_searchBox ? m_searchBox->GetValue() : "";
         FilterModules(t.ToStdString());
         CreateMenuContent();
     });
-    allBtn->Bind(wxEVT_ENTER_WINDOW, [allBtn](wxMouseEvent& e) {
+    wxcBind(*allBtn, wxEVT_ENTER_WINDOW, [allBtn](wxMouseEvent& e) {
         allBtn->SetBackgroundColour(wxColour(0xd0, 0xd0, 0xd0));
         allBtn->Refresh();
         e.Skip();
     });
-    allBtn->Bind(wxEVT_LEAVE_WINDOW, [allBtn](wxMouseEvent& e) {
+    wxcBind(*allBtn, wxEVT_LEAVE_WINDOW, [allBtn](wxMouseEvent& e) {
         allBtn->SetBackgroundColour(wxNullColour);
         allBtn->Refresh();
         e.Skip();
@@ -180,22 +188,25 @@ StartMenu::StartMenu(wxWindow* parent)
         }
         btn->SetToolTip(cat.label);
         CategoryId id = cat.id;
-        btn->Bind(wxEVT_BUTTON, [this, id](wxCommandEvent&) {
+        btn->SetName(wxString::Format(wxT("category_%d"), static_cast<int>(id)));
+        wxcBind(*btn, wxEVT_BUTTON, [this, id](wxCommandEvent&) {
             m_activeCategoryId = id;
             wxString t = m_searchBox ? m_searchBox->GetValue() : "";
             FilterModules(t.ToStdString());
             CreateMenuContent();
         });
-        btn->Bind(wxEVT_ENTER_WINDOW, [btn](wxMouseEvent& e) {
-            btn->SetBackgroundColour(wxColour(0xd0, 0xd0, 0xd0));
-            btn->Refresh();
-            e.Skip();
-        });
-        btn->Bind(wxEVT_LEAVE_WINDOW, [btn](wxMouseEvent& e) {
-            btn->SetBackgroundColour(wxNullColour);
-            btn->Refresh();
-            e.Skip();
-        });
+        wxcBind(*btn, wxEVT_ENTER_WINDOW,
+                [btn](wxMouseEvent& e) {
+                    btn->SetBackgroundColour(wxColour(0xd0, 0xd0, 0xd0));
+                    btn->Refresh();
+                    e.Skip();
+                });
+        wxcBind(*btn, wxEVT_LEAVE_WINDOW,
+                [btn](wxMouseEvent& e) {
+                    btn->SetBackgroundColour(wxNullColour);
+                    btn->Refresh();
+                    e.Skip();
+                });
         catSizer->Add(btn, 1, wxEXPAND | wxALL, 2);
     }
     m_categoryPanel->SetSizer(catSizer);
@@ -215,11 +226,14 @@ StartMenu::StartMenu(wxWindow* parent)
     m_subMenu = new wxPanel(parent, wxID_ANY, wxDefaultPosition, wxSize(kSubMenuWidth, 200),
                             wxBORDER_SIMPLE);
     m_subMenu->SetBackgroundColour(kMenuBg);
+    m_subMenu->SetName(wxT("submenu"));
     m_subMenu->Hide();
-    m_subMenu->Bind(wxEVT_LEAVE_WINDOW, &StartMenu::OnSubMenuLeaveWindow, this);
+    wxcBind(*m_subMenu, wxEVT_LEAVE_WINDOW,
+            &StartMenu::OnSubMenuLeaveWindow, this);
     m_subScrollArea =
         new wxPanel(m_subMenu, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_NONE);
     m_subScrollArea->SetBackgroundColour(kMenuBg);
+    m_subScrollArea->SetName(wxT("submenu_list"));
     wxBoxSizer* subRoot = new wxBoxSizer(wxVERTICAL);
     subRoot->Add(m_subScrollArea, 1, wxEXPAND | wxALL, 4);
     m_subMenu->SetSizer(subRoot);
@@ -273,7 +287,15 @@ void StartMenu::clearModules() {
     }
 }
 
-void StartMenu::setLaunchCallback(LaunchCallback callback) { m_launchCallback = callback; }
+void StartMenu::setLaunchCallback(LaunchCallback callback) {
+    if (!callback) {
+        m_launchCallback = nullptr;
+        return;
+    }
+    m_launchCallback = [this, cb = std::move(callback)](ModulePtr m) {
+        wxInvokeChecked(this, nullptr, [&] { cb(std::move(m)); });
+    };
+}
 
 void StartMenu::OnSearch(wxCommandEvent& event) {
     FilterModules(m_searchBox ? m_searchBox->GetValue().ToStdString() : "");
@@ -394,20 +416,27 @@ void StartMenu::AddMenuItem(wxWindow* parent, wxSizer* sizer, const wxString& la
         rowSizer->Add(chev, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, 10);
     }
     row->SetSizer(rowSizer);
+    row->SetName(wxT("row"));
+    text->SetName(wxT("label"));
 
     m_menuRows.push_back({row, module, rowKind, categoryId});
 
-    row->Bind(wxEVT_LEFT_UP, &StartMenu::OnMenuItemClick, this);
-    row->Bind(wxEVT_ENTER_WINDOW, &StartMenu::OnMenuItemEnter, this);
-    row->Bind(wxEVT_LEAVE_WINDOW, &StartMenu::OnMenuItemLeave, this);
-    text->Bind(wxEVT_LEFT_UP, &StartMenu::OnMenuItemClick, this);
-    text->Bind(wxEVT_ENTER_WINDOW, &StartMenu::OnMenuItemEnter, this);
-    text->Bind(wxEVT_LEAVE_WINDOW, &StartMenu::OnMenuItemLeave, this);
+    wxcBind(*row, wxEVT_LEFT_UP, &StartMenu::OnMenuItemClick, this);
+    wxcBind(*row, wxEVT_ENTER_WINDOW, &StartMenu::OnMenuItemEnter, this);
+    wxcBind(*row, wxEVT_LEAVE_WINDOW, &StartMenu::OnMenuItemLeave, this);
+    wxcBind(*text, wxEVT_LEFT_UP, &StartMenu::OnMenuItemClick, this);
+    wxcBind(*text, wxEVT_ENTER_WINDOW, &StartMenu::OnMenuItemEnter,
+            this);
+    wxcBind(*text, wxEVT_LEAVE_WINDOW, &StartMenu::OnMenuItemLeave,
+            this);
     for (wxWindowList::const_iterator it = row->GetChildren().begin();
          it != row->GetChildren().end(); ++it) {
-        (*it)->Bind(wxEVT_LEFT_UP, &StartMenu::OnMenuItemClick, this);
-        (*it)->Bind(wxEVT_ENTER_WINDOW, &StartMenu::OnMenuItemEnter, this);
-        (*it)->Bind(wxEVT_LEAVE_WINDOW, &StartMenu::OnMenuItemLeave, this);
+        wxcBind(**it, wxEVT_LEFT_UP, &StartMenu::OnMenuItemClick,
+                this);
+        wxcBind(**it, wxEVT_ENTER_WINDOW,
+                &StartMenu::OnMenuItemEnter, this);
+        wxcBind(**it, wxEVT_LEAVE_WINDOW,
+                &StartMenu::OnMenuItemLeave, this);
     }
 
     sizer->Add(row, 0, wxEXPAND);
@@ -480,33 +509,37 @@ void StartMenu::OnMenuItemClick(wxMouseEvent& event) {
             if (lbl.StartsWith("Console")) {
                 wxFrame* f =
                     new wxFrame(nullptr, wxID_ANY, "Console", wxDefaultPosition, wxSize(800, 400));
+                f->SetName(wxT("console"));
                 wxBoxSizer* s = new wxBoxSizer(wxVERTICAL);
                 wxTextCtrl* out = new wxTextCtrl(f, wxID_ANY, "", wxDefaultPosition, wxDefaultSize,
                                                  wxTE_MULTILINE | wxTE_READONLY);
+                out->SetName(wxT("stdout"));
                 wxTextCtrl* in = new wxTextCtrl(f, wxID_ANY, "", wxDefaultPosition, wxDefaultSize,
                                                 wxTE_PROCESS_ENTER);
+                in->SetName(wxT("stdin"));
                 s->Add(out, 1, wxEXPAND | wxALL, 6);
                 s->Add(in, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, 6);
                 f->SetSizer(s);
-                in->Bind(wxEVT_TEXT_ENTER, [out, in](wxCommandEvent&) {
-                    wxString cmd = in->GetValue();
-                    if (cmd.IsEmpty())
-                        return;
-                    out->AppendText("> " + cmd + "\n");
-                    in->Clear();
+                wxcBind(*in, wxEVT_TEXT_ENTER,
+                        [out, in](wxCommandEvent&) {
+                            wxString cmd = in->GetValue();
+                            if (cmd.IsEmpty())
+                                return;
+                            out->AppendText("> " + cmd + "\n");
+                            in->Clear();
 
-                    FILE* pipe = popen(cmd.ToStdString().c_str(), "r");
-                    if (!pipe) {
-                        out->AppendText("(failed to run)\n");
-                        return;
-                    }
-                    char buf[512];
-                    while (fgets(buf, sizeof(buf), pipe)) {
-                        out->AppendText(wxString::FromUTF8(buf));
-                    }
-                    int rc = pclose(pipe);
-                    out->AppendText(wxString::Format("\n(exit %d)\n", rc));
-                });
+                            FILE* pipe = popen(cmd.ToStdString().c_str(), "r");
+                            if (!pipe) {
+                                out->AppendText("(failed to run)\n");
+                                return;
+                            }
+                            char buf[512];
+                            while (fgets(buf, sizeof(buf), pipe)) {
+                                out->AppendText(wxString::FromUTF8(buf));
+                            }
+                            int rc = pclose(pipe);
+                            out->AppendText(wxString::Format("\n(exit %d)\n", rc));
+                        });
                 f->Centre();
                 f->Show(true);
             }
