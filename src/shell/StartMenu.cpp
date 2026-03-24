@@ -12,7 +12,6 @@
 #include <wx/utils.h>
 
 #include <algorithm>
-#include <cstdio>
 #include <set>
 
 #include "../ui/ThemeStyles.hpp"
@@ -505,44 +504,6 @@ void StartMenu::OnMenuItemClick(wxMouseEvent& event) {
             if (shell) {
                 shell->openExplorerAt("Trash");
             }
-        } else if (lbl.StartsWith("Recent") || lbl.StartsWith("Console")) {
-            if (lbl.StartsWith("Console")) {
-                wxFrame* f =
-                    new wxFrame(nullptr, wxID_ANY, "Console", wxDefaultPosition, wxSize(800, 400));
-                f->SetName(wxT("console"));
-                wxBoxSizer* s = new wxBoxSizer(wxVERTICAL);
-                wxTextCtrl* out = new wxTextCtrl(f, wxID_ANY, "", wxDefaultPosition, wxDefaultSize,
-                                                 wxTE_MULTILINE | wxTE_READONLY);
-                out->SetName(wxT("stdout"));
-                wxTextCtrl* in = new wxTextCtrl(f, wxID_ANY, "", wxDefaultPosition, wxDefaultSize,
-                                                wxTE_PROCESS_ENTER);
-                in->SetName(wxT("stdin"));
-                s->Add(out, 1, wxEXPAND | wxALL, 6);
-                s->Add(in, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, 6);
-                f->SetSizer(s);
-                wxcBind(*in, wxEVT_TEXT_ENTER,
-                        [out, in](wxCommandEvent&) {
-                            wxString cmd = in->GetValue();
-                            if (cmd.IsEmpty())
-                                return;
-                            out->AppendText("> " + cmd + "\n");
-                            in->Clear();
-
-                            FILE* pipe = popen(cmd.ToStdString().c_str(), "r");
-                            if (!pipe) {
-                                out->AppendText("(failed to run)\n");
-                                return;
-                            }
-                            char buf[512];
-                            while (fgets(buf, sizeof(buf), pipe)) {
-                                out->AppendText(wxString::FromUTF8(buf));
-                            }
-                            int rc = pclose(pipe);
-                            out->AppendText(wxString::Format("\n(exit %d)\n", rc));
-                        });
-                f->Centre();
-                f->Show(true);
-            }
         }
         HideMenu();
         return;
@@ -753,9 +714,6 @@ void StartMenu::CreateMenuContent() {
     auto iconTrash = //
         ImageSet(Path(slv_core_pop, "interface-essential/archive-box.svg"))
             .toBitmap1(kIconSize, kIconSize);
-    auto iconConsole = //
-        ImageSet(Path(slv_core_pop, "computer-devices/desktop-code.svg"))
-            .toBitmap1(kIconSize, kIconSize);
     auto iconExit = //
         ImageSet(Path(slv_core_pop, "map-travel/emergency-exit.svg"))
             .toBitmap1(kIconSize, kIconSize);
@@ -813,7 +771,7 @@ void StartMenu::CreateMenuContent() {
     addPseudo("Recent files", iconRecent.IsOk() ? &iconRecent : nullptr, ROW_RECENT_FOLDER);
     addPseudo("Trash", iconTrash.IsOk() ? &iconTrash : nullptr, ROW_LEAF);
     addSep();
-    addPseudo("Console", iconConsole.IsOk() ? &iconConsole : nullptr, ROW_LEAF);
+    addModule(findByName("console"));
     addModule(findByName("controlpanel"));
     addModule(findByName("registry"));
     addSep();

@@ -2,10 +2,13 @@ project('omnishell', 'cpp',
   version : '1.0.2',
   default_options : ['warning_level=0', 'cpp_std=c++17'])
 
+add_languages('c', native : false)
+
 pkgdatadir = get_option('datadir') / meson.project_name()
 
 fs = import('fs')
 cpp = meson.get_compiler('cpp')
+c = meson.get_compiler('c')
 
 # libbas
     bas_c_dep = dependency('bas-c', required : true)
@@ -36,6 +39,36 @@ cpp = meson.get_compiler('cpp')
     wx_richtext_lib = cpp.find_library(wx_gtk_prefix + '_richtext-' + wx_ver, required: true)
     wx_stc_lib = cpp.find_library(wx_gtk_prefix + '_stc-' + wx_ver, required: true)
     wx_webview_lib = cpp.find_library(wx_gtk_prefix + '_webview-' + wx_ver, required: true)
+
+bison = find_program('bison', required : true)
+flex = find_program('flex', required : true)
+
+zash_bison = custom_target(
+    'zash_bison',
+    input : 'src/cli/zash/zash.y',
+    output : ['zash.tab.c', 'zash.tab.h'],
+    command : [bison, '-d', '-o', '@OUTPUT0@', '@INPUT@'],
+)
+
+zash_flex = custom_target(
+    'zash_flex',
+    input : 'src/cli/zash/zash.lex',
+    output : 'lex.yy.c',
+    command : [flex, '-o', '@OUTPUT0@', '@INPUT@'],
+    depends : zash_bison,
+)
+
+zash_sources = files(
+    'src/cli/zash/parser/zash_alloc.c',
+    'src/cli/zash/zash_driver.c',
+    'src/cli/zash/zash_interpreter.cpp',
+    'src/cli/zash/builtins/builtins.cpp',
+)
+
+zash_inc = [
+    include_directories('src/cli/zash'),
+    include_directories('src/cli/zash/parser'),
+]
 
 # wx_dep = dependency('wxwidgets', modules : [
 #     'core',
@@ -145,6 +178,12 @@ cpp_sources = files(
   'src/ui/dialogs/ChoosePrinterDialog.cpp',
   'src/wx/LabeledIcon.cpp',
   'src/wx/WxChecked.cpp',
+  'src/wx/wxTerminal.cpp',
+  'src/wx/wxConsole.cpp',
+  'src/wx/term/xterm.cpp',
+  'src/mod/console/ConsoleApp.cpp',
+  'src/mod/console/ConsoleFrame.cpp',
+  'src/mod/console/ConsoleBody.cpp',
 )
 
 # Assets will be zipped and linked as a section in the executable
@@ -200,7 +239,11 @@ exe_deps = [
 
 have_wx_media = wx_media_lib.found()
 lib_omnishell_cpp_args = cpp_nowarn + ['-DLOGGER_NAME=omni']
-lib_omnishell_deps = exe_deps
+lib_omnishell_deps = exe_deps + [threads_dep]
+if host_machine.system() != 'windows'
+    util_lib = cpp.find_library('util', required : true)
+    lib_omnishell_deps += util_lib
+endif
 if have_wx_media
     lib_omnishell_deps += [wx_media_lib]
     lib_omnishell_cpp_args += ['-DHAVE_WX_MEDIA=1']
@@ -223,9 +266,13 @@ exe_inc = [
 
 lib_omnishell = library('omnishell',
     cpp_sources,
+    zash_sources,
+    zash_bison,
+    zash_flex,
     'src/module.cpp',
     dependencies : lib_omnishell_deps,
-    include_directories : exe_inc,
+    include_directories : exe_inc + zash_inc,
+    c_args : c.get_supported_arguments(['-Wno-unused-parameter']),
     cpp_args : lib_omnishell_cpp_args,
     cpp_pch: wx_pch,
     link_args : ['-rdynamic'],
