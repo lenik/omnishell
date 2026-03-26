@@ -198,7 +198,7 @@ void ConsoleBody::createFragmentView(CreateViewContext* ctx) {
         return;
 
     m_console = new wxConsole(m_frame);
-    
+
     auto* sz = new wxBoxSizer(wxVERTICAL);
     sz->Add(m_console, 1, wxEXPAND);
     m_frame->SetSizer(sz);
@@ -206,10 +206,6 @@ void ConsoleBody::createFragmentView(CreateViewContext* ctx) {
     loadHistory();
 
     m_frame->Bind(wxEVT_CLOSE_WINDOW, &ConsoleBody::onFrameClose, this);
-
-    if (wxTerminal* t = m_console->GetTerminal()) {
-        t->CallAfter([t]() { t->SetFocus(); });
-    }
 }
 
 void ConsoleBody::onFrameClose(wxCloseEvent& e) {

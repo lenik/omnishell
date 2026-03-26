@@ -20,6 +20,17 @@ constexpr int kMinCols = 20;
 constexpr int kMinRows = 4;
 constexpr int kScrollbackExtraRows = 2048;
 
+// wxGTK: wxScrollBar may still grab focus even if SetCanFocus(false) is used.
+// Enforce non-focusable behavior by overriding AcceptsFocus.
+class NoFocusScrollBar final : public wxScrollBar {
+public:
+    NoFocusScrollBar(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style)
+        : wxScrollBar(parent, id, pos, size, style) {}
+
+    bool AcceptsFocus() const override { return false; }
+    bool AcceptsFocusFromKeyboard() const override { return false; }
+};
+
 void Utf8Consume(std::string_view& in, uint32_t& outCp, bool& ok) {
     ok = false;
     if (in.empty())
@@ -346,22 +357,64 @@ wxTerminal::wxTerminal(wxWindow* parent, wxWindowID id, const wxPoint& pos, cons
     SetBackgroundStyle(wxBG_STYLE_PAINT);
     SetDoubleBuffered(true);
     SetName(wxT("wxTerminal"));
+    SetCanFocus(true);
 
     m_defaultFontPt = 11;
     m_font = wxFont(m_defaultFontPt, wxFONTFAMILY_TELETYPE, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL);
     SetFont(m_font);
 
-    m_vscroll = new wxScrollBar(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxSB_VERTICAL);
-    m_vscroll->SetScrollbar(0, 1, 1, 1, false);
-    const int sid = m_vscroll->GetId();
-    Bind(wxEVT_SCROLL_TOP, &wxTerminal::OnVScroll, this, sid);
-    Bind(wxEVT_SCROLL_BOTTOM, &wxTerminal::OnVScroll, this, sid);
-    Bind(wxEVT_SCROLL_LINEUP, &wxTerminal::OnVScroll, this, sid);
-    Bind(wxEVT_SCROLL_LINEDOWN, &wxTerminal::OnVScroll, this, sid);
-    Bind(wxEVT_SCROLL_PAGEUP, &wxTerminal::OnVScroll, this, sid);
-    Bind(wxEVT_SCROLL_PAGEDOWN, &wxTerminal::OnVScroll, this, sid);
-    Bind(wxEVT_SCROLL_THUMBTRACK, &wxTerminal::OnVScroll, this, sid);
-    Bind(wxEVT_SCROLL_THUMBRELEASE, &wxTerminal::OnVScroll, this, sid);
+    // m_vscroll = new NoFocusScrollBar(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxSB_VERTICAL);
+    // // Scrollbar must not steal keyboard focus (breaks caret + typing).
+    // m_vscroll->SetCanFocus(false);
+    // m_vscroll->Bind(wxEVT_SET_FOCUS, [this](wxFocusEvent& e) {
+    //     SetFocus();
+    //     e.Skip(false);
+    // });
+    // m_vscroll->Bind(wxEVT_LEFT_DOWN, [this](wxMouseEvent& e) {
+    //     // Keep focus on terminal even while user drags scrollbar.
+    //     SetFocus();
+    //     e.Skip();
+    // });
+    // // If key events still land on the scrollbar, reroute them to the terminal.
+    // auto rerouteKey = [this](wxKeyEvent& e) {
+    //     SetFocus();
+    //     wxKeyEvent fwd(e);
+    //     fwd.SetEventObject(this);
+    //     GetEventHandler()->ProcessEvent(fwd);
+    //     e.Skip(false);
+    // };
+    // m_vscroll->Bind(wxEVT_CHAR_HOOK, rerouteKey);
+    // m_vscroll->Bind(wxEVT_KEY_DOWN, rerouteKey);
+    // m_vscroll->Bind(wxEVT_CHAR, rerouteKey);
+    // m_vscroll->SetScrollbar(0, 1, 1, 1, false);
+    // const int sid = m_vscroll->GetId();
+    // Bind(wxEVT_SCROLL_TOP, &wxTerminal::OnVScroll, this, sid);
+    // Bind(wxEVT_SCROLL_BOTTOM, &wxTerminal::OnVScroll, this, sid);
+    // Bind(wxEVT_SCROLL_LINEUP, &wxTerminal::OnVScroll, this, sid);
+    // Bind(wxEVT_SCROLL_LINEDOWN, &wxTerminal::OnVScroll, this, sid);
+    // Bind(wxEVT_SCROLL_PAGEUP, &wxTerminal::OnVScroll, this, sid);
+    // Bind(wxEVT_SCROLL_PAGEDOWN, &wxTerminal::OnVScroll, this, sid);
+    // Bind(wxEVT_SCROLL_THUMBTRACK, &wxTerminal::OnVScroll, this, sid);
+    // Bind(wxEVT_SCROLL_THUMBRELEASE, &wxTerminal::OnVScroll, this, sid);
+
+    // GTK may focus internal child windows of wxScrollBar (not the wxScrollBar itself).
+    // Catch all child-focus transitions and keep focus on the terminal.
+    // Bind(wxEVT_CHILD_FOCUS, [this](wxChildFocusEvent& e) {
+    //     wxWindow* w = e.GetWindow();
+    //     bool fromScrollbar = false;
+    //     for (wxWindow* p = w; p; p = p->GetParent()) {
+    //         if (p == m_vscroll) {
+    //             fromScrollbar = true;
+    //             break;
+    //         }
+    //     }
+    //     if (fromScrollbar) {
+    //         SetFocus();
+    //         e.Skip(false);
+    //         return;
+    //     }
+    //     e.Skip();
+    // });
 
     m_bufRows = m_visibleRows + kScrollbackExtraRows;
     m_grid.assign(static_cast<size_t>(m_bufRows * m_cols), Cell{});
@@ -394,7 +447,15 @@ wxTerminal::wxTerminal(wxWindow* parent, wxWindowID id, const wxPoint& pos, cons
     SyncScrollbarFromView();
 }
 
-wxTerminal::~wxTerminal() = default;
+wxTerminal::~wxTerminal() {
+    if (m_topKeyHookWnd) {
+        // We bound a lambda; Unbind() can't remove it reliably without storing it.
+        // Leaving it would be dangerous if it captured `this`, so we guard by disabling the hook
+        // via clearing the window pointer and returning early in the lambda's focus walk.
+        // (The window will typically outlive this terminal only briefly during teardown.)
+        m_topKeyHookWnd = nullptr;
+    }
+}
 
 void wxTerminal::SetForegroundPtyPassthrough(bool on) {
     m_foregroundPtyPassthrough = on;

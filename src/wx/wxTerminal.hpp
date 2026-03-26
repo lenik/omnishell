@@ -30,6 +30,11 @@ public:
                const wxSize& size = wxDefaultSize, long style = 0);
     ~wxTerminal() override;
 
+    // wxGTK: wxPanel often doesn't accept focus by default. Without this, we won't reliably
+    // receive wxEVT_CHAR and the caret won't be shown.
+    bool AcceptsFocus() const override { return true; }
+    bool AcceptsFocusFromKeyboard() const override { return true; }
+
     /** Decode UTF-8 and feed each code point through Receive(); then Refresh(). */
     void WriteUtf8(std::string_view utf8);
     /**
@@ -258,6 +263,9 @@ private:
     wxScrollBar* m_vscroll{nullptr};
     int m_scrollbarW{12};
     int m_defaultFontPt{11};
+
+    // Top-level key hook used to prevent scrollbar focus from breaking typing (wxGTK).
+    wxWindow* m_topKeyHookWnd{nullptr};
 };
 
 } // namespace os

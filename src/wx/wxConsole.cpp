@@ -319,13 +319,6 @@ wxConsole::wxConsole(wxWindow* parent, wxWindowID id, const wxPoint& pos, const 
     SetName(wxT("wxConsole"));
     m_term = new wxTerminal(this, wxID_ANY);
 
-    // Ensure keyboard input goes to the terminal by default.
-    Bind(wxEVT_SET_FOCUS, [this](wxFocusEvent& e) {
-        if (m_term)
-            m_term->SetFocus();
-        e.Skip();
-    });
-
     wxBoxSizer* sz = new wxBoxSizer(wxVERTICAL);
     sz->Add(m_term, 1, wxEXPAND);
     SetSizer(sz);
@@ -379,12 +372,6 @@ wxConsole::wxConsole(wxWindow* parent, wxWindowID id, const wxPoint& pos, const 
         if (t)
             t->WriteUtf8(
                 "OmniShell console — zash (if/for/case, pipelines, builtins). Type `help`.\r\n");
-    });
-
-    // After layout, focus the terminal so typing works immediately.
-    m_term->CallAfter([t = m_term]() {
-        if (t)
-            t->SetFocus();
     });
 }
 
