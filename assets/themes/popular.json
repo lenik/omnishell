@@ -1,6 +1,6 @@
 {
     "browser": {
-        "icon"              : {                                 "asset": "streamline-vectors/core/flat/computer-devices/network.svg" }
+        "icon"              : {                                 "asset": "streamline-vectors/core/pop/programming/browser-website-1.svg" }
     },
     "calculator": {
         "icon"              : {                                 "asset": "streamline-vectors/core/pop/interface-essential/calculator.svg" }
@@ -9,119 +9,119 @@
         "icon"              : {                                 "asset": "streamline-vectors/core/pop/interface-essential/blank-calendar.svg" }
     },
     "camera": {
-        "app.settings"      : { "wxartid": "wxART_HELP_SETTINGS", "asset": "streamline-vectors/core/pop/interface-essential/cog-1.svg" },
+        "app.settings"      : { "wxartid": "wxART_HELP_SETTINGS","asset":"streamline-vectors/core/pop/interface-essential/cog-1.svg" },
         "group.camera"      : { "wxartid": "wxART_CAMERA",      "asset": "streamline-vectors/core/pop/images-photography/camera-1.svg" },
-        "icon"              : {                                 "asset": "streamline-vectors/core/pop/images-photography/camera-1.svg" },
-        "media.capture"     : { "wxartid": "wxART_PHOTO",       "asset": "streamline-vectors/core/pop/images-photography/camera-1.svg" },
+        "icon"              : {                                 "asset": "streamline-vectors/core/pop/images-photography/camera-square.svg" },
+        "media.capture"     : { "wxartid": "wxART_PHOTO",       "asset": "streamline-vectors/core/pop/images-photography/polaroid-four.svg" },
         "media.record"      : { "wxartid": "wxART_VIDEO",       "asset": "streamline-vectors/core/pop/entertainment/camera-video.svg" },
-        "media.replay"      : { "wxartid": "wxART_REPLAY",      "asset": "streamline-vectors/core/pop/entertainment/button-play.svg" }
+        "media.replay"      : { "wxartid": "wxART_REPLAY",      "asset": "streamline-vectors/core/pop/interface-essential/line-arrow-reload-horizontal-1.svg" }
     },
     "console": {
         "group.console"     : { "wxartid": "wxART_CONSOLE",     "asset": "streamline-vectors/core/pop/interface-essential/console.svg" },
-        "icon"              : {                                 "asset": "streamline-vectors/core/pop/computer-devices/desktop-code.svg" },
-        "nav.history_next"  : { "wxartid": "wxART_GO_BACK",     "asset": "streamline-vectors/core/pop/interface-essential/history.svg" },
-        "nav.history_prev"  : { "wxartid": "wxART_GO_FORWARD",  "asset": "streamline-vectors/core/pop/interface-essential/history.svg" },
+        "icon"              : {                                 "asset": "streamline-vectors/core/pop/programming/script-2.svg" },
+        "nav.history_next"  : { "wxartid": "wxART_GO_BACK",     "asset": "streamline-vectors/core/pop/interface-essential/line-arrow-move-left-2.svg" },
+        "nav.history_prev"  : { "wxartid": "wxART_GO_FORWARD",  "asset": "streamline-vectors/core/pop/interface-essential/line-arrow-move-right-2.svg" },
         "nav.page_next"     : { "wxartid": "wxART_DOWN",        "asset": "streamline-vectors/core/pop/interface-essential/down.svg" },
         "nav.page_prev"     : { "wxartid": "wxART_UP",          "asset": "streamline-vectors/core/pop/interface-essential/up.svg" },
         "nav.scroll_down"   : { "wxartid": "wxART_DOWN",        "asset": "streamline-vectors/core/pop/interface-essential/down.svg" },
         "nav.scroll_up"     : { "wxartid": "wxART_UP",          "asset": "streamline-vectors/core/pop/interface-essential/up.svg" }
     },
     "controlpanel": {
-        "icon"              : {                                 "asset": "streamline-vectors/core/pop/interface-essential/cog-1.svg" }
+        "icon"              : {                                 "asset": "streamline-vectors/core/pop/interface-essential/dashboard-3.svg" }
     },
     "default": {
-        "edit.paste"        : { "wxartid": "wxART_PASTE",       "asset": "streamline-vectors/core/pop/interface-essential/paste.svg" },
-        "edit.copy"         : { "wxartid": "wxART_COPY",        "asset": "streamline-vectors/core/pop/interface-essential/copy.svg" },
+        "edit.paste"        : { "wxartid": "wxART_PASTE",       "asset": "streamline-vectors/core/pop/interface-essential/copy-paste.svg" },
+        "edit.copy"         : { "wxartid": "wxART_COPY",        "asset": "streamline-vectors/core/pop/interface-essential/copy-paste.svg" },
         "edit.cut"          : { "wxartid": "wxART_CUT",         "asset": "streamline-vectors/core/pop/interface-essential/cut.svg" },
-        "edit.delete"       : { "wxartid": "wxART_DELETE",      "asset": "streamline-vectors/core/pop/interface-essential/delete.svg" },
-        "edit.select_all"   : { "wxartid": "wxART_SELECT_ALL",  "asset": "streamline-vectors/core/pop/interface-essential/clipboard-check.svg" },
+        "edit.delete"       : { "wxartid": "wxART_DELETE",      "asset": "streamline-vectors/core/pop/interface-essential/delete-1.svg" },
+        "edit.select_all"   : { "wxartid": "wxART_SELECT_ALL",  "asset": "streamline-vectors/core/pop/interface-essential/select-circle-area-1.svg" },
         "edit.clear"        : { "wxartid": "wxART_CLEAR",       "asset": "streamline-vectors/core/pop/interface-essential/clear.svg" },
-        "edit.redo"         : { "wxartid": "wxART_REDO",        "asset": "streamline-vectors/core/pop/artificial-intelligence/ai-redo-spark.svg" },
-        "edit.undo"         : { "wxartid": "wxART_UNDO",        "asset": "streamline-vectors/ultimate/colors/interface-essential/undo.svg" },
+        "edit.redo"         : { "wxartid": "wxART_REDO",        "asset": "streamline-vectors/core/pop/interface-essential/line-arrow-rotate-right-1.svg" },
+        "edit.undo"         : { "wxartid": "wxART_UNDO",        "asset": "streamline-vectors/core/pop/interface-essential/line-arrow-rotate-left-1.svg" },
         "file.new"          : { "wxartid": "wxART_NEW",         "asset": "streamline-vectors/core/pop/interface-essential/new-file.svg" },
-        "file.open"         : { "wxartid": "wxART_FILE_OPEN",   "asset": "streamline-vectors/core/pop/interface-essential/open-book.svg" },
-        "file.save"         : { "wxartid": "wxART_FILE_SAVE",   "asset": "streamline-vectors/core/pop/interface-essential/file-add-alternate.svg" },
-        "file.saveas"       : { "wxartid": "wxART_FILE_SAVE_AS", "asset": "streamline-vectors/core/pop/interface-essential/multiple-file-2.svg" },
-        "game.new"          : { "wxartid": "wxART_NEW",         "asset": "streamline-vectors/core/pop/interface-essential/new-file.svg" },
+        "file.open"         : { "wxartid": "wxART_FILE_OPEN",   "asset": "streamline-vectors/core/pop/interface-essential/new-folder.svg" },
+        "file.save"         : { "wxartid": "wxART_FILE_SAVE",   "asset": "streamline-vectors/core/pop/computer-devices/floppy-disk.svg" },
+        "file.saveas"       : { "wxartid": "wxART_FILE_SAVE_AS", "asset": "streamline-vectors/core/pop/interface-essential/download-file.svg" },
+        "game.new"          : { "wxartid": "wxART_NEW",         "asset": "streamline-vectors/core/pop/entertainment/dice-1.svg" },
         "game.redo"         : { "wxartid": "wxART_REDO",        "asset": "streamline-vectors/core/pop/interface-essential/line-arrow-rotate-right-1.svg" },
         "game.undo"         : { "wxartid": "wxART_UNDO",        "asset": "streamline-vectors/core/pop/interface-essential/line-arrow-rotate-left-1.svg" },
-        "group.edit"        : { "wxartid": "wxART_EDIT",        "asset": "streamline-vectors/core/pop/interface-essential/edit.svg" },
-        "group.file"        : { "wxartid": "wxART_FILE",        "asset": "streamline-vectors/core/pop/interface-essential/file.svg" },
-        "group.help"        : { "wxartid": "wxART_HELP",        "asset": "streamline-vectors/core/pop/interface-essential/help.svg" },
-        "group.tools"       : { "wxartid": "wxART_TOOLS",       "asset": "streamline-vectors/core/pop/interface-essential/tools.svg" },
-        "group.view"        : { "wxartid": "wxART_VIEW",        "asset": "streamline-vectors/core/pop/interface-essential/view.svg" },
-        "group.media"       : { "wxartid": "wxART_MEDIA",       "asset": "streamline-vectors/core/pop/entertainment/camera-video.svg" },
-        "group.playlist"    : { "wxartid": "wxART_PLAYLIST",    "asset": "streamline-vectors/core/pop/entertainment/music-note-1.svg" },
-        "media.play"        : { "wxartid": "wxART_PLAY",        "asset": "streamline-vectors/core/pop/entertainment/button-play.svg" },
-        "media.pause"       : { "wxartid": "wxART_PAUSE",       "asset": "streamline-vectors/core/pop/entertainment/button-pause-2.svg" },
-        "media.play_pause"  : { "wxartid": "wxART_PLAY_PAUSE",  "asset": "streamline-vectors/core/pop/entertainment/button-next.svg" },
-        "media.stop"        : { "wxartid": "wxART_STOP",        "asset": "streamline-vectors/core/pop/entertainment/button-stop.svg" },
-        "media.repeat"      : { "wxartid": "wxART_REPEAT",      "asset": "streamline-vectors/core/pop/interface-essential/repeat.svg" },
-        "media.once"        : { "wxartid": "wxART_ONCE",        "asset": "streamline-vectors/core/pop/interface-essential/arrange-number.svg" },
-        "media.rewind"      : { "wxartid": "wxART_REWIND",      "asset": "streamline-vectors/core/pop/entertainment/button-rewind-2.svg" },
-        "media.forward"     : { "wxartid": "wxART_FORWARD",     "asset": "streamline-vectors/core/pop/entertainment/button-forward-2.svg" },
-        "nav.back"          : { "wxartid": "wxART_GO_BACK",     "asset": "streamline-vectors/core/pop/interface-essential/arrow-left.svg" },
-        "nav.forward"       : { "wxartid": "wxART_GO_FORWARD",  "asset": "streamline-vectors/core/pop/interface-essential/arrow-right.svg" },
-        "nav.home"          : { "wxartid": "wxART_GO_HOME",     "asset": "streamline-vectors/core/pop/interface-essential/home.svg" },
-        "view.refresh"      : { "wxartid": "wxART_REFRESH",     "asset": "streamline-vectors/core/pop/interface-essential/refresh.svg" },
+        "group.edit"        : { "wxartid": "wxART_EDIT",        "asset": "streamline-vectors/core/pop/interface-essential/pencil.svg" },
+        "group.file"        : { "wxartid": "wxART_FILE",        "asset": "streamline-vectors/core/pop/interface-essential/multiple-file-2.svg" },
+        "group.help"        : { "wxartid": "wxART_HELP",        "asset": "streamline-vectors/core/pop/interface-essential/help-question-1.svg" },
+        "group.tools"       : { "wxartid": "wxART_TOOLS",       "asset": "streamline-vectors/core/pop/interface-essential/wrench.svg" },
+        "group.view"        : { "wxartid": "wxART_VIEW",        "asset": "streamline-vectors/core/pop/interface-essential/visible.svg" },
+        "group.media"       : { "wxartid": "wxART_MEDIA",       "asset": "streamline-vectors/core/pop/entertainment/media-play.svg" },
+        "group.playlist"    : { "wxartid": "wxART_PLAYLIST",    "asset": "streamline-vectors/core/pop/entertainment/play-list-4.svg" },
+        "media.play"        : { "wxartid": "wxART_PLAY",        "asset": "streamline-vectors/core/pop/entertainment/media-play.svg" },
+        "media.pause"       : { "wxartid": "wxART_PAUSE",       "asset": "streamline-vectors/core/pop/entertainment/media-pause.svg" },
+        "media.play_pause"  : { "wxartid": "wxART_PLAY_PAUSE",  "asset": "streamline-vectors/core/pop/entertainment/button-play.svg" },
+        "media.stop"        : { "wxartid": "wxART_STOP",        "asset": "streamline-vectors/core/pop/entertainment/media-stop.svg" },
+        "media.repeat"      : { "wxartid": "wxART_REPEAT",      "asset": "streamline-vectors/core/pop/interface-essential/loop-1.svg" },
+        "media.once"        : { "wxartid": "wxART_ONCE",        "asset": "streamline-vectors/core/pop/interface-essential/one-finger-tap.svg" },
+        "media.rewind"      : { "wxartid": "wxART_REWIND",      "asset": "streamline-vectors/core/pop/entertainment/button-rewind-1.svg" },
+        "media.forward"     : { "wxartid": "wxART_FORWARD",     "asset": "streamline-vectors/core/pop/entertainment/button-fast-forward-1.svg" },
+        "nav.back"          : { "wxartid": "wxART_GO_BACK",     "asset": "streamline-vectors/core/pop/interface-essential/line-arrow-move-left-2.svg" },
+        "nav.forward"       : { "wxartid": "wxART_GO_FORWARD",  "asset": "streamline-vectors/core/pop/interface-essential/line-arrow-move-right-2.svg" },
+        "nav.home"          : { "wxartid": "wxART_GO_HOME",     "asset": "streamline-vectors/core/pop/interface-essential/home-3.svg" },
+        "view.refresh"      : { "wxartid": "wxART_REFRESH",     "asset": "streamline-vectors/core/pop/interface-essential/reset.svg" },
         "view.zoom_in"      : { "wxartid": "wxART_ZOOM_IN",     "asset": "streamline-vectors/core/pop/interface-essential/magnifying-glass-circle.svg" },
         "view.zoom_out"     : { "wxartid": "wxART_ZOOM_OUT",    "asset": "streamline-vectors/core/pop/interface-essential/magnifying-glass.svg" },
-        "view.zoom_reset"   : { "wxartid": "wxART_RESET",       "asset": "streamline-vectors/core/pop/interface-essential/search-visual.svg" }
+        "view.zoom_reset"   : { "wxartid": "wxART_RESET",       "asset": "streamline-vectors/core/pop/interface-essential/reset.svg" }
     },
     "explorer": {
-        "icon"              : {                                 "asset": "streamline-vectors/core/pop/interface-essential/folder-add.svg" },
-        "nav.up"            : { "wxartid": "wxART_GO_DIR_UP",   "asset": "streamline-vectors/core/pop/interface-essential/arrow-up.svg" },
-        "view.grid"         : { "wxartid": "wxART_GRID_VIEW", "asset": "streamline-vectors/core/pop/interface-essential/grid-view.svg" },
-        "view.list"         : { "wxartid": "wxART_LIST_VIEW",   "asset": "streamline-vectors/core/pop/interface-essential/list-view.svg" }
+        "icon"              : {                                 "asset": "streamline-vectors/core/pop/computer-devices/local-storage-folder.svg" },
+        "nav.up"            : { "wxartid": "wxART_GO_DIR_UP",   "asset": "streamline-vectors/core/pop/interface-essential/up.svg" },
+        "view.grid"         : { "wxartid": "wxART_GRID_VIEW",   "asset": "streamline-vectors/core/pop/interface-essential/layout-window-8.svg" },
+        "view.list"         : { "wxartid": "wxART_LIST_VIEW",   "asset": "streamline-vectors/core/pop/interface-essential/bullet-list.svg" }
     },
     "fiveormore": {
-        "icon"              : {                                 "asset": "streamline-vectors/core/pop/interface-essential/horizontal-menu-circle.svg" }
+        "icon"              : {                                 "asset": "streamline-vectors/core/pop/entertainment/dice-5.svg" }
     },
     "mediaplayer": {
-        "icon"              : {                                 "asset": "streamline-vectors/core/pop/entertainment/camera-video.svg" }
+        "icon"              : {                                 "asset": "streamline-vectors/core/pop/entertainment/media-play.svg" }
     },
     "minesweeper": {
         "icon"              : {                                 "asset": "streamline-vectors/core/pop/interface-essential/bomb.svg" }
     },
     "musicbox": {
-        "file.import_dir"   : { "wxartid": "wxART_FILE_OPEN",   "asset": "streamline-vectors/core/pop/interface-essential/open-book.svg" },
-        "file.import_files" : { "wxartid": "wxART_FILE_OPEN",   "asset": "streamline-vectors/core/pop/interface-essential/open-book.svg" },
+        "file.import_dir"   : { "wxartid": "wxART_FILE_OPEN",   "asset": "streamline-vectors/core/pop/interface-essential/music-folder-song.svg" },
+        "file.import_files" : { "wxartid": "wxART_FILE_OPEN",   "asset": "streamline-vectors/core/pop/interface-essential/multiple-file-2.svg" },
         "icon"              : {                                 "asset": "streamline-vectors/core/pop/entertainment/music-note-1.svg" }
     },
     "notepad": {
         "icon"              : {                                 "asset": "streamline-vectors/core/pop/interface-essential/blank-notepad.svg" }
     },
     "paint": {
-        "icon"              : {                                 "asset": "streamline-vectors/core/pop/interface-essential/paint-palette.svg" }
+        "icon"              : {                                 "asset": "streamline-vectors/core/pop/interface-essential/paintbrush-1.svg" }
     },
     "photoviewer": {
-        "icon"              : {                                 "asset": "streamline-vectors/core/pop/images-photography/edit-image-photo.svg" }
+        "icon"              : {                                 "asset": "streamline-vectors/core/pop/images-photography/landscape-2.svg" }
     },
     "registry": {
-        "icon"              : {                                 "asset": "streamline-vectors/core/pop/interface-essential/filter-2.svg" }
+        "icon"              : {                                 "asset": "streamline-vectors/core/pop/computer-devices/database-setting.svg" }
     },
     "shell": {
-        "startmenu.all"     : {                                 "asset": "streamline-vectors/core/pop/interface-essential/layout-window-8.svg" },
+        "startmenu.all"     : {                                 "asset": "streamline-vectors/core/pop/interface-essential/horizontal-menu-circle.svg" },
         "startmenu.chevron" : {                                 "asset": "heroicons/normal/chevron-right.svg" },
-        "startmenu.exit"    : {                                 "asset": "streamline-vectors/core/pop/map-travel/emergency-exit.svg" },
-        "startmenu.recent"  : {                                 "asset": "streamline-vectors/core/pop/interface-essential/folder-add.svg" },
-        "startmenu.trash"   : {                                 "asset": "streamline-vectors/core/pop/interface-essential/archive-box.svg" },
-        "taskbar.start"     : {                                 "asset": "streamline-vectors/core/pop/interface-essential/brightness-3.svg" }
+        "startmenu.exit"    : {                                 "asset": "streamline-vectors/core/pop/interface-essential/logout-1.svg" },
+        "startmenu.recent"  : {                                 "asset": "streamline-vectors/core/pop/interface-essential/history.svg" },
+        "startmenu.trash"   : {                                 "asset": "streamline-vectors/core/pop/interface-essential/recycle-bin-2.svg" },
+        "taskbar.start"     : {                                 "asset": "streamline-vectors/core/pop/interface-essential/home-4.svg" }
     },
     "snippingtool": {
         "icon"              : {                                 "asset": "streamline-vectors/core/pop/interface-essential/snipping-tool.svg" }
     },
     "solitaire": {
-        "icon"              : {                                 "asset": "streamline-vectors/core/pop/money-shopping/credit-card-1.svg" }
+        "icon"              : {                                 "asset": "streamline-vectors/core/pop/entertainment/cards.svg" }
     },
     "soundrecorder": {
-        "icon"              : {                                 "asset": "streamline-vectors/core/pop/interface-essential/microphone.svg" }
+        "icon"              : {                                 "asset": "streamline-vectors/core/pop/interface-essential/megaphone-2.svg" }
     },
     "stopwatch": {
         "icon"              : {                                 "asset": "streamline-vectors/core/pop/interface-essential/circle-clock.svg" }
     },
     "sudoku": {
-        "icon"              : {                                 "asset": "streamline-vectors/core/pop/interface-essential/layout-window-8.svg" }
+        "icon"              : {                                 "asset": "streamline-vectors/core/pop/work-education/task-list.svg" }
     },
     "taskmanager": {
         "icon"              : {                                 "asset": "streamline-vectors/core/pop/interface-essential/task-manager.svg" }
