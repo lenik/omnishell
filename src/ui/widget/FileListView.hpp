@@ -6,6 +6,7 @@
 #include <bas/volume/DirEntry.hpp>
 #include <bas/volume/VolumeFile.hpp>
 
+#include <wx/image.h>
 #include <wx/imaglist.h>
 #include <wx/listctrl.h>
 #include <wx/wx.h>
@@ -39,8 +40,19 @@ private:
     static const int ICON_SIZE_LARGE = 48;
     int m_sortColumn;
     bool m_sortAscending;
-    static const size_t SMALL_IMAGE_THRESHOLD = 16 * 1024; // 16KB
-    std::unordered_map<std::string, int> m_thumbnailCache; // path -> image list index (large list)
+    // Thumbnail generation is gated by file size to avoid decoding huge images everywhere.
+    // Cache holds decoded+scaled wxImage so we can derive faded variants without re-decoding.
+    size_t m_thumbnailMaxBytes{16 * 1024}; // default 16KB (keeps old behaviour)
+    std::unordered_map<std::string, wxImage> m_thumbnailBaseCache; // thumbKey(path,size) -> scaled wxImage
+    std::unordered_map<std::string, int> m_thumbnailVariantCache; // variantKey -> image list index
+
+    // Recency fade style (used by Camera gallery):
+    // - show last `m_recencyRecentCount` items as "recent" with a highlight border
+    // - fade older items based on distance from the recent window
+    bool m_recencyFadeEnabled{false};
+    size_t m_recencyRecentCount{0};
+    size_t m_recencyFadeSteps{7}; // number of visual steps for older items
+    bool m_recencyBorderEnabled{true};
     
     // Callbacks for events
     std::vector<std::function<void(VolumeFile& file)>> m_fileSelectedListeners;
@@ -75,6 +87,13 @@ public:
     // View mode
     void setViewMode(const std::string& mode);
     std::string getViewMode() const;
+    
+    // Thumbnail / recency styling
+    // - recentCount: last N items (after the list has been sorted by date) are shown "normal"
+    // - older items fade out based on distance from the recent window
+    void enableRecencyFade(size_t recentCount, size_t fadeSteps = 7, bool border = true);
+    void disableRecencyFade();
+    void setThumbnailMaxBytes(size_t maxBytes);
     
     // Selection
     std::vector<std::string> getSelectedFiles() const;

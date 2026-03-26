@@ -53,6 +53,9 @@ private:
     void OnMouseLeave(wxMouseEvent& event);
     void OnMouseDown(wxMouseEvent& event);
     void OnMouseUp(wxMouseEvent& event);
+    /** True if `w` is this window or a descendant. */
+    static bool IsUnderThis(wxWindow* self, wxWindow* w);
+    void syncHoverFromMouse();
 
 private:
     wxStaticBitmap* m_bitmap;

@@ -27,7 +27,7 @@ void RegistryApp::initializeMetadata() {
     doc = "Viewer/editor for the file-backed registry (nodes = dirs, values = .json files).";
     categoryId = ID_CATEGORY_SYSTEM;
 
-    image = ImageSet(Path(slv_core_pop, "interface-essential/filter-2.svg"));
+    image = (m_app ? m_app->getIconTheme() : os::app.getIconTheme())->icon("registry", "icon");
 }
 
 ProcessPtr RegistryApp::run(const RunConfig& config) {

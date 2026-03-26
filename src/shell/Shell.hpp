@@ -39,6 +39,8 @@ class ShellApp : public uiApp {
     DesktopWindow* getDesktopWindow() const { return m_desktop; }
     Taskbar* getTaskbar() const { return m_taskbar; }
     StartMenu* getStartMenu() const { return m_startMenu; }
+    /** Main shell frame (desktop host). Excluded from Task Manager "end task" on that window. */
+    wxcFrame* getMainWindow() const { return m_mainWindow; }
 
     VfsDaemonHost& vfsDaemon() { return m_vfsDaemon; }
     const VfsDaemonHost& vfsDaemon() const { return m_vfsDaemon; }

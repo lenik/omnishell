@@ -27,7 +27,7 @@ void FiveOrMoreApp::initializeMetadata() {
           "Change difficulty before the first move or start a new game. R new game.";
     categoryId = ID_CATEGORY_GAME;
 
-    image = ImageSet(Path(slv_core_pop, "interface-essential/horizontal-menu-circle.svg"));
+    image = (m_app ? m_app->getIconTheme() : os::app.getIconTheme())->icon("fiveormore", "icon");
 }
 
 ProcessPtr FiveOrMoreApp::run(const RunConfig& config) {

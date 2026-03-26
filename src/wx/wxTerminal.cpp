@@ -347,8 +347,21 @@ wxTerminal::wxTerminal(wxWindow* parent, wxWindowID id, const wxPoint& pos, cons
     SetDoubleBuffered(true);
     SetName(wxT("wxTerminal"));
 
-    m_font = wxFont(11, wxFONTFAMILY_TELETYPE, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL);
+    m_defaultFontPt = 11;
+    m_font = wxFont(m_defaultFontPt, wxFONTFAMILY_TELETYPE, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL);
     SetFont(m_font);
+
+    m_vscroll = new wxScrollBar(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxSB_VERTICAL);
+    m_vscroll->SetScrollbar(0, 1, 1, 1, false);
+    const int sid = m_vscroll->GetId();
+    Bind(wxEVT_SCROLL_TOP, &wxTerminal::OnVScroll, this, sid);
+    Bind(wxEVT_SCROLL_BOTTOM, &wxTerminal::OnVScroll, this, sid);
+    Bind(wxEVT_SCROLL_LINEUP, &wxTerminal::OnVScroll, this, sid);
+    Bind(wxEVT_SCROLL_LINEDOWN, &wxTerminal::OnVScroll, this, sid);
+    Bind(wxEVT_SCROLL_PAGEUP, &wxTerminal::OnVScroll, this, sid);
+    Bind(wxEVT_SCROLL_PAGEDOWN, &wxTerminal::OnVScroll, this, sid);
+    Bind(wxEVT_SCROLL_THUMBTRACK, &wxTerminal::OnVScroll, this, sid);
+    Bind(wxEVT_SCROLL_THUMBRELEASE, &wxTerminal::OnVScroll, this, sid);
 
     m_bufRows = m_visibleRows + kScrollbackExtraRows;
     m_grid.assign(static_cast<size_t>(m_bufRows * m_cols), Cell{});
@@ -363,14 +376,30 @@ wxTerminal::wxTerminal(wxWindow* parent, wxWindowID id, const wxPoint& pos, cons
     Bind(wxEVT_KILL_FOCUS, &wxTerminal::OnKillFocus, this);
     Bind(wxEVT_TIMER, &wxTerminal::OnCaretTimer, this, ID_CARET_TIMER);
     Bind(wxEVT_LEFT_DOWN, &wxTerminal::OnMouseDown, this);
+    // If user selects text with right/middle click, ensure the terminal still gets
+    // keyboard focus so typing keeps working.
+    Bind(wxEVT_RIGHT_DOWN, [this](wxMouseEvent& e) {
+        SetFocus();
+        e.Skip();
+    });
+    Bind(wxEVT_MIDDLE_DOWN, [this](wxMouseEvent& e) {
+        SetFocus();
+        e.Skip();
+    });
     Bind(wxEVT_MOTION, &wxTerminal::OnMouseMove, this);
     Bind(wxEVT_LEFT_UP, &wxTerminal::OnMouseUp, this);
     Bind(wxEVT_MOUSEWHEEL, &wxTerminal::OnMouseWheel, this);
     m_caretTimer.Start(530);
     RecalcGrid();
+    SyncScrollbarFromView();
 }
 
 wxTerminal::~wxTerminal() = default;
+
+void wxTerminal::SetForegroundPtyPassthrough(bool on) {
+    m_foregroundPtyPassthrough = on;
+    Refresh();
+}
 
 void wxTerminal::AddInterpreter(std::unique_ptr<TermInterpreter> interp) {
     if (interp)
@@ -482,6 +511,7 @@ void wxTerminal::ClearScreen() {
     m_curItalic = false;
     m_curInverse = false;
     ResetInterpreters();
+    SyncScrollbarFromView();
     Refresh();
 }
 
@@ -659,9 +689,16 @@ void wxTerminal::RecalcGrid() {
     m_cellH = ch;
 
     wxSize sz = GetClientSize();
+    const int vpW = ViewportWidthPx();
+    /* Before first layout, width is often 0 — do not force m_cols to kMinCols (ugly wrapping). */
+    if (vpW <= 0) {
+        Refresh();
+        return;
+    }
+
     int usableH = std::max(m_cellH * kMinRows, sz.GetHeight());
     int newVisible = std::max(kMinRows, usableH / m_cellH);
-    int newCols = std::max(kMinCols, sz.GetWidth() / m_cellW);
+    int newCols = std::max(kMinCols, vpW / m_cellW);
     int newBufRows = newVisible + kScrollbackExtraRows;
 
     if (newCols == m_cols && newVisible == m_visibleRows && newBufRows == m_bufRows)
@@ -691,9 +728,17 @@ void wxTerminal::RecalcGrid() {
         m_viewTop = maxTop;
     m_inputAtomsDirty = true;
     Refresh();
+    SyncScrollbarFromView();
 }
 
 void wxTerminal::OnSize(wxSizeEvent& e) {
+    if (m_vscroll) {
+        const wxSize sz = GetClientSize();
+        m_scrollbarW = std::clamp(m_scrollbarW, 1, sz.GetWidth());
+        m_vscroll->SetPosition(wxPoint(sz.GetWidth() - m_scrollbarW, 0));
+        m_vscroll->SetSize(wxSize(m_scrollbarW, sz.GetHeight()));
+        m_vscroll->Show(true);
+    }
     RecalcGrid();
     e.Skip();
 }
@@ -709,6 +754,7 @@ void wxTerminal::ScrollBufferUp() {
         --m_cv;
     if (m_viewTop > 0)
         --m_viewTop;
+    SyncScrollbarFromView();
 }
 
 void wxTerminal::CarriageReturn() {
@@ -838,6 +884,31 @@ void wxTerminal::WriteUtf8(std::string_view utf8) {
     Refresh();
 }
 
+void wxTerminal::WriteUtf8BelowInputOverlay(std::string_view utf8) {
+    EnsureInputAtoms();
+    const int savR = m_cv;
+    const int savC = m_cu;
+    const int rowBelow = LastInputBufRow() + 1;
+    m_cv = rowBelow;
+    m_cu = 0;
+    ForEachUtf8Cp(utf8, [this](uint32_t cp) { Receive(cp); });
+    const int postCv = m_cv;
+    m_cv = savR;
+    m_cu = savC;
+    if (m_followOutput) {
+        const int bottom = std::max(postCv, LastInputBufRow());
+        int newTop = bottom - m_visibleRows + 1;
+        if (newTop < 0)
+            newTop = 0;
+        const int maxTop = std::max(0, m_bufRows - m_visibleRows);
+        if (newTop > maxTop)
+            newTop = maxTop;
+        m_viewTop = newTop;
+    }
+    SyncScrollbarFromView();
+    Refresh();
+}
+
 int wxTerminal::LastInputBufRow() const {
     EnsureInputAtoms();
     int br = m_cv, bc = m_cu;
@@ -865,6 +936,7 @@ void wxTerminal::ScrollToFollowOutputCursor() {
     if (newTop > maxTop)
         newTop = maxTop;
     m_viewTop = newTop;
+    SyncScrollbarFromView();
 }
 
 void wxTerminal::ScrollViewByPages(int deltaPages) {
@@ -877,6 +949,7 @@ void wxTerminal::ScrollViewByPages(int deltaPages) {
         m_viewTop = maxTop;
     const int bottom = std::max(m_cv, LastInputBufRow());
     m_followOutput = (m_viewTop + m_visibleRows - 1 >= bottom);
+    SyncScrollbarFromView();
     Refresh();
 }
 
@@ -891,6 +964,7 @@ void wxTerminal::ScrollViewByLines(int deltaLines) {
         m_viewTop = maxTop;
     const int bottom = std::max(m_cv, LastInputBufRow());
     m_followOutput = (m_viewTop + m_visibleRows - 1 >= bottom);
+    SyncScrollbarFromView();
     Refresh();
 }
 
@@ -898,6 +972,8 @@ bool wxTerminal::HitTestVisibleCell(const wxPoint& clientPt, int* visRow, int* c
     if (!visRow || !col)
         return false;
     if (clientPt.y < 0 || clientPt.y >= m_visibleRows * m_cellH)
+        return false;
+    if (clientPt.x < 0 || clientPt.x >= ViewportWidthPx())
         return false;
     *visRow = clientPt.y / m_cellH;
     *col = clientPt.x / m_cellW;
@@ -914,6 +990,8 @@ bool wxTerminal::HitTestVisibleCell(const wxPoint& clientPt, int* visRow, int* c
 
 bool wxTerminal::HitTestInputLine(const wxPoint& clientPt, int* charIndex) const {
     if (!charIndex)
+        return false;
+    if (clientPt.x < 0 || clientPt.x >= ViewportWidthPx())
         return false;
     EnsureInputAtoms();
     int br = m_cv, bc = m_cu;
@@ -1051,7 +1129,37 @@ void wxTerminal::CutSelection() {
     Refresh();
 }
 
+void wxTerminal::PasteToForegroundPty() {
+    if (!OnSendForegroundPty)
+        return;
+    if (!wxTheClipboard->Open())
+        return;
+    wxTextDataObject data;
+    if (!wxTheClipboard->GetData(data)) {
+        wxTheClipboard->Close();
+        return;
+    }
+    wxTheClipboard->Close();
+    wxString t = data.GetText();
+    if (t.empty())
+        return;
+    wxScopedCharBuffer b = t.utf8_str();
+    const char* p = b.data();
+    if (!p)
+        return;
+    std::string s(p, b.length());
+    for (char& c : s) {
+        if (c == '\n')
+            c = '\r';
+    }
+    OnSendForegroundPty(s);
+}
+
 void wxTerminal::PasteFromClipboard() {
+    if (m_foregroundPtyPassthrough && OnSendForegroundPty) {
+        PasteToForegroundPty();
+        return;
+    }
     if (!wxTheClipboard->Open())
         return;
     wxTextDataObject data;
@@ -1141,6 +1249,9 @@ void wxTerminal::OnMouseMove(wxMouseEvent& e) {
 }
 
 void wxTerminal::OnMouseUp(wxMouseEvent& e) {
+    // After selections via mouse (including right/middle click),
+    // ensure keyboard focus is back on the terminal.
+    SetFocus();
     if (!m_mouseDown)
         return;
     m_mouseDown = false;
@@ -1318,12 +1429,37 @@ void wxTerminal::OnPaint(wxPaintEvent&) {
         }
     }
 
-    DrawInputLine(dc);
-    DrawInputCaret(dc);
+    if (!m_foregroundPtyPassthrough) {
+        DrawInputLine(dc);
+        DrawInputCaret(dc);
+    }
 }
 
 void wxTerminal::OnChar(wxKeyEvent& e) {
     long k = e.GetKeyCode();
+    if (m_foregroundPtyPassthrough && OnSendForegroundPty) {
+        if (e.GetUnicodeKey() == 4 || k == 4) {
+            OnSendForegroundPty("\x04");
+            return;
+        }
+        if (k == WXK_TAB || e.GetUnicodeKey() == '\t')
+            return;
+        if (k == WXK_RETURN || k == WXK_NUMPAD_ENTER) {
+            OnSendForegroundPty("\r");
+            return;
+        }
+        const wxChar u = e.GetUnicodeKey();
+        if (u && u >= 32 && u != 127) {
+            wxString ws(u);
+            wxScopedCharBuffer b = ws.utf8_str();
+            const char* p = b.data();
+            if (p && b.length() > 0)
+                OnSendForegroundPty(std::string_view(p, b.length()));
+            return;
+        }
+        e.Skip();
+        return;
+    }
     /* Ctrl+D → EOT (0x04): quit when input line is empty. */
     if (e.GetUnicodeKey() == 4 || k == 4) {
         if (m_edit.empty()) {
@@ -1389,6 +1525,83 @@ void wxTerminal::OnKeyDown(wxKeyEvent& e) {
     const int k = e.GetKeyCode();
     const bool ctrl = e.ControlDown() || e.CmdDown();
 
+    if (e.ShiftDown() && k == WXK_PAGEUP) {
+        ScrollViewByPages(-1);
+        return;
+    }
+    if (e.ShiftDown() && k == WXK_PAGEDOWN) {
+        ScrollViewByPages(1);
+        return;
+    }
+
+    if (m_foregroundPtyPassthrough && OnSendForegroundPty) {
+        if (ctrl && e.ShiftDown() && (k == 'c' || k == 'C')) {
+            CopySelection();
+            return;
+        }
+        if (ctrl && (k == 'c' || k == 'C') && !e.ShiftDown()) {
+            OnSendForegroundPty("\x03");
+            return;
+        }
+        if (ctrl && (k == 'v' || k == 'V' || k == 22)) {
+            PasteToForegroundPty();
+            return;
+        }
+        if (ctrl && (k == 'd' || k == 'D' || k == 4)) {
+            OnSendForegroundPty("\x04");
+            return;
+        }
+        if (ctrl && (k == 'x' || k == 'X')) {
+            CutSelection();
+            return;
+        }
+        if (ctrl && (k == 12 || k == 'l' || k == 'L')) {
+            OnSendForegroundPty("\x0c");
+            return;
+        }
+        if (k == WXK_TAB && !ctrl && !e.AltDown()) {
+            OnSendForegroundPty("\t");
+            return;
+        }
+        if (k == WXK_BACK) {
+            OnSendForegroundPty("\x7f");
+            return;
+        }
+        if (k == WXK_DELETE) {
+            OnSendForegroundPty("\x1b[3~");
+            return;
+        }
+        if (k == WXK_LEFT) {
+            OnSendForegroundPty("\x1b[D");
+            return;
+        }
+        if (k == WXK_RIGHT) {
+            OnSendForegroundPty("\x1b[C");
+            return;
+        }
+        if (k == WXK_UP) {
+            OnSendForegroundPty("\x1b[A");
+            return;
+        }
+        if (k == WXK_DOWN) {
+            OnSendForegroundPty("\x1b[B");
+            return;
+        }
+        if (k == WXK_HOME) {
+            OnSendForegroundPty("\x1b[H");
+            return;
+        }
+        if (k == WXK_END) {
+            OnSendForegroundPty("\x1b[F");
+            return;
+        }
+        if (ctrl && k >= 1 && k <= 26 && k != 3 && k != 4 && k != 22 && k != 24 && k != 12) {
+            const char c = static_cast<char>(k);
+            OnSendForegroundPty(std::string_view(&c, 1));
+            return;
+        }
+    }
+
     if (ctrl && (k == 'd' || k == 'D' || k == 4)) {
         if (m_edit.empty()) {
             if (OnEofEmptyLine)
@@ -1396,15 +1609,6 @@ void wxTerminal::OnKeyDown(wxKeyEvent& e) {
             return;
         }
         e.Skip();
-        return;
-    }
-
-    if (e.ShiftDown() && k == WXK_PAGEUP) {
-        ScrollViewByPages(-1);
-        return;
-    }
-    if (e.ShiftDown() && k == WXK_PAGEDOWN) {
-        ScrollViewByPages(1);
         return;
     }
 
@@ -1601,5 +1805,121 @@ void wxTerminal::OnCaretTimer(wxTimerEvent&) {
     m_caretOn = !m_caretOn;
     Refresh();
 }
+
+int wxTerminal::ViewportWidthPx() const {
+    const int w = GetClientSize().GetWidth();
+    if (w <= 0)
+        return 0;
+    return std::max(0, w - m_scrollbarW);
+}
+
+void wxTerminal::SyncScrollbarFromView() {
+    if (!m_vscroll)
+        return;
+    const int maxTop = std::max(0, m_bufRows - m_visibleRows);
+    const int pos = std::clamp(m_viewTop, 0, maxTop);
+    const int range = std::max(1, m_bufRows);
+    const int thumb = std::clamp(m_visibleRows, 1, range);
+    m_vscroll->SetScrollbar(pos, thumb, range, thumb, false);
+}
+
+void wxTerminal::OnVScroll(wxScrollEvent& e) {
+    if (!m_vscroll)
+        return;
+    const int maxTop = std::max(0, m_bufRows - m_visibleRows);
+    const int pos = std::clamp(e.GetPosition(), 0, maxTop);
+    m_viewTop = pos;
+
+    const int bottom = std::max(m_cv, LastInputBufRow());
+    m_followOutput = (m_viewTop + m_visibleRows - 1 >= bottom);
+    Refresh();
+}
+
+void wxTerminal::HistoryPrev() {
+    if (m_cmdHistory.empty())
+        return;
+    if (m_historyNav < 0) {
+        m_historyDraft = m_edit;
+        m_historyNav = static_cast<int>(m_cmdHistory.size()) - 1;
+    } else if (m_historyNav > 0) {
+        --m_historyNav;
+    }
+    m_edit = m_cmdHistory[static_cast<size_t>(m_historyNav)];
+    m_editCaret = m_edit.length();
+    m_inputAtomsDirty = true;
+    m_followOutput = true;
+    ScrollToFollowOutputCursor();
+    Refresh();
+}
+
+void wxTerminal::HistoryNext() {
+    if (m_historyNav < 0)
+        return;
+    ++m_historyNav;
+    if (m_historyNav >= static_cast<int>(m_cmdHistory.size())) {
+        m_edit = m_historyDraft;
+        m_historyNav = -1;
+    } else {
+        m_edit = m_cmdHistory[static_cast<size_t>(m_historyNav)];
+    }
+    m_editCaret = m_edit.length();
+    m_inputAtomsDirty = true;
+    m_followOutput = true;
+    ScrollToFollowOutputCursor();
+    Refresh();
+}
+
+std::vector<std::string> wxTerminal::GetCommandHistoryUtf8() const {
+    std::vector<std::string> out;
+    out.reserve(m_cmdHistory.size());
+    for (const auto& ws : m_cmdHistory) {
+        wxScopedCharBuffer b = ws.utf8_str();
+        const char* p = b.data();
+        if (!p)
+            continue;
+        out.emplace_back(p, b.length());
+    }
+    return out;
+}
+
+void wxTerminal::SetCommandHistoryUtf8(const std::vector<std::string>& lines) {
+    m_cmdHistory.clear();
+    m_cmdHistory.reserve(lines.size());
+    for (const auto& s : lines) {
+        if (s.empty())
+            continue;
+        m_cmdHistory.emplace_back(wxString::FromUTF8(s.data(), static_cast<int>(s.size())));
+    }
+    m_historyNav = -1;
+    m_historyDraft.clear();
+}
+
+void wxTerminal::SetFontPointSize(int pt) {
+    pt = std::clamp(pt, 6, 28);
+    if (pt == m_font.GetPointSize())
+        return;
+    m_font.SetPointSize(pt);
+    SetFont(m_font);
+    m_inputAtomsDirty = true;
+    RecalcGrid();
+}
+
+void wxTerminal::FontSizeUp(int delta) {
+    if (delta < 1)
+        delta = 1;
+    SetFontPointSize(m_font.GetPointSize() + delta);
+}
+
+void wxTerminal::FontSizeDown(int delta) {
+    if (delta < 1)
+        delta = 1;
+    SetFontPointSize(m_font.GetPointSize() - delta);
+}
+
+void wxTerminal::FontSizeReset() { SetFontPointSize(m_defaultFontPt); }
+
+void wxTerminal::PagePrev() { ScrollViewByPages(-1); }
+
+void wxTerminal::PageNext() { ScrollViewByPages(1); }
 
 } // namespace os

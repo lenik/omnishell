@@ -34,7 +34,7 @@ void NotepadApp::initializeMetadata() {
     doc = "A basic text editor for viewing and editing text files.";
     categoryId = ID_CATEGORY_ACCESSORIES;
 
-    image = ImageSet(Path(slv_core_pop, "interface-essential/blank-notepad.svg"));
+    image = (m_app ? m_app->getIconTheme() : os::app.getIconTheme())->icon("notepad", "icon");
 }
 
 ProcessPtr NotepadApp::run(const RunConfig& config) {
@@ -67,7 +67,7 @@ ProcessPtr NotepadApp::open(VolumeManager* volumeManager, VolumeFile file) {
     proc->uri = kNotepadModuleUri;
     proc->name = "notepad";
     proc->label = "Notepad";
-    proc->icon = ImageSet(Path(slv_core_pop, "interface-essential/blank-notepad.svg"));
+    proc->icon = os::app.getIconTheme()->icon("notepad", "icon");
 
     auto* frame = new NotepadFrame(&app, "Notepad");
     frame->body().openFile(file);

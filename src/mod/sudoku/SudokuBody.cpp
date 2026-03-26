@@ -388,26 +388,26 @@ class SudokuCanvas : public wxPanel {
 } // namespace
 
 SudokuBody::SudokuBody(App* app) {
-    (void)app;
+    const os::IconTheme* theme = (app ? app->getIconTheme() : os::app.getIconTheme());
 
     group(ID_GROUP_GAME, "game", "sudoku", 1000, "&Game", "Sudoku").install();
     int seq = 0;
     action(ID_GAME_NEW, "game/sudoku", "new", seq++, "&New game", "Reset puzzle")
-        .icon(wxART_NEW, Path(slv_core_pop, "interface-essential/new-file.svg"))
+        .icon(theme->icon("sudoku", "game.new"))
         .performFn([this](PerformContext*) {
             if (m_canvas)
                 static_cast<SudokuCanvas*>(m_canvas)->newGame();
         })
         .install();
     action(ID_GAME_UNDO, "game/sudoku", "undo", seq++, "&Undo", "Undo")
-        .icon(wxART_UNDO, Path(slv_core_pop, "interface-essential/line-arrow-rotate-left-1.svg"))
+        .icon(theme->icon("sudoku", "game.undo"))
         .performFn([this](PerformContext*) {
             if (m_canvas)
                 static_cast<SudokuCanvas*>(m_canvas)->undoMove();
         })
         .install();
     action(ID_GAME_REDO, "game/sudoku", "redo", seq++, "&Redo", "Redo")
-        .icon(wxART_REDO, Path(slv_core_pop, "interface-essential/line-arrow-rotate-right-1.svg"))
+        .icon(theme->icon("sudoku", "game.redo"))
         .performFn([this](PerformContext*) {
             if (m_canvas)
                 static_cast<SudokuCanvas*>(m_canvas)->redoMove();

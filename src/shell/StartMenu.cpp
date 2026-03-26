@@ -3,6 +3,7 @@
 #include "Shell.hpp"
 
 #include <bas/ui/arch/ImageSet.hpp>
+#include "../core/App.hpp"
 
 #include <wx/image.h>
 #include <wx/log.h>
@@ -39,7 +40,7 @@ static wxBitmap ChevronBitmap(bool hover) {
     if (!hover && cachedBlack.IsOk())
         return cachedBlack;
 
-    ImageSet set(Path("heroicons/normal", "chevron-right.svg"));
+    ImageSet set = os::app.getIconTheme()->icon("shell", "startmenu.chevron");
     wxBitmap base = set.toBitmap1(12, 12);
     if (!base.IsOk()) {
         return base;
@@ -149,8 +150,7 @@ StartMenu::StartMenu(wxWindow* parent)
     allBtn->SetMinSize(wxSize(44, -1));
     {
         // Use a known-good icon so ALL always has a bitmap.
-        wxBitmap allBmp = ImageSet(Path(slv_core_pop, "interface-essential/layout-window-8.svg"))
-                              .toBitmap1(16, 16);
+        wxBitmap allBmp = os::app.getIconTheme()->icon("shell", "startmenu.all").toBitmap1(16, 16);
         if (allBmp.IsOk()) {
             allBtn->SetBitmap(allBmp, wxLEFT);
             allBtn->SetBitmapMargins(4, 0);
@@ -708,19 +708,9 @@ void StartMenu::CreateMenuContent() {
     wxBoxSizer* sizer = new wxBoxSizer(wxVERTICAL);
     std::set<std::string> usedUris;
 
-    auto iconRecent = //
-        ImageSet(Path(slv_core_pop, "interface-essential/folder-add.svg"))
-            .toBitmap1(kIconSize, kIconSize);
-    auto iconTrash = //
-        ImageSet(Path(slv_core_pop, "interface-essential/archive-box.svg"))
-            .toBitmap1(kIconSize, kIconSize);
-    auto iconExit = //
-        ImageSet(Path(slv_core_pop, "map-travel/emergency-exit.svg"))
-            .toBitmap1(kIconSize, kIconSize);
-    if (!iconExit.IsOk())
-        iconExit = //
-            ImageSet(Path(slv_core_pop, "interface-essential/download-circle.svg"))
-                .toBitmap1(kIconSize, kIconSize);
+    auto iconRecent = os::app.getIconTheme()->icon("shell", "startmenu.recent").toBitmap1(kIconSize, kIconSize);
+    auto iconTrash = os::app.getIconTheme()->icon("shell", "startmenu.trash").toBitmap1(kIconSize, kIconSize);
+    auto iconExit = os::app.getIconTheme()->icon("shell", "startmenu.exit").toBitmap1(kIconSize, kIconSize);
 
     auto addModule = [&](ModulePtr m) {
         if (!m || usedUris.count(m->getFullUri()))

@@ -28,7 +28,7 @@ void StopWatchApp::initializeMetadata() {
     doc = "Basic stopwatch with start/stop/reset.";
     categoryId = ID_CATEGORY_ACCESSORIES;
 
-    image = ImageSet(Path(slv_core_pop, "interface-essential/circle-clock.svg"));
+    image = (m_app ? m_app->getIconTheme() : os::app.getIconTheme())->icon("stopwatch", "icon");
 }
 
 ProcessPtr StopWatchApp::run(const RunConfig& config) {
@@ -40,7 +40,7 @@ ProcessPtr StopWatchApp::run(const RunConfig& config) {
     proc->icon = image;
 
     auto* frame = new StopWatchFrame(m_app, "StopWatch");
-    frame->SetSize(wxSize(300, 150));
+    frame->SetSize(wxSize(400, 300));
     frame->Centre();
     frame->Show(true);
     proc->addWindow(frame);

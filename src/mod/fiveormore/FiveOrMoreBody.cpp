@@ -475,7 +475,7 @@ void FiveOrMoreBody::canvasNotifyMoveFinished() {
 }
 
 FiveOrMoreBody::FiveOrMoreBody(App* app) {
-    (void)app;
+    const os::IconTheme* theme = (app ? app->getIconTheme() : os::app.getIconTheme());
 
     group(ID_GROUP_GAME, "game", "fiveormore", 1000, "&Game", "Five or more").install();
 
@@ -508,7 +508,7 @@ FiveOrMoreBody::FiveOrMoreBody(App* app) {
         .install();
 
     action(ID_GAME_NEW, "game/fiveormore", "new", 0, "&New game", "New board")
-        .icon(wxART_NEW, Path(slv_core_pop, "interface-essential/new-file.svg"))
+        .icon(theme->icon("fiveormore", "game.new"))
         .performFn([this](PerformContext*) {
             if (m_canvas)
                 static_cast<FiveOrMoreCanvas*>(m_canvas)->newGame();

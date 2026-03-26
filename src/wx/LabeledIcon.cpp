@@ -1,7 +1,9 @@
 #include "LabeledIcon.hpp"
 
+#include <wx/app.h>
 #include <wx/dcbuffer.h>
 #include <wx/utils.h>
+#include <wx/window.h>
 
 namespace {
 
@@ -45,6 +47,28 @@ wxString wrapTextToWidth(const wxString& text, int maxWidth, wxWindow* window,
 } // namespace
 
 namespace os {
+
+bool LabeledIcon::IsUnderThis(wxWindow* self, wxWindow* w) {
+    for (wxWindow* cur = w; cur; cur = cur->GetParent()) {
+        if (cur == self)
+            return true;
+    }
+    return false;
+}
+
+void LabeledIcon::syncHoverFromMouse() {
+    wxWindow* at = wxFindWindowAtPoint(wxGetMousePosition());
+    const bool inside = IsUnderThis(this, at);
+    if (m_hover == inside)
+        return;
+    m_hover = inside;
+    if (!inside) {
+        m_pressed = false;
+        if (HasCapture())
+            ReleaseMouse();
+    }
+    Refresh();
+}
 
 LabeledIcon::LabeledIcon(wxWindow* parent, wxWindowID id, const wxBitmap& bitmap,
                          const wxString& label, const wxPoint& pos, const wxSize& size,
@@ -127,20 +151,16 @@ LabeledIcon::LabeledIcon(wxWindow* parent, wxWindowID id, const wxBitmap& bitmap
     Bind(wxEVT_LEFT_UP, &LabeledIcon::OnMouseUp, this);
     Bind(wxEVT_PAINT, &LabeledIcon::OnPaint, this);
 
-    // Also update hover state when moving over children
+    // Also update hover when moving over children (GTK can deliver leave before pointer updates).
     auto childEnter = [this](wxMouseEvent& e) {
-        m_hover = true;
-        Refresh();
+        syncHoverFromMouse();
         e.Skip();
     };
     auto childLeave = [this](wxMouseEvent& e) {
-        wxPoint screenPos = wxGetMousePosition();
-        wxPoint clientPos = ScreenToClient(screenPos);
-        m_hover = GetClientRect().Contains(clientPos);
-        if (!m_hover) {
-            m_pressed = false;
-        }
-        Refresh();
+        if (wxTheApp)
+            wxTheApp->CallAfter([this]() { syncHoverFromMouse(); });
+        else
+            syncHoverFromMouse();
         e.Skip();
     };
 
@@ -148,6 +168,14 @@ LabeledIcon::LabeledIcon(wxWindow* parent, wxWindowID id, const wxBitmap& bitmap
     wxcBind(*m_label, wxEVT_ENTER_WINDOW, childEnter);
     wxcBind(*m_bitmap, wxEVT_LEAVE_WINDOW, childLeave);
     wxcBind(*m_label, wxEVT_LEAVE_WINDOW, childLeave);
+
+    auto motionSync = [this](wxMouseEvent& e) {
+        syncHoverFromMouse();
+        e.Skip();
+    };
+    wxcBind(*m_bitmap, wxEVT_MOTION, motionSync);
+    wxcBind(*m_label, wxEVT_MOTION, motionSync);
+    Bind(wxEVT_MOTION, motionSync);
 }
 
 void LabeledIcon::setBitmap(const wxBitmap& bitmap) {
@@ -207,19 +235,15 @@ void LabeledIcon::OnPaint(wxPaintEvent& event) {
 }
 
 void LabeledIcon::OnMouseEnter(wxMouseEvent& event) {
-    m_hover = true;
-    Refresh();
+    syncHoverFromMouse();
     event.Skip();
 }
 
 void LabeledIcon::OnMouseLeave(wxMouseEvent& event) {
-    wxPoint screenPos = wxGetMousePosition();
-    wxPoint clientPos = ScreenToClient(screenPos);
-    m_hover = GetClientRect().Contains(clientPos);
-    if (!m_hover) {
-        m_pressed = false;
-    }
-    Refresh();
+    if (wxTheApp)
+        wxTheApp->CallAfter([this]() { syncHoverFromMouse(); });
+    else
+        syncHoverFromMouse();
     event.Skip();
 }
 

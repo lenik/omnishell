@@ -47,3 +47,5 @@ omnishell.layout
 *_test
 *_test[1-9]
 
+/third_party
+

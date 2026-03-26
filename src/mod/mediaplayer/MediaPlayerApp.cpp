@@ -26,7 +26,7 @@ constexpr const char* kMediaPlayerUri = "omnishell.MediaPlayer";
 
 /** First handler in openwith is used by Explorer (see FileAssociations). */
 constexpr const char* kMediaFileTypeJson =
-    R"({"openwith":{"MediaPlayer":"omnishell.MediaPlayer"},"icon":{"asset":"streamline-vectors/core/pop/entertainment/music-note-1.svg"}})";
+    R"({"openwith":{"MediaPlayer":"omnishell.MediaPlayer"},"icon":{"asset":"streamline-vectors/core/pop/entertainment/camera-video.svg"}})";
 
 constexpr const char* kMediaMimeOpenWith = R"({"openwith":{"MediaPlayer":"omnishell.MediaPlayer"}})";
 
@@ -70,7 +70,7 @@ void MediaPlayerApp::initializeMetadata() {
     doc = "Uses the shell VFS daemon (HTTP) to stream media from volume paths.";
     categoryId = ID_CATEGORY_ACCESSORIES;
 
-    image = ImageSet(Path(slv_core_pop, "entertainment/music-note-1.svg"));
+    image = (m_app ? m_app->getIconTheme() : os::app.getIconTheme())->icon("mediaplayer", "icon");
 }
 
 void MediaPlayerApp::install() {
@@ -149,7 +149,7 @@ ProcessPtr MediaPlayerApp::open(VolumeManager* vm, VolumeFile file) {
     proc->uri = kMediaPlayerUri;
     proc->name = "mediaplayer";
     proc->label = "Media Player";
-    proc->icon = ImageSet(Path(slv_core_pop, "entertainment/music-note-1.svg"));
+    proc->icon = os::app.getIconTheme()->icon("mediaplayer", "icon");
 
     auto* frame = new MediaPlayerFrame(vm, "Media Player");
     frame->body().openVolumePath(static_cast<size_t>(idx), path);

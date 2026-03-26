@@ -72,7 +72,7 @@ void BrowserApp::initializeMetadata() {
           "logic is used for vol:// and asset:// inside WebView.";
     categoryId = ID_CATEGORY_ACCESSORIES;
 
-    image = ImageSet(Path(slv_core_flat, "computer-devices/network.svg"));
+    image = os::app.getIconTheme()->icon("browser", "icon");
 }
 
 void BrowserApp::install() {
@@ -135,7 +135,7 @@ ProcessPtr BrowserApp::open(VolumeManager* vm, VolumeFile file) {
     proc->uri = kBrowserModuleUri;
     proc->name = "browser";
     proc->label = "Browser";
-    proc->icon = ImageSet(Path(slv_core_flat, "computer-devices/network.svg"));
+    proc->icon = os::app.getIconTheme()->icon("browser", "icon");
 
     auto* frame = new BrowserFrame(vm, "Browser");
     frame->body().navigateTo(wxString::FromUTF8(url.data(), url.size()));

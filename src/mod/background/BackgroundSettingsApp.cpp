@@ -26,7 +26,7 @@ void BackgroundSettingsApp::initializeMetadata() {
     doc = "UI for changing desktop background.";
     categoryId = ID_CATEGORY_SYSTEM;
 
-    image = ImageSet(Path(slv_core_pop, "interface-essential/image-blur.svg"));
+    image = (m_app ? m_app->getIconTheme() : os::app.getIconTheme())->icon("backgroundsettings", "icon");
 }
 
 ProcessPtr BackgroundSettingsApp::run(const RunConfig& config) {

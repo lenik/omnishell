@@ -1,11 +1,16 @@
 #include "App.hpp"
+#include "ui/arch/UIAction.hpp"
 
+#include <bas/log/uselog.h>
 #include <bas/proc/env.hpp>
+#include <bas/proc/Assets.hpp>
+
 #include <bas/volume/LocalVolume.hpp>
 #include <bas/volume/VolumeManager.hpp>
 
 #include <filesystem>
 #include <iostream>
+#include <cstdlib>
 
 #include <getopt.h>
 
@@ -50,6 +55,30 @@ void App::addDefaultLocalVolumesIfEmpty() {
     if (std::filesystem::is_directory(testdrive))
         volumeManager->addVolume(std::make_unique<LocalVolume>(testdrive));
     volumeManager->addLocalVolumes();
+}
+
+const IconTheme* App::getIconTheme() const {
+    if (m_iconThemeLoaded)
+        return &m_iconTheme;
+
+    // Lazy-load from embedded assets.
+    // assets.zip stores files under the assets/ directory root, so json lives at themes/popular.json.
+    static constexpr const char* kPopularThemePath = "themes/popular.json";
+    try {
+        if (assets_contains(kPopularThemePath)) {
+            const auto data = assets_get_data(kPopularThemePath);
+            if (!data.empty()) {
+                std::string text(reinterpret_cast<const char*>(data.data()), data.size());
+                (void)m_iconTheme.loadFromJsonText(text);
+            }
+        }
+    } catch (...) {
+        logerror_fmt("Failed to load icon theme: %s", kPopularThemePath);
+        std::exit(1);
+    }
+
+    m_iconThemeLoaded = true;
+    return &m_iconTheme;
 }
 
 static option longopts[] = {

@@ -3,20 +3,20 @@
 
 #include "ConsoleBody.hpp"
 
-#include <wx/frame.h>
+#include <bas/wx/uiframe.hpp>
 
 namespace os {
 
 class App;
 
-class ConsoleFrame : public wxFrame {
+class ConsoleFrame : public uiFrame {
 public:
     explicit ConsoleFrame(App* app);
 
-    ConsoleBody* body() { return m_body; }
+    void createFragmentView(CreateViewContext* ctx) override;
 
 private:
-    ConsoleBody* m_body{nullptr};
+    ConsoleBody m_body;
 };
 
 } // namespace os

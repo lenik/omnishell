@@ -57,6 +57,7 @@ struct VolumeDesktopIcon : public DesktopIcon {
  * - Drag and drop
  * - Double-click to launch
  * - Right-click context menu
+ * - Arrow keys move selection; Enter opens the selected icon (module or volume)
  */
 class DesktopWindow : public wxcPanel {
   public:
@@ -163,6 +164,14 @@ class DesktopWindow : public wxcPanel {
 
     void clearDesktopIconSelection();
     void setSingleSelectedIcon(DesktopIcon* icon);
+
+    void OnDesktopKeyboardNavigate(wxKeyEvent& event);
+    void wireIconKeyboard(LabeledIcon* w);
+    void collectIconPointers(std::vector<DesktopIcon*>& out) const;
+    static wxPoint iconCenter(DesktopIcon* ic);
+    DesktopIcon* findSpatialNeighbor(DesktopIcon* cur, int keyCode) const;
+    void selectTopLeftIcon();
+    void activateSelectedIcon();
 };
 
 } // namespace os

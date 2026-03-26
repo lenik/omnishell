@@ -24,7 +24,7 @@ void SolitaireApp::initializeMetadata() {
         "R new deal.";
     categoryId = ID_CATEGORY_GAME;
 
-    image = ImageSet(Path(slv_core_pop, "money-shopping/credit-card-1.svg"));
+    image = (m_app ? m_app->getIconTheme() : os::app.getIconTheme())->icon("solitaire", "icon");
 }
 
 ProcessPtr SolitaireApp::run(const RunConfig& config) {

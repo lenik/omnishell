@@ -4,6 +4,7 @@
 #include "term/TermInterpreter.hpp"
 
 #include <wx/panel.h>
+#include <wx/scrolbar.h>
 
 #include <cstdint>
 #include <functional>
@@ -31,6 +32,11 @@ public:
 
     /** Decode UTF-8 and feed each code point through Receive(); then Refresh(). */
     void WriteUtf8(std::string_view utf8);
+    /**
+     * Write UTF-8 on the first full row below the wrapped prompt+edit line, then restore m_cv/m_cu.
+     * Used for tab-completion candidate lists so they do not overwrite the input line.
+     */
+    void WriteUtf8BelowInputOverlay(std::string_view utf8);
 
     void Receive(uint32_t codePoint);
     void PutChar(uint32_t codePoint);
@@ -58,6 +64,20 @@ public:
     void EraseInLine(int mode = 0);
 
     void ClearScreen();
+
+    /** Convenience APIs for console UI actions. */
+    void HistoryPrev();
+    void HistoryNext();
+    void FontSizeUp(int delta = 1);
+    void FontSizeDown(int delta = 1);
+    void FontSizeReset();
+    void PagePrev();
+    void PageNext();
+    void SetFontPointSize(int pt);
+
+    /** Persist/restore command history for consoles. */
+    std::vector<std::string> GetCommandHistoryUtf8() const;
+    void SetCommandHistoryUtf8(const std::vector<std::string>& lines);
 
     void AddInterpreter(std::unique_ptr<TermInterpreter> interp);
     void ClearInterpreters();
@@ -98,12 +118,17 @@ public:
     std::function<bool(wxString& edit, size_t& caret, wxTerminal* self)> OnTabComplete;
     /** Ctrl+D (EOF) with empty input line — e.g. close console (bash-like). */
     std::function<void()> OnEofEmptyLine;
+    /** While a subprocess owns the PTY, send user input as raw terminal bytes (UTF-8). */
+    std::function<void(std::string_view)> OnSendForegroundPty;
+    void SetForegroundPtyPassthrough(bool on);
+    bool GetForegroundPtyPassthrough() const { return m_foregroundPtyPassthrough; }
 
 private:
     void OnPaint(wxPaintEvent& e);
     void OnSize(wxSizeEvent& e);
     void OnChar(wxKeyEvent& e);
     void OnKeyDown(wxKeyEvent& e);
+    void OnVScroll(wxScrollEvent& e);
     void OnSetFocus(wxFocusEvent& e);
     void OnKillFocus(wxFocusEvent& e);
     void OnCaretTimer(wxTimerEvent& e);
@@ -113,6 +138,8 @@ private:
     void OnMouseWheel(wxMouseEvent& e);
 
     void RecalcGrid();
+    int ViewportWidthPx() const;
+    void SyncScrollbarFromView();
     void ResetInterpreters();
     void EscSecond(uint8_t ch);
 
@@ -150,6 +177,7 @@ private:
     void CopySelection();
     void CutSelection();
     void PasteFromClipboard();
+    void PasteToForegroundPty();
     bool IsGridCellSelected(int visRow, int col) const;
 
     void ScrollViewByPages(int deltaPages);
@@ -212,6 +240,8 @@ private:
 
     std::vector<std::unique_ptr<TermInterpreter>> m_interpreters;
 
+    bool m_foregroundPtyPassthrough{false};
+
     bool m_mouseDown{false};
     bool m_dragged{false};
     bool m_hasSelection{false};
@@ -224,6 +254,10 @@ private:
     int m_selPrEnd{0};
 
     enum { ID_CARET_TIMER = wxID_HIGHEST + 9400 };
+
+    wxScrollBar* m_vscroll{nullptr};
+    int m_scrollbarW{12};
+    int m_defaultFontPt{11};
 };
 
 } // namespace os

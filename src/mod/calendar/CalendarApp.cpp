@@ -25,7 +25,7 @@ void CalendarApp::initializeMetadata() {
     doc = "Simple calendar viewer.";
     categoryId = ID_CATEGORY_ACCESSORIES;
 
-    image = ImageSet(Path(slv_core_pop, "interface-essential/blank-calendar.svg"));
+    image = (m_app ? m_app->getIconTheme() : os::app.getIconTheme())->icon("calendar", "icon");
 }
 
 ProcessPtr CalendarApp::run(const RunConfig& config) {

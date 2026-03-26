@@ -17,6 +17,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <fnmatch.h>
+#include <poll.h>
 #include <sys/wait.h>
 #include <sys/utsname.h>
 #include <unistd.h>
@@ -99,27 +100,127 @@ static void reportExecvpFailed(const char *argv0) {
     writeFdAll(2, buf, std::strlen(buf));
 }
 
-void drainPtyMaster(int master, const std::function<void(std::string_view)> &wo) {
-    if (master < 0)
-        return;
-    char buf[4096];
-    for (;;) {
-        const ssize_t n = read(master, buf, sizeof(buf));
-        if (n > 0) {
-            if (wo)
-                wo(std::string_view(buf, static_cast<size_t>(n)));
-            continue;
-        }
-        if (n == 0)
-            return;
-        if (errno == EINTR)
-            continue;
-        return;
-    }
-}
 #endif
 
 } // namespace
+
+void Interpreter::queueForegroundPtyInput(std::string_view utf8) {
+#if defined(__unix__) || defined(__APPLE__)
+    if (!foregroundPtyActive_.load(std::memory_order_acquire) || utf8.empty())
+        return;
+    std::lock_guard<std::mutex> lock(ptyStdinMu_);
+    ptyStdinQueue_.insert(ptyStdinQueue_.end(), utf8.begin(), utf8.end());
+#endif
+}
+
+#if defined(__unix__) || defined(__APPLE__)
+int Interpreter::relayPtySession(int master, pid_t pid) {
+    if (master < 0) {
+        int st = 0;
+        waitpid(pid, &st, 0);
+        if (WIFEXITED(st))
+            return WEXITSTATUS(st);
+        return 1;
+    }
+
+    foregroundPtyActive_.store(true, std::memory_order_release);
+    if (onForegroundPty)
+        onForegroundPty(true);
+
+    char buf[4096];
+    auto flushQueue = [&]() {
+        for (;;) {
+            std::unique_lock<std::mutex> lock(ptyStdinMu_);
+            if (ptyStdinQueue_.empty())
+                return;
+            std::vector<uint8_t> chunk(std::move(ptyStdinQueue_));
+            ptyStdinQueue_.clear();
+            lock.unlock();
+            size_t off = 0;
+            while (off < chunk.size()) {
+                ssize_t w = write(master, chunk.data() + off, chunk.size() - off);
+                if (w < 0) {
+                    if (errno == EINTR)
+                        continue;
+                    return;
+                }
+                off += static_cast<size_t>(w);
+            }
+        }
+    };
+
+    bool child_reaped = false;
+    int st = 0;
+
+    while (!child_reaped) {
+        flushQueue();
+
+        const pid_t wr = waitpid(pid, &st, WNOHANG);
+        if (wr == pid) {
+            child_reaped = true;
+            break;
+        }
+
+        struct pollfd pfd = { master, POLLIN, 0 };
+        const int pr = poll(&pfd, 1, 100);
+        if (pr < 0) {
+            if (errno == EINTR)
+                continue;
+            break;
+        }
+
+        if (pfd.revents & (POLLERR | POLLNVAL))
+            break;
+
+        if (pfd.revents & POLLIN) {
+            const ssize_t n = read(master, buf, sizeof(buf));
+            if (n > 0) {
+                if (writeOut)
+                    writeOut(std::string_view(buf, static_cast<size_t>(n)));
+            } else if (n == 0) {
+                waitpid(pid, &st, 0);
+                child_reaped = true;
+                break;
+            }
+        }
+    }
+
+    flushQueue();
+
+    if (!child_reaped)
+        waitpid(pid, &st, 0);
+
+    for (;;) {
+        const ssize_t n = read(master, buf, sizeof(buf));
+        if (n > 0) {
+            if (writeOut)
+                writeOut(std::string_view(buf, static_cast<size_t>(n)));
+            continue;
+        }
+        if (n == 0)
+            break;
+        if (errno == EINTR)
+            continue;
+        break;
+    }
+
+    close(master);
+
+    {
+        std::lock_guard<std::mutex> lk(ptyStdinMu_);
+        ptyStdinQueue_.clear();
+    }
+    foregroundPtyActive_.store(false, std::memory_order_release);
+    if (onForegroundPty)
+        onForegroundPty(false);
+
+    if (WIFSIGNALED(st))
+        return 1;
+    if (WIFEXITED(st))
+        return WEXITSTATUS(st);
+    return 1;
+}
+#endif
 
 Interpreter::Interpreter() {
     register_default_builtins(*this);
@@ -651,11 +752,7 @@ int Interpreter::runCmd(ZashCmd *cmd, bool inChild) {
         reportExecvpFailed(av[0]);
         _exit(127);
     }
-    drainPtyMaster(master, writeOut);
-    close(master);
-    int st = 0;
-    waitpid(pid, &st, 0);
-    lastStatus_ = WIFEXITED(st) ? WEXITSTATUS(st) : 1;
+    lastStatus_ = relayPtySession(master, pid);
     return lastStatus_;
 #else
     lastStatus_ = 1;
@@ -744,18 +841,14 @@ int Interpreter::runPipeline(ZashPipeline *pl) {
         runCmd(pl->cmds[n - 1], true);
         _exit(lastStatus_);
     }
-    kids.push_back(lastPid);
     if (prev >= 0)
         close(prev);
-    drainPtyMaster(master, writeOut);
-    close(master);
-    int st = 0;
+    lastStatus_ = relayPtySession(master, lastPid);
     for (pid_t k : kids) {
         int s = 0;
         waitpid(k, &s, 0);
-        st = s;
+        (void)s;
     }
-    lastStatus_ = WIFEXITED(st) ? WEXITSTATUS(st) : 1;
     return lastStatus_;
 #else
     return 1;

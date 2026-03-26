@@ -23,7 +23,7 @@ void SudokuApp::initializeMetadata() {
     doc = "Click a cell, type 1–9, Backspace clears. R resets. Given cells are locked.";
     categoryId = ID_CATEGORY_GAME;
 
-    image = ImageSet(Path(slv_core_pop, "interface-essential/layout-window-8.svg"));
+    image = (m_app ? m_app->getIconTheme() : os::app.getIconTheme())->icon("sudoku", "icon");
 }
 
 ProcessPtr SudokuApp::run(const RunConfig& config) {

@@ -1,5 +1,6 @@
 #include "MinesweeperBody.hpp"
 
+#include "../../core/App.hpp"
 #include <wx/artprov.h>
 
 #include <algorithm>
@@ -20,20 +21,20 @@ enum {
 }
 
 MinesweeperBody::MinesweeperBody(App* app) {
-    (void)app;
+    const os::IconTheme* theme = (app ? app->getIconTheme() : os::app.getIconTheme());
 
     group(ID_GROUP_GAME, "game", "minesweeper", 1000, "&Game", "Minesweeper").install();
     int seq = 0;
     action(ID_GAME_NEW, "game/minesweeper", "new", seq++, "&New game", "New game")
-        .icon(wxART_NEW, Path(slv_core_pop, "interface-essential/new-file.svg"))
+        .icon(theme->icon("minesweeper", "game.new"))
         .performFn([this](PerformContext*) { resetGame(); })
         .install();
     action(ID_GAME_UNDO, "game/minesweeper", "undo", seq++, "&Undo", "Undo")
-        .icon(wxART_UNDO, Path(slv_core_pop, "interface-essential/line-arrow-rotate-left-1.svg"))
+        .icon(theme->icon("minesweeper", "game.undo"))
         .performFn([this](PerformContext*) { undoMove(); })
         .install();
     action(ID_GAME_REDO, "game/minesweeper", "redo", seq++, "&Redo", "Redo")
-        .icon(wxART_REDO, Path(slv_core_pop, "interface-essential/line-arrow-rotate-right-1.svg"))
+        .icon(theme->icon("minesweeper", "game.redo"))
         .performFn([this](PerformContext*) { redoMove(); })
         .install();
 }

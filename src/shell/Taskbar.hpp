@@ -114,10 +114,8 @@ private:
     
     std::vector<TaskbarButton> m_applications;
     wxMenu* m_startMenu;
-    
-    int m_buttonWidth;
+
     int m_buttonSpacing;
-    int m_margin;
 };
 
 } // namespace os

@@ -1,5 +1,4 @@
 #include "FileListView.hpp"
-#include "wx/artprov.h"
 
 #include "../../wx/WxChecked.hpp"
 
@@ -9,6 +8,7 @@
 #include <bas/wx/artprovs.hpp>
 #include <bas/wx/images.hpp>
 
+#include <wx/artprov.h>
 #include <wx/image.h>
 #include <wx/imaglist.h>
 #include <wx/listctrl.h>
@@ -17,6 +17,7 @@
 #include <wx/mstream.h>
 
 #include <algorithm>
+#include <cmath>
 #include <iomanip>
 #include <sstream>
 
@@ -43,7 +44,141 @@ wxEND_EVENT_TABLE()
 
 static wxBitmap IconBitmapForList(const wxArtID& id, int size) {
     ImageSet image(id);
-    return image.toBitmap1(size, size, wxART_LIST);
+
+    static const wxColour kPink = wxColour(255, 192, 203);
+    BitmapMode mode = BitmapMode::DEFAULT.backcolor(kPink);
+    return image.toBitmap1(size, size, wxART_LIST, mode);
+}
+
+static wxBitmap SolidFallbackBitmap(int w, int h, //
+        wxColour back, // = wxColour(220, 220, 220),
+        wxColour border  // = wxColour(180, 180, 180)
+    ) {
+    wxBitmap bmp(w, h, 24);
+    if (!bmp.IsOk())
+        return bmp;
+    wxMemoryDC dc(bmp);
+    dc.SetBackground(wxBrush(back));
+    dc.Clear();
+    dc.SetPen(wxPen(border));
+    dc.SetBrush(*wxTRANSPARENT_BRUSH);
+    dc.DrawRectangle(0, 0, w, h);
+    return bmp;
+}
+
+/**
+ * wxGTK ImageList::Draw asserts if a bitmap has no backing pixbuf. ImageSet::toBitmap1 can
+ * return an empty bitmap when an asset is missing. Scaling uses wxImage; bitmap creation must
+ * keep alpha — wxBitmap(im, 24) drops transparency and icons render solid black on GTK.
+ */
+static wxBitmap NormalizeToImageListSize(const wxBitmap& src, int size) {
+    static const wxColour kDarkGray = wxColour(220, 220, 220);
+    static const wxColour kLightGray = wxColour(180, 180, 180);
+    static const wxColour kRed = wxColour(200, 200, 200);
+    static const wxColour kGreen = wxColour(200, 200, 200);
+    static const wxColour kBlue = wxColour(200, 200, 200);
+
+    if (!src.IsOk() || src.GetWidth() < 1 || src.GetHeight() < 1)
+        // blue: src bitmap is missing
+        return SolidFallbackBitmap(size, size, kBlue, kLightGray);
+
+    wxImage im = src.ConvertToImage();
+    if (!im.IsOk())
+        // green: wxImage conversion failed
+        return SolidFallbackBitmap(size, size, kGreen, kLightGray);
+
+    if (im.GetWidth() != size || im.GetHeight() != size)
+        // resize in place: avoid creating a new bitmap
+        im = im.Rescale(size, size, wxIMAGE_QUALITY_BILINEAR);
+
+    wxBitmap out(im);
+    if (!out.IsOk() || out.GetWidth() < 1 || out.GetHeight() < 1) {
+        // wxBitmap creation failed: try again with 24bpp
+        wxBitmap out24(im, 24);
+        if (out24.IsOk() && out24.GetWidth() > 0 && out24.GetHeight() > 0)
+            return out24;
+        // red: wxBitmap creation failed
+        return SolidFallbackBitmap(size, size, kRed, kLightGray);
+    }
+    return out;
+}
+
+static wxBitmap ReliableListBitmap(const wxArtID& id, int size) {
+    wxBitmap fromSet = IconBitmapForList(id, size);
+    if (fromSet.IsOk() && fromSet.GetWidth() > 0 && fromSet.GetHeight() > 0) {
+        wxBitmap n = NormalizeToImageListSize(fromSet, size);
+        if (n.IsOk() && n.GetWidth() == size && n.GetHeight() == size)
+            return n;
+    }
+    wxBitmap a = wxArtProvider::GetBitmap(id, wxART_OTHER, wxSize(size, size));
+    return NormalizeToImageListSize(a, size);
+}
+
+static std::string thumbKey(const std::string& path, int size) {
+    return path + "|" + std::to_string(size);
+}
+
+static std::string variantKey(const std::string& path, int size, size_t fadeSteps, int variantId) {
+    return path + "|" + std::to_string(size) + "|" + std::to_string(fadeSteps) + "|" +
+           std::to_string(variantId);
+}
+
+static wxImage adjustBrightnessAndMaybeGreyscale(const wxImage& src, float brightness, bool greyscale) {
+    wxImage out = src;
+    if (!out.IsOk())
+        return out;
+    if (greyscale)
+        out = out.ConvertToGreyscale();
+    unsigned char* d = out.GetData();
+    if (!d)
+        return out;
+    brightness = std::clamp(brightness, 0.0f, 1.0f);
+    const size_t px = static_cast<size_t>(out.GetWidth()) * static_cast<size_t>(out.GetHeight());
+    for (size_t i = 0; i < px; ++i) {
+        const size_t o = i * 3;
+        d[o + 0] = static_cast<unsigned char>(static_cast<float>(d[o + 0]) * brightness);
+        d[o + 1] = static_cast<unsigned char>(static_cast<float>(d[o + 1]) * brightness);
+        d[o + 2] = static_cast<unsigned char>(static_cast<float>(d[o + 2]) * brightness);
+    }
+    return out;
+}
+
+static wxImage withBorder(const wxImage& src, const wxColour& borderColor, int thickness) {
+    wxImage out = src;
+    if (!out.IsOk())
+        return out;
+    unsigned char* d = out.GetData();
+    if (!d)
+        return out;
+
+    const int w = out.GetWidth();
+    const int h = out.GetHeight();
+    if (w <= 0 || h <= 0)
+        return out;
+
+    thickness = std::max(1, thickness);
+    thickness = std::min(thickness, std::min(w, h) / 2);
+
+    auto setPx = [&](int x, int y) {
+        if (x < 0 || y < 0 || x >= w || y >= h)
+            return;
+        const size_t o = static_cast<size_t>(y) * static_cast<size_t>(w) * 3u + static_cast<size_t>(x) * 3u;
+        d[o + 0] = borderColor.Red();
+        d[o + 1] = borderColor.Green();
+        d[o + 2] = borderColor.Blue();
+    };
+
+    for (int t = 0; t < thickness; ++t) {
+        for (int x = t; x < w - t; ++x) {
+            setPx(x, t);
+            setPx(x, h - 1 - t);
+        }
+        for (int y = t; y < h - t; ++y) {
+            setPx(t, y);
+            setPx(w - 1 - t, y);
+        }
+    }
+    return out;
 }
 
 FileListView::FileListView(wxWindow* parent, const Location& location)
@@ -74,15 +209,15 @@ FileListView::~FileListView() {
 void FileListView::setupImageLists() {
     m_imageListSmall = new wxImageList(ICON_SIZE_SMALL, ICON_SIZE_SMALL);
     m_imageListLarge = new wxImageList(ICON_SIZE_LARGE, ICON_SIZE_LARGE);
-    wxBitmap folderS = IconBitmapForList(wxT("wxART_FOLDER"), ICON_SIZE_SMALL);
-    wxBitmap fileS = IconBitmapForList(wxT("wxART_NORMAL_FILE"), ICON_SIZE_SMALL);
-    wxBitmap imageS = IconBitmapForList(wxT("wxART_MISSING_IMAGE"), ICON_SIZE_SMALL);
-    wxBitmap folderL = IconBitmapForList(wxT("wxART_FOLDER"), ICON_SIZE_LARGE);
-    wxBitmap fileL = IconBitmapForList(wxT("wxART_NORMAL_FILE"), ICON_SIZE_LARGE);
-    wxBitmap imageL = IconBitmapForList(wxT("wxART_MISSING_IMAGE"), ICON_SIZE_LARGE);
-    m_imageListSmall->Add(folderS);   // 0
-    m_imageListSmall->Add(fileS);     // 1
-    m_imageListSmall->Add(imageS);   // 2
+    wxBitmap folderS = ReliableListBitmap(wxART_FOLDER, ICON_SIZE_SMALL);
+    wxBitmap fileS = ReliableListBitmap(wxART_NORMAL_FILE, ICON_SIZE_SMALL);
+    wxBitmap imageS = ReliableListBitmap(wxART_MISSING_IMAGE, ICON_SIZE_SMALL);
+    wxBitmap folderL = ReliableListBitmap(wxART_FOLDER, ICON_SIZE_LARGE);
+    wxBitmap fileL = ReliableListBitmap(wxART_NORMAL_FILE, ICON_SIZE_LARGE);
+    wxBitmap imageL = ReliableListBitmap(wxART_MISSING_IMAGE, ICON_SIZE_LARGE);
+    m_imageListSmall->Add(folderS); // 0 folder
+    m_imageListSmall->Add(fileS);   // 1 file
+    m_imageListSmall->Add(imageS);  // 2 image / generic media
     m_imageListLarge->Add(folderL);
     m_imageListLarge->Add(fileL);
     m_imageListLarge->Add(imageL);
@@ -94,29 +229,104 @@ int FileListView::getIconIndex(const DirEntry& entry, size_t listIndex) {
     if (entry.isDirectory()) return 0;
     using FT = FileTypeDetector::FileType;
     FT ft = FileTypeDetector::detectFileType(entry.name);
-    if (ft == FT::IMAGE && entry.size > 0 && entry.size <= SMALL_IMAGE_THRESHOLD && m_location.volume) {
-        std::string path = joinVolumePath(m_location.path, entry.name);
-        auto it = m_thumbnailCache.find(path);
-        if (it != m_thumbnailCache.end()) return it->second;
-        try {
-            VolumeFile vf(m_location.volume, path);
-            std::vector<uint8_t> data = vf.readFile();
-            if (!data.empty()) {
-                wxMemoryInputStream stream(data.data(), data.size());
-                wxImage img;
-                if (img.LoadFile(stream, wxBITMAP_TYPE_ANY) && img.IsOk()) {
-                    img = img.Scale(size, size, wxIMAGE_QUALITY_BILINEAR);
-                    wxBitmap bmp(img);
-                    if (bmp.IsOk()) {
-                        int idx = imgList->Add(bmp);
-                        m_thumbnailCache[path] = idx;
-                        return idx;
-                    }
+
+    if (ft == FT::IMAGE && entry.size > 0 && entry.size <= m_thumbnailMaxBytes && m_location.volume) {
+        const std::string path = joinVolumePath(m_location.path, entry.name);
+
+        const size_t total = m_entries.size();
+        const bool hasRecentWindow =
+            m_recencyFadeEnabled && m_recencyRecentCount > 0 && total > 0;
+
+        const size_t recentCount = hasRecentWindow ? std::min(m_recencyRecentCount, total) : 0;
+        const bool isRecent = hasRecentWindow ? (listIndex + 1 > total - recentCount) : false;
+
+        int variantId = 0; // 0 = recent (with border), >=1 = faded steps
+        float brightness = 1.0f;
+        bool greyscale = true;
+        bool needBorder = false;
+
+        if (hasRecentWindow) {
+            if (isRecent) {
+                variantId = 0;
+                brightness = 1.0f;
+                greyscale = false;
+                needBorder = m_recencyBorderEnabled;
+            } else {
+                const size_t nonRecentCount = total - recentCount;
+                const size_t idxInNonRecent = std::min(listIndex, nonRecentCount - 1);
+                // Distance from the recent window boundary (in number of items).
+                const size_t distFromRecent = (nonRecentCount == 0) ? 0 : (nonRecentCount - 1 - idxInNonRecent);
+                size_t steps = std::max<size_t>(2, m_recencyFadeSteps);
+                const size_t olderLevels = (steps > 2) ? (steps - 2) : 0; // 0..olderLevels -> older items
+                const size_t maxFadeDist = std::max<size_t>(1, m_recencyRecentCount * 4);
+                const size_t clampedDist = std::min(distFromRecent, maxFadeDist);
+                const size_t olderLevel0 =
+                    (olderLevels == 0) ? 0 : (clampedDist * olderLevels) / maxFadeDist;
+                variantId = 1 + static_cast<int>(olderLevel0);
+
+                // Map variantId to brightness [~0.2..1.0]
+                if (steps > 2) {
+                    const float t = static_cast<float>(variantId - 1) / static_cast<float>(steps - 2);
+                    brightness = 1.0f - t * 0.8f;
+                } else {
+                    brightness = 0.3f; // only two steps: keep it dimmer than recent
                 }
+                greyscale = true;
+                needBorder = false;
             }
-        } catch (...) {}
+        } else {
+            // Default non-recency path: create normal thumbnails (variantId=0, no border).
+            variantId = 1;
+            brightness = 1.0f;
+            greyscale = false;
+            needBorder = false;
+        }
+
+        const std::string baseKey = thumbKey(path, size);
+        const std::string vKey = variantKey(path, size, m_recencyFadeSteps, variantId);
+
+        if (auto it = m_thumbnailVariantCache.find(vKey); it != m_thumbnailVariantCache.end())
+            return it->second;
+
+        try {
+            wxImage base;
+            if (auto it = m_thumbnailBaseCache.find(baseKey); it != m_thumbnailBaseCache.end()) {
+                base = it->second;
+            } else {
+                VolumeFile vf(m_location.volume, path);
+                std::vector<uint8_t> data = vf.readFile();
+                if (data.empty())
+                    return 2;
+                wxMemoryInputStream stream(data.data(), data.size());
+                if (!base.LoadFile(stream, wxBITMAP_TYPE_ANY) || !base.IsOk())
+                    return 2;
+                base = base.Scale(size, size, wxIMAGE_QUALITY_BILINEAR);
+                if (!base.IsOk())
+                    return 2;
+                m_thumbnailBaseCache[baseKey] = base;
+            }
+
+            wxImage variant = adjustBrightnessAndMaybeGreyscale(base, brightness, greyscale);
+            if (needBorder) {
+                // Use a warm highlight border.
+                wxColour borderColor(255, 230, 160);
+                const int thickness = std::max(1, size / 12);
+                variant = withBorder(variant, borderColor, thickness);
+            }
+
+            wxBitmap bmp(variant);
+            if (!bmp.IsOk())
+                return 2;
+            int idx = imgList->Add(bmp);
+            m_thumbnailVariantCache[vKey] = idx;
+            return idx;
+        } catch (...) {
+        }
     }
-    if (ft == FT::IMAGE) return 2;
+    /* Do not load/decode files here: synchronous read+decode per row slowed Explorer and could
+       produce wxBitmaps without valid GTK pixbufs (ImageList::Draw assert). */
+    if (ft == FT::IMAGE)
+        return 2;
     return 1;
 }
 
@@ -140,7 +350,8 @@ void FileListView::setLocation(const Location& location) {
 
     m_location = location;
     m_entries.clear();
-    m_thumbnailCache.clear();
+    m_thumbnailBaseCache.clear();
+    m_thumbnailVariantCache.clear();
     DeleteAllItems();
     populateList();
 }
@@ -168,6 +379,29 @@ void FileListView::setViewMode(const std::string& mode) {
     
     setupColumns();
     populateList();
+}
+
+void FileListView::enableRecencyFade(size_t recentCount, size_t fadeSteps, bool border) {
+    m_recencyFadeEnabled = recentCount > 0;
+    m_recencyRecentCount = recentCount;
+    m_recencyFadeSteps = std::max<size_t>(2, fadeSteps);
+    m_recencyBorderEnabled = border;
+    // Variant cache depends on fadeSteps, so clear it.
+    m_thumbnailVariantCache.clear();
+    Refresh();
+}
+
+void FileListView::disableRecencyFade() {
+    m_recencyFadeEnabled = false;
+    m_recencyRecentCount = 0;
+    m_thumbnailVariantCache.clear();
+    Refresh();
+}
+
+void FileListView::setThumbnailMaxBytes(size_t maxBytes) {
+    m_thumbnailMaxBytes = maxBytes;
+    // Existing thumbnails are still valid; no need to clear.
+    Refresh();
 }
 
 std::string FileListView::getViewMode() const {

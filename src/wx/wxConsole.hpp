@@ -27,7 +27,12 @@ public:
     zash::Interpreter* GetZash() const { return m_zash.get(); }
 
 protected:
-    /** Called after default builtins and terminal-specific builtins (clear/cls) are registered. */
+    /**
+     * Called from the wxConsole constructor after m_zash is created.
+     * Note: C++ does not call derived overrides during base construction — register extra builtins
+     * in the derived constructor body (see ConsoleBody) or accept duplicate registration in OnZashInit
+     * for any later explicit init path.
+     */
     virtual void OnZashInit(zash::Interpreter& interp);
 
 private:

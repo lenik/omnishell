@@ -2,20 +2,20 @@
 
 #include "../../core/App.hpp"
 
-#include <wx/sizer.h>
-
 namespace os {
 
 ConsoleFrame::ConsoleFrame(App* app)
-    : wxFrame(nullptr, wxID_ANY, wxT("Console"), wxDefaultPosition, wxSize(800, 400))
-    , m_body(new ConsoleBody(this)) {
+    : uiFrame("Console")
+    , m_body(app) {
     (void)app;
     SetName(wxT("console"));
-    m_body->SetName(wxT("console_body"));
+    addFragment(&m_body);
+    createView();
+    SetSize(wxSize(900, 520));
+}
 
-    wxBoxSizer* sz = new wxBoxSizer(wxVERTICAL);
-    sz->Add(m_body, 1, wxEXPAND | wxALL, 6);
-    SetSizer(sz);
+void ConsoleFrame::createFragmentView(CreateViewContext* ctx) {
+    uiFrame::createFragmentView(ctx);
 }
 
 } // namespace os

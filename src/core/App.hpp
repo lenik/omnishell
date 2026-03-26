@@ -8,6 +8,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include "../ui/IconTheme.hpp"
+
 class VolumeManager;
 
 namespace os {
@@ -41,6 +43,13 @@ class App {
 
     /** Build a RunConfig for module.run(); env points at runtimeEnv. */
     RunConfig makeRunConfig(std::vector<std::string> args = {}) const;
+
+    /** Icon theme loaded from embedded assets (see assets/themes/popular.json). */
+    const IconTheme* getIconTheme() const;
+
+  private:
+    mutable IconTheme m_iconTheme;
+    mutable bool m_iconThemeLoaded{false};
 };
 
 extern App app;

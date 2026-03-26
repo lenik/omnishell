@@ -199,7 +199,7 @@ void writeMatchList(wxTerminal* term, const std::vector<std::string>& matches) {
         acc += "  ";
     }
     acc += "\r\n";
-    term->WriteUtf8(acc);
+    term->WriteUtf8BelowInputOverlay(acc);
 }
 
 } // namespace
@@ -319,6 +319,13 @@ wxConsole::wxConsole(wxWindow* parent, wxWindowID id, const wxPoint& pos, const 
     SetName(wxT("wxConsole"));
     m_term = new wxTerminal(this, wxID_ANY);
 
+    // Ensure keyboard input goes to the terminal by default.
+    Bind(wxEVT_SET_FOCUS, [this](wxFocusEvent& e) {
+        if (m_term)
+            m_term->SetFocus();
+        e.Skip();
+    });
+
     wxBoxSizer* sz = new wxBoxSizer(wxVERTICAL);
     sz->Add(m_term, 1, wxEXPAND);
     SetSizer(sz);
@@ -355,11 +362,30 @@ wxConsole::wxConsole(wxWindow* parent, wxWindowID id, const wxPoint& pos, const 
     m_zash->registerBuiltin("clear", wx_zash_term_clear);
     m_zash->registerBuiltin("cls", wx_zash_term_clear);
 
+    m_term->OnSendForegroundPty = [this](std::string_view sv) {
+        if (m_zash)
+            m_zash->queueForegroundPtyInput(sv);
+    };
+    m_zash->onForegroundPty = [this](bool on) {
+        wxTerminal* t = m_term;
+        t->CallAfter([t, on]() { t->SetForegroundPtyPassthrough(on); });
+    };
+
     OnZashInit(*m_zash);
     SyncPromptFromZash();
 
-    m_term->WriteUtf8(
-        "OmniShell console — zash (if/for/case, pipelines, builtins). Type `help`.\r\n");
+    /* After layout, client width is non-zero so RecalcGrid() has set m_cols > kMinCols (20). */
+    m_term->CallAfter([t = m_term]() {
+        if (t)
+            t->WriteUtf8(
+                "OmniShell console — zash (if/for/case, pipelines, builtins). Type `help`.\r\n");
+    });
+
+    // After layout, focus the terminal so typing works immediately.
+    m_term->CallAfter([t = m_term]() {
+        if (t)
+            t->SetFocus();
+    });
 }
 
 void wxConsole::OnSubmit(const wxString& line) {

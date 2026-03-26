@@ -1,9 +1,11 @@
 #ifndef ZASH_INTERPRETER_HPP
 #define ZASH_INTERPRETER_HPP
 
+#include <atomic>
 #include <functional>
 #include <map>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -11,6 +13,10 @@
 extern "C" {
 #include "parser/zash_ast.h"
 }
+
+#if defined(__unix__) || defined(__APPLE__)
+#include <sys/types.h>
+#endif
 
 namespace os::zash {
 
@@ -23,6 +29,11 @@ public:
     std::function<void(std::string_view)> writeOut;
     std::function<void(std::string_view)> writeErr;
     std::function<void()> requestExit;
+    /** True while a foreground external command owns the PTY (for UI to forward keys). */
+    std::function<void(bool)> onForegroundPty;
+    /** Queue bytes to the child process stdin (thread-safe; no-op if no foreground PTY). */
+    void queueForegroundPtyInput(std::string_view utf8);
+    bool foregroundPtyActive() const { return foregroundPtyActive_.load(std::memory_order_acquire); }
 
     Interpreter();
 
@@ -69,6 +80,14 @@ private:
     int runCmd(ZashCmd *cmd, bool inChild = false);
     int runCase(const char *word, ZashCaseArm *arms);
     void registerFunction(ZashStmt *st);
+
+#if defined(__unix__) || defined(__APPLE__)
+    int relayPtySession(int master, pid_t pid);
+#endif
+
+    std::mutex ptyStdinMu_;
+    std::vector<uint8_t> ptyStdinQueue_;
+    std::atomic<bool> foregroundPtyActive_{false};
 
     std::map<std::string, std::string> env_;
     std::vector<std::map<std::string, std::string>> localStack_;

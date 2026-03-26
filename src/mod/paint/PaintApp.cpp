@@ -37,7 +37,7 @@ void PaintApp::initializeMetadata() {
     doc = "Basic paint application.";
     categoryId = ID_CATEGORY_ACCESSORIES;
 
-    image = ImageSet(Path(slv_core_pop, "interface-essential/paint-palette.svg"));
+    image = (m_app ? m_app->getIconTheme() : os::app.getIconTheme())->icon("paint", "icon");
 }
 
 ProcessPtr PaintApp::run(const RunConfig& config) {
@@ -70,7 +70,7 @@ ProcessPtr PaintApp::openImage(VolumeManager* volumeManager, VolumeFile file) {
     proc->uri = kPaintModuleUri;
     proc->name = "paint";
     proc->label = "Paint";
-    proc->icon = ImageSet(Path(slv_core_pop, "interface-essential/paint-palette.svg"));
+    proc->icon = os::app.getIconTheme()->icon("paint", "icon");
 
     auto* frame = new PaintFrame(&app, "Paint");
 

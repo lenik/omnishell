@@ -1,9 +1,11 @@
 #include "MediaPlayerBody.hpp"
 
+#include "../../core/App.hpp"
 #include "../../shell/Shell.hpp"
-#include "../../ui/dialogs/ChooseFileDialog.hpp"
 #include "../../ui/ThemeStyles.hpp"
+#include "../../ui/dialogs/ChooseFileDialog.hpp"
 
+#include "../../wx/artprovs.hpp"
 #include <bas/volume/Volume.hpp>
 #include <bas/volume/VolumeManager.hpp>
 
@@ -82,9 +84,9 @@ static bool extensionIsAudio(std::string_view path) {
         if (c >= 'A' && c <= 'Z')
             c = static_cast<char>(c - 'A' + 'a');
     }
-    static const char* kAudio[] = {"mp3",  "wav",  "flac", "ogg",  "oga",  "opus", "m4a",  "aac",
-                                   "wma",  "mid",  "midi", "kar",  "aiff", "aif",  "mpc",  "ape",
-                                   "wv",   "dsf",  "dff"};
+    static const char* kAudio[] = {"mp3", "wav", "flac", "ogg",  "oga", "opus", "m4a",
+                                   "aac", "wma", "mid",  "midi", "kar", "aiff", "aif",
+                                   "mpc", "ape", "wv",   "dsf",  "dff"};
     for (const char* a : kAudio) {
         if (ext == a)
             return true;
@@ -139,7 +141,8 @@ class MediaAudioVisualizer : public wxPanel {
             const double dt = t * 0.9;
             for (int i = 0; i < kBarCount; ++i) {
                 double phase = dt * (1.2 + i * 0.11) + i * 0.7;
-                double target = 0.12 + 0.88 * (0.5 + 0.5 * std::sin(phase)) * (0.65 + 0.35 * std::sin(dt * 0.4 + i * 0.2));
+                double target = 0.12 + 0.88 * (0.5 + 0.5 * std::sin(phase)) *
+                                           (0.65 + 0.35 * std::sin(dt * 0.4 + i * 0.2));
                 if (!m_playing)
                     target *= 0.15;
                 m_barSmooth[i] += (target - m_barSmooth[i]) * (m_playing ? 0.28 : 0.5);
@@ -155,7 +158,8 @@ class MediaAudioVisualizer : public wxPanel {
             const int step = std::max(2, sz.x / 280);
             auto sampleY = [&](int x) -> int {
                 double u = x * 0.045 + t * 2.8;
-                double v = std::sin(u) * 0.35 + std::sin(u * 1.7 + t) * 0.22 + std::sin(u * 0.51 - t * 1.2) * 0.18;
+                double v = std::sin(u) * 0.35 + std::sin(u * 1.7 + t) * 0.22 +
+                           std::sin(u * 0.51 - t * 1.2) * 0.18;
                 if (!m_playing)
                     v *= 0.2;
                 int y = midY - static_cast<int>(v * (midY - 6));
@@ -178,25 +182,30 @@ class MediaAudioVisualizer : public wxPanel {
 
 static MediaAudioVisualizer* asViz(wxPanel* p) { return static_cast<MediaAudioVisualizer*>(p); }
 
-MediaPlayerBody::MediaPlayerBody(VolumeManager* vm)
-    : m_vm(vm) {
-    group(ID_GROUP_MEDIA, "media", "mediaplayer", 1000, "&Media", "Media player").install();
+MediaPlayerBody::MediaPlayerBody(VolumeManager* vm) : m_vm(vm) {
+    const IconTheme* theme = app.getIconTheme();
+
+    group(ID_GROUP_MEDIA, "media", "mediaplayer", 1000)
+        .label("&Media")
+        .description("Media player")
+        .icon(theme->icon("mediaplayer", "group.media"))
+        .install();
 
     int seq = 0;
     action(ID_OPEN, "media/mediaplayer", "open", seq++, "&Open...", "Open media file from volume")
-        .icon(wxART_FILE_OPEN, Path(slv_core_pop, "interface-essential/open-book.svg"))
+        .icon(theme->icon("mediaplayer", "file.open"))
         .performFn([this](PerformContext* ctx) { onOpen(ctx); })
         .install();
     action(ID_PLAY, "media/mediaplayer", "play", seq++, "&Play", "Play")
-        .icon(wxART_GO_FORWARD, Path(slv_core_pop, "entertainment/media-play.svg"))
+        .icon(theme->icon("mediaplayer", "media.play"))
         .performFn([this](PerformContext* ctx) { onPlay(ctx); })
         .install();
     action(ID_PAUSE, "media/mediaplayer", "pause", seq++, "&Pause", "Pause")
-        .icon(wxART_MINUS, Path(slv_core_pop, "entertainment/media-pause.svg"))
+        .icon(theme->icon("mediaplayer", "media.pause"))
         .performFn([this](PerformContext* ctx) { onPause(ctx); })
         .install();
     action(ID_STOP, "media/mediaplayer", "stop", seq++, "&Stop", "Stop")
-        .icon(wxART_DELETE, Path(slv_core_pop, "entertainment/media-stop.svg"))
+        .icon(theme->icon("mediaplayer", "media.stop"))
         .performFn([this](PerformContext* ctx) { onStop(ctx); })
         .install();
 
@@ -204,6 +213,18 @@ MediaPlayerBody::MediaPlayerBody(VolumeManager* vm)
         .label("Repeat")
         .description("Repeat when playback reaches the end")
         .stateType(UIStateType::BOOL)
+        .valueDescriptorFn([this](const UIStateVariant& nv) -> UIStateValueDescriptor {
+            UIStateValueDescriptor d;
+            d.label = m_repeat ? "Repeat" : "No Repeat";
+            d.description = m_repeat ? "Repeat when playback reaches the end"
+                                     : "No repeat when playback reaches the end";
+            d.icon = m_repeat
+                         ? ImageSet(wxART_REPEAT,
+                                    Path(slv_core_pop, "interface-essential/button-loop.svg"))
+                         : ImageSet(wxART_SEQUENCE,
+                                    Path(slv_core_pop, "interface-essential/arrange-number.svg"));
+            return d;
+        })
         .initValue(UIStateVariant{false})
         .valueRef(&m_repeatStateSink)
         .connect([this](const UIStateVariant& nv, const UIStateVariant&) {
@@ -254,17 +275,21 @@ void MediaPlayerBody::createFragmentView(CreateViewContext* ctx) {
 
     m_media->Bind(wxEVT_MEDIA_FINISHED, &MediaPlayerBody::onMediaFinished, this);
 #else
-    mainSizer->Add(new wxStaticText(m_root, wxID_ANY,
-                                    _("wxMediaCtrl is not available (link wxWidgets media library).")),
-                   0, wxALL, 8);
+    mainSizer->Add(
+        new wxStaticText(m_root, wxID_ANY,
+                         _("wxMediaCtrl is not available (link wxWidgets media library).")),
+        0, wxALL, 8);
 #endif
 
-    wxBitmap bmpPlay =
-        ImageSet(wxART_GO_FORWARD, Path(slv_core_pop, "entertainment/media-play.svg")).toBitmap1(kControlIconPx, kControlIconPx);
-    wxBitmap bmpPause =
-        ImageSet(wxART_MINUS, Path(slv_core_pop, "entertainment/media-pause.svg")).toBitmap1(kControlIconPx, kControlIconPx);
-    wxBitmap bmpStop =
-        ImageSet(wxART_DELETE, Path(slv_core_pop, "entertainment/media-stop.svg")).toBitmap1(kControlIconPx, kControlIconPx);
+    wxBitmap bmpPlay = ImageSet(wxART_GO_FORWARD, //
+                                Path(slv_core_pop, "entertainment/button-play.svg"))
+                           .toBitmap1(kControlIconPx, kControlIconPx);
+    wxBitmap bmpPause = ImageSet(wxART_PAUSE, //
+                                 Path(slv_core_pop, "entertainment/button-pause-2.svg"))
+                            .toBitmap1(kControlIconPx, kControlIconPx);
+    wxBitmap bmpStop = ImageSet(wxART_STOP, //
+                                Path(slv_core_pop, "entertainment/button-stop.svg"))
+                           .toBitmap1(kControlIconPx, kControlIconPx);
 
     auto* bar = new wxPanel(m_root, wxID_ANY);
     auto* barSizer = new wxBoxSizer(wxHORIZONTAL);
@@ -272,7 +297,8 @@ void MediaPlayerBody::createFragmentView(CreateViewContext* ctx) {
 
     auto makeBtn = [this, bar, &barSizer](const wxBitmap& bmp, const wxString& tip,
                                           void (MediaPlayerBody::*fn)(PerformContext*)) {
-        auto* b = new wxBitmapButton(bar, wxID_ANY, bmp, wxDefaultPosition, wxDefaultSize, wxBU_AUTODRAW | wxBORDER_NONE);
+        auto* b = new wxBitmapButton(bar, wxID_ANY, bmp, wxDefaultPosition, wxDefaultSize,
+                                     wxBU_AUTODRAW | wxBORDER_NONE);
         b->SetToolTip(tip);
         b->Bind(wxEVT_BUTTON, [this, fn](wxCommandEvent& e) {
             auto pc = toPerformContext(e);
@@ -299,7 +325,9 @@ void MediaPlayerBody::createFragmentView(CreateViewContext* ctx) {
     updateFrameTitle();
 }
 
-wxEvtHandler* MediaPlayerBody::getEventHandler() { return m_root ? m_root->GetEventHandler() : nullptr; }
+wxEvtHandler* MediaPlayerBody::getEventHandler() {
+    return m_root ? m_root->GetEventHandler() : nullptr;
+}
 
 wxLongLong MediaPlayerBody::playbackTellMs() const {
 #if HAVE_WX_MEDIA
@@ -424,7 +452,9 @@ void MediaPlayerBody::onOpen(PerformContext*) {
     }
 
     ChooseFileDialog dlg(m_frame, m_vm, _("Open media"), FileDialogMode::Open, startDir, "");
-    dlg.addFilter(_("Audio/Video"), "*.mp3;*.wav;*.flac;*.ogg;*.oga;*.opus;*.m4a;*.aac;*.wma;*.mp4;*.webm;*.mkv;*.avi;*.mov");
+    dlg.addFilter(
+        _("Audio/Video"),
+        "*.mp3;*.wav;*.flac;*.ogg;*.oga;*.opus;*.m4a;*.aac;*.wma;*.mp4;*.webm;*.mkv;*.avi;*.mov");
     dlg.addFilter(_("All files"), "*.*");
     dlg.setFileMustExist(true);
     if (dlg.ShowModal() != wxID_OK)

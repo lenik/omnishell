@@ -14,14 +14,30 @@ c = meson.get_compiler('c')
     bas_c_dep = dependency('bas-c', required : true)
     bas_cpp_dep = dependency('bas-cpp', required : true)
     bas_ui_dep = dependency('bas-ui', required : true)
-    boost_dep = dependency('boost', required : true)
     date_tz_lib = cpp.find_library('date-tz', required : true)
     threads_dep = dependency('threads')
     date_dep = declare_dependency(dependencies: [threads_dep, date_tz_lib])
     openssl_dep = dependency('openssl', required : true)
 
-# wxWidgets dependencies (must use a single GTK toolkit to avoid "GTK+ 2.x and GTK+ 3 in the same process" error)
+# boost libraries
+    boost_system_dep = dependency('boost', modules: ['system'], required: true)
+
+    # wxWidgets dependencies (must use a single GTK toolkit to avoid "GTK+ 2.x and GTK+ 3 in the same process" error)
     wx_dep = dependency('wxwidgets', method: 'config-tool', required: true)
+
+    # Decide whether we need vendored Boost.JSON; actual boost_dep is defined later
+    # (Meson requires add_project_arguments() to happen before any build targets).
+    use_vendored_boost_json = (not boost_system_dep.found() or (boost_system_dep.version() < '1.68' or wx_dep.version() < '3.1'))
+    if use_vendored_boost_json
+        boost_inc = [
+            include_directories('third_party/boost_json/include'),
+            include_directories('third_party/boost_core/include'),
+            include_directories('third_party/boost_assert/include'),
+        ]
+    else
+        boost_inc = []
+    endif
+
     # Detect toolkit from default wx-config so we link only gtk2 or only gtk3
     wx_config = find_program('wx-config', required: true)
     wx_libs_out = run_command(wx_config, '--libs', check: true, capture: true).stdout()
@@ -88,6 +104,33 @@ zash_inc = [
 cpp_nowarn = cpp.get_supported_arguments(['-w', '/w'])
 cpp_nowarn = cpp_nowarn + wx_defines
 
+# Boost dependency (needs to be declared after add_project_arguments()).
+if use_vendored_boost_json
+    boost_json_lib = static_library(
+        'boost_json',
+        'third_party/boost_json/src/src.cpp',
+        include_directories: boost_inc,
+    )
+    boost_dep = declare_dependency(
+        include_directories: boost_inc,
+        link_with: boost_json_lib,
+        dependencies: [
+            dependency('boost', modules : [
+                'locale',
+                'system',
+            ], required : true),
+        ],
+    )
+else
+    boost_dep = dependency('boost', modules : [
+        'assert',
+        'core',
+        'json',
+        'locale',
+        'system',
+    ], required : true)
+endif
+
 # Precompiled header for wxWidgets
 wx_pch = 'src/wx_pch.h'
 
@@ -136,6 +179,9 @@ cpp_sources = files(
   'src/mod/browser/BrowserApp.cpp',
   'src/mod/browser/BrowserFrame.cpp',
   'src/mod/browser/BrowserBody.cpp',
+  'src/mod/calculator/CalculatorApp.cpp',
+  'src/mod/calculator/CalculatorBody.cpp',
+  'src/mod/calculator/CalculatorFrame.cpp',
   'src/mod/mediaplayer/MediaPlayerApp.cpp',
   'src/mod/mediaplayer/MediaPlayerFrame.cpp',
   'src/mod/mediaplayer/MediaPlayerBody.cpp',
@@ -154,6 +200,22 @@ cpp_sources = files(
   'src/mod/solitaire/SolitaireApp.cpp',
   'src/mod/solitaire/SolitaireFrame.cpp',
   'src/mod/solitaire/SolitaireBody.cpp',
+  'src/mod/snippingtool/SnippingToolApp.cpp',
+  'src/mod/snippingtool/SnippingToolBody.cpp',
+  'src/mod/snippingtool/SnippingToolFrame.cpp',
+  'src/mod/soundrecorder/SoundRecorderApp.cpp',
+  'src/mod/soundrecorder/SoundRecorderBody.cpp',
+  'src/mod/soundrecorder/SoundRecorderFrame.cpp',
+  'src/mod/camera/CameraApp.cpp',
+  'src/mod/camera/CameraFrame.cpp',
+  'src/mod/camera/CameraBody.cpp',
+  'src/mod/camera/CameraGstPreview.cpp',
+  'src/mod/photoviewer/PhotoViewerApp.cpp',
+  'src/mod/photoviewer/PhotoViewerFrame.cpp',
+  'src/mod/photoviewer/PhotoViewerBody.cpp',
+  'src/mod/musicbox/MusicBoxApp.cpp',
+  'src/mod/musicbox/MusicBoxFrame.cpp',
+  'src/mod/musicbox/MusicBoxBody.cpp',
   'src/mod/fiveormore/FiveOrMoreApp.cpp',
   'src/mod/fiveormore/FiveOrMoreFrame.cpp',
   'src/mod/fiveormore/FiveOrMoreBody.cpp',
@@ -163,6 +225,9 @@ cpp_sources = files(
   'src/mod/stopwatch/StopWatchApp.cpp',
   'src/mod/stopwatch/StopWatchFrame.cpp',
   'src/mod/stopwatch/StopWatchBody.cpp',
+  'src/mod/taskmanager/TaskManagerApp.cpp',
+  'src/mod/taskmanager/TaskManagerBody.cpp',
+  'src/mod/taskmanager/TaskManagerFrame.cpp',
   'src/mod/passwordmanager/LoginDialog.cpp',
   'src/mod/passwordmanager/PasswordManager.cpp',
   'src/mod/background/BackgroundSettingsApp.cpp',
@@ -173,6 +238,7 @@ cpp_sources = files(
   'src/ui/widget/BreadcrumbNav.cpp',
   'src/ui/widget/DirTreeView.cpp',
   'src/ui/widget/FileListView.cpp',
+  'src/ui/IconTheme.cpp',
   'src/ui/dialogs/ChooseFileDialog.cpp',
   'src/ui/dialogs/ChooseFolderDialog.cpp',
   'src/ui/dialogs/ChoosePrinterDialog.cpp',
@@ -247,6 +313,19 @@ endif
 if have_wx_media
     lib_omnishell_deps += [wx_media_lib]
     lib_omnishell_cpp_args += ['-DHAVE_WX_MEDIA=1']
+endif
+
+alsa_dep = cpp.find_library('asound', required: false)
+if host_machine.system() == 'linux' and alsa_dep.found()
+    lib_omnishell_deps += alsa_dep
+    lib_omnishell_cpp_args += ['-DOMNISHELL_HAVE_ALSA=1']
+endif
+
+gst_dep = dependency('gstreamer-1.0', required: false)
+gst_app_dep = dependency('gstreamer-app-1.0', required: false)
+if gst_dep.found() and gst_app_dep.found()
+    lib_omnishell_deps += [gst_dep, gst_app_dep]
+    lib_omnishell_cpp_args += ['-DOMNISHELL_HAVE_GSTREAMER=1']
 endif
 
 # if wx_dep.version() < '3.1'

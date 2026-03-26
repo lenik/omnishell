@@ -25,69 +25,70 @@ enum {
 NotepadBody::NotepadBody(App* app)
     : m_app(app) //
 {
+    const IconTheme* theme = (m_app ? m_app->getIconTheme() : os::app.getIconTheme());
+
     int seq = 0;
     action(wxID_NEW, "file", "new", seq++, "&New", "New document")
-        .icon(wxART_NEW, Path(slv_core_pop, "interface-essential/new-file.svg"))
+        .icon(theme->icon("notepad", "file.new"))
         .performFn([this](PerformContext* ctx) { onNew(ctx); })
         .install();
     action(wxID_OPEN, "file", "open", seq++, "&Open...", "Open file")
-        .icon(wxART_FILE_OPEN, Path(slv_core_pop, "interface-essential/open-book.svg"))
+        .icon(theme->icon("notepad", "file.open"))
         .performFn([this](PerformContext* ctx) { onOpen(ctx); })
         .install();
     action(wxID_SAVE, "file", "save", seq++, "&Save", "Save file")
-        .icon(wxART_FILE_SAVE, Path(slv_core_pop, "interface-essential/file-add-alternate.svg"))
+        .icon(theme->icon("notepad", "file.save"))
         .performFn([this](PerformContext* ctx) { onSave(ctx); })
         .install();
     action(wxID_SAVEAS, "file", "saveas", seq++, "Save &As...", "Save as")
-        .icon(wxART_FILE_SAVE_AS, Path(slv_core_pop, "interface-essential/multiple-file-2.svg"))
+        .icon(theme->icon("notepad", "file.saveas"))
         .performFn([this](PerformContext* ctx) { onSaveAs(ctx); })
         .install();
 
     seq = 0;
     action(wxID_UNDO, "edit", "undo", seq++, "Undo", "Undo")
-        .icon(wxART_UNDO,
-              Path(slv_ultimate_colors, "interface-essential/undo.svg"))
+        .icon(theme->icon("notepad", "edit.undo"))
         .performFn([this](PerformContext* ctx) { onUndo(ctx); })
         .install();
     action(wxID_REDO, "edit", "redo", seq++, "Redo", "Redo")
-        .icon(wxART_REDO, Path(slv_core_pop, "artificial-intelligence/ai-redo-spark.svg"))
+        .icon(theme->icon("notepad", "edit.redo"))
         .performFn([this](PerformContext* ctx) { onRedo(ctx); })
         .install();
 
     seq = 1000;
     action(wxID_SELECTALL, "edit", "select_all", seq++, "Select &All", "Select all")
-        .icon(wxART_REPORT_VIEW, Path(slv_core_pop, "interface-essential/clipboard-check.svg"))
+        .icon(theme->icon("notepad", "edit.select_all"))
         .performFn([this](PerformContext* ctx) { onSelectAll(ctx); })
         .install();
     action(wxID_CLEAR, "edit", "clear", seq++, "Clear", "Clear")
-        .icon(wxART_DELETE, Path(slv_core_pop, "interface-essential/clipboard-remove.svg"))
+        .icon(theme->icon("notepad", "edit.clear"))
         .performFn([this](PerformContext* ctx) { onClear(ctx); })
         .install();
 
     action(wxID_CUT, "edit", "cut", seq++, "Cu&t", "Cut")
-        .icon(wxART_CUT, Path(slv_core_pop, "interface-essential/cut.svg"))
+        .icon(theme->icon("notepad", "edit.cut"))
         .performFn([this](PerformContext* ctx) { onCut(ctx); })
         .install();
     action(wxID_COPY, "edit", "copy", seq++, "&Copy", "Copy")
-        .icon(wxART_COPY, Path(slv_core_pop, "interface-essential/clipboard-add.svg"))
+        .icon(theme->icon("notepad", "edit.copy"))
         .performFn([this](PerformContext* ctx) { onCopy(ctx); })
         .install();
     action(wxID_PASTE, "edit", "paste", seq++, "&Paste", "Paste")
-        .icon(wxART_PASTE, Path(slv_core_pop, "interface-essential/empty-clipboard.svg"))
+        .icon(theme->icon("notepad", "edit.paste"))
         .performFn([this](PerformContext* ctx) { onPaste(ctx); })
         .install();
 
     seq = 2000;
     action(ID_ZOOM_IN, "view", "zoom_in", seq++, "Zoom &In", "Zoom in")
-        .icon(wxART_PLUS, Path(slv_core_pop, "interface-essential/magnifying-glass-circle.svg"))
+        .icon(theme->icon("notepad", "view.zoom_in"))
         .performFn([this](PerformContext* ctx) { onZoomIn(ctx); })
         .install();
     action(ID_ZOOM_OUT, "view", "zoom_out", seq++, "Zoom &Out", "Zoom out")
-        .icon(wxART_MINUS, Path(slv_core_pop, "interface-essential/magnifying-glass.svg"))
+        .icon(theme->icon("notepad", "view.zoom_out"))
         .performFn([this](PerformContext* ctx) { onZoomOut(ctx); })
         .install();
     action(ID_ZOOM_RESET, "view", "zoom_reset", seq++, "Zoom &Reset", "Zoom reset")
-        .icon(wxART_CROSS_MARK, Path(slv_core_pop, "interface-essential/search-visual.svg"))
+        .icon(theme->icon("notepad", "view.zoom_reset"))
         .performFn([this](PerformContext* ctx) { onZoomReset(ctx); })
         .install();
 }

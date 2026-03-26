@@ -27,7 +27,7 @@ void ConsoleApp::initializeMetadata() {
     doc = "Canvas terminal (xterm-style output) and builtins.";
     categoryId = ID_CATEGORY_SYSTEM;
 
-    image = ImageSet(Path(slv_core_pop, "computer-devices/desktop-code.svg"));
+    image = (m_app ? m_app->getIconTheme() : os::app.getIconTheme())->icon("console", "icon");
 }
 
 ProcessPtr ConsoleApp::run(const RunConfig& config) {

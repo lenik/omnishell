@@ -3,6 +3,7 @@
 #include "Shell.hpp"
 
 #include <bas/ui/arch/ImageSet.hpp>
+#include "../core/App.hpp"
 #include <wx/datetime.h>
 #include <wx/dcbuffer.h>
 #include <wx/log.h>
@@ -63,8 +64,7 @@ class TaskbarStartPlate : public os::wxcPanel {
 namespace os {
 
 Taskbar::Taskbar(wxWindow* parent)
-    : wxcPanel(parent, wxID_ANY), m_startMenu(nullptr), m_buttonWidth(150), m_buttonSpacing(2),
-      m_margin(0) {
+    : wxcPanel(parent, wxID_ANY), m_startMenu(nullptr), m_buttonSpacing(2) {
     SetName(wxT("taskbar"));
     SetMinSize(wxSize(-1, GetDefaultHeight()));
     SetMaxSize(wxSize(-1, GetDefaultHeight()));
@@ -72,8 +72,7 @@ Taskbar::Taskbar(wxWindow* parent)
     // Start: owner-drawn plate (see TaskbarStartPlate) so label stays white on GTK when
     // other windows open / focus changes (native wxButton would restyle the label).
     int h = GetDefaultHeight();
-    wxBitmap startBmp =
-        ImageSet(Path(slv_core_pop, "interface-essential/brightness-3.svg")).toBitmap1(24, 24);
+    wxBitmap startBmp = os::app.getIconTheme()->icon("shell", "taskbar.start").toBitmap1(24, 24);
     m_startButton = new TaskbarStartPlate(this, h, startBmp);
     m_startButton->SetPosition(wxPoint(0, 0));
     m_startButton->SetSize(wxSize(100, h));
@@ -128,7 +127,7 @@ void Taskbar::addApplication(ModulePtr module, wxWindow* window) {
 
     // Create button
     button.button =
-        new wxButton(m_appListPanel, wxID_ANY, module->label, wxDefaultPosition, wxSize(140, 28));
+        new wxButton(m_appListPanel, wxID_ANY, module->label, wxDefaultPosition, wxDefaultSize);
     wxcBind(*button.button, wxEVT_BUTTON, &Taskbar::OnAppButtonClick, this);
 
     m_applications.push_back(button);
@@ -153,7 +152,7 @@ void Taskbar::addProcess(ProcessPtr process) {
         button.minimized = false;
 
         button.button = new wxButton(m_appListPanel, wxID_ANY, process->label, wxDefaultPosition,
-                                     wxSize(140, 28));
+                                     wxDefaultSize);
         wxBitmap bmp = process->icon.toBitmap1(16, 16);
         if (bmp.IsOk()) {
             button.button->SetBitmap(bmp, wxLEFT);
@@ -333,7 +332,12 @@ void Taskbar::OnSize(wxSizeEvent& event) {
     m_trayPanel->SetPosition(wxPoint(trayX, 0));
     m_trayPanel->SetSize(wxSize(size.GetWidth() - trayX, h));
 
-    m_clock->SetPosition(wxPoint(230 - 105, 10));
+    const wxSize traySz = m_trayPanel->GetClientSize();
+    const int clockW = 100;
+    const int pad = 6;
+    int clockX = std::max(pad, traySz.GetWidth() - clockW - pad);
+    m_clock->SetSize(wxSize(clockW, -1));
+    m_clock->SetPosition(wxPoint(clockX, std::max(0, (traySz.GetHeight() - m_clock->GetSize().GetHeight()) / 2)));
 
     UpdateButtonLayout();
     event.Skip();
@@ -345,21 +349,38 @@ void Taskbar::OnPaint(wxPaintEvent& event) {
 }
 
 void Taskbar::UpdateButtonLayout() {
-    int x = 0;
-    int y = 0;
-    const int panelW = m_appListPanel ? m_appListPanel->GetClientSize().GetWidth() : 0;
+    if (!m_appListPanel)
+        return;
+    const wxSize panelSz = m_appListPanel->GetClientSize();
+    const int panelW = panelSz.GetWidth();
+    const int panelH = panelSz.GetHeight();
+    const int margin = 4;
+    const int spacing = m_buttonSpacing;
+
+    size_t n = 0;
     for (auto& app : m_applications) {
-        if (app.button) {
-            app.button->SetPosition(wxPoint(x, y));
-            int w = m_buttonWidth;
-            if (panelW > 0)
-                w = std::min(w, std::max(1, panelW - x));
-            if (w < 60)
-                w = std::max(1, w);
-            app.button->SetMinSize(wxSize(60, 28));
-            app.button->SetSize(wxSize(w, 28));
-            x += m_buttonWidth + m_buttonSpacing;
-        }
+        if (app.button)
+            ++n;
+    }
+    if (n == 0)
+        return;
+
+    const int totalSpacing = static_cast<int>(n > 1 ? (n - 1) * spacing : 0);
+    int usableW = panelW - 2 * margin - totalSpacing;
+    if (usableW < static_cast<int>(n))
+        usableW = static_cast<int>(n);
+    const int btnW = std::max(1, usableW / static_cast<int>(n));
+    const int btnH = std::max(1, panelH - 2 * margin);
+
+    int x = margin;
+    const int y = margin;
+    for (auto& app : m_applications) {
+        if (!app.button)
+            continue;
+        app.button->SetPosition(wxPoint(x, y));
+        app.button->SetMinSize(wxSize(1, 1));
+        app.button->SetSize(wxSize(btnW, btnH));
+        x += btnW + spacing;
     }
     m_appListPanel->Layout();
 }

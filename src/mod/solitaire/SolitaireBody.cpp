@@ -571,7 +571,7 @@ class SolitaireCanvas : public wxPanel {
 } // namespace
 
 SolitaireBody::SolitaireBody(App* app) {
-    (void)app;
+    const os::IconTheme* theme = (app ? app->getIconTheme() : os::app.getIconTheme());
 
     group(ID_GROUP_GAME, "game", "solitaire", 1000)
         .label("&Game")
@@ -580,7 +580,7 @@ SolitaireBody::SolitaireBody(App* app) {
     action(ID_GAME_NEW, "game/solitaire", "new", 0)
         .label("&New deal")
         .description("Shuffle and deal")
-        .icon(wxART_NEW, Path(slv_core_pop, "interface-essential/new-file.svg"))
+        .icon(theme->icon("solitaire", "game.new"))
         .performFn([this](PerformContext*) {
             if (m_canvas)
                 static_cast<SolitaireCanvas*>(m_canvas)->newGame();

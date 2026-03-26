@@ -33,7 +33,7 @@ void MinesweeperApp::initializeMetadata() {
     doc = "Simple playable minesweeper game.";
     categoryId = ID_CATEGORY_GAME;
 
-    image = ImageSet(Path(slv_core_pop, "interface-essential/bomb.svg"));
+    image = os::app.getIconTheme()->icon("minesweeper", "icon");
 }
 
 ProcessPtr MinesweeperApp::run(const RunConfig& config) {

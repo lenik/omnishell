@@ -19,6 +19,7 @@
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <limits>
 #include <sstream>
 
 #include "../ui/ThemeStyles.hpp"
@@ -75,8 +76,10 @@ std::string escapeJson(const std::string& in) {
 namespace os {
 
 DesktopWindow::DesktopWindow(wxWindow* parent)
-    : wxcPanel(parent, wxID_ANY), m_volumeManager(nullptr), m_backgroundColor(*wxLIGHT_GREY),
-      m_iconSize(64, 80), m_iconSpacing(10), m_margin(20) {
+    : wxcPanel(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize,
+               wxTAB_TRAVERSAL | wxWANTS_CHARS),
+      m_volumeManager(nullptr), m_backgroundColor(*wxLIGHT_GREY), m_iconSize(64, 80),
+      m_iconSpacing(10), m_margin(20) {
     SetName(wxT("desktop"));
     SetBackgroundStyle(wxBG_STYLE_PAINT);
     SetMinSize(wxSize(800, 600));
@@ -86,6 +89,7 @@ DesktopWindow::DesktopWindow(wxWindow* parent)
     Bind(wxEVT_LEFT_DCLICK, &DesktopWindow::OnLeftDoubleClick, this);
     Bind(wxEVT_RIGHT_DOWN, &DesktopWindow::OnRightClick, this);
     Bind(wxEVT_ERASE_BACKGROUND, &DesktopWindow::OnEraseBackground, this);
+    Bind(wxEVT_KEY_DOWN, &DesktopWindow::OnDesktopKeyboardNavigate, this);
 }
 
 DesktopWindow::~DesktopWindow() { clearIcons(); }
@@ -202,6 +206,7 @@ void DesktopWindow::CreateVolumeIconControls(VolumeDesktopIcon& icon) {
     if (labelStr.empty())
         labelStr = icon.volume->getId();
     icon.widget = new LabeledIcon(this, wxID_ANY, bitmap, labelStr, icon.position, m_iconSize);
+    wireIconKeyboard(icon.widget);
 
     // Double-click opens Explorer for this volume
     icon.widget->onLeftDClick([this](wxMouseEvent& event) {
@@ -548,9 +553,142 @@ void DesktopWindow::setSingleSelectedIcon(DesktopIcon* icon) {
     }
 }
 
+void DesktopWindow::wireIconKeyboard(LabeledIcon* w) {
+    if (!w)
+        return;
+    w->Bind(wxEVT_KEY_DOWN, &DesktopWindow::OnDesktopKeyboardNavigate, this);
+}
+
+void DesktopWindow::collectIconPointers(std::vector<DesktopIcon*>& out) const {
+    out.clear();
+    for (auto& v : m_volumeIcons) {
+        if (v.widget)
+            out.push_back(const_cast<VolumeDesktopIcon*>(&v));
+    }
+    for (auto& m : m_icons) {
+        if (m.widget)
+            out.push_back(const_cast<DesktopModuleIcon*>(&m));
+    }
+}
+
+wxPoint DesktopWindow::iconCenter(DesktopIcon* ic) {
+    if (!ic)
+        return wxPoint();
+    if (!ic->widget)
+        return wxPoint(ic->position.x + 32, ic->position.y + 40);
+    const wxRect r = ic->widget->GetRect();
+    return wxPoint(r.x + r.width / 2, r.y + r.height / 2);
+}
+
+DesktopIcon* DesktopWindow::findSpatialNeighbor(DesktopIcon* cur, int keyCode) const {
+    if (!cur)
+        return nullptr;
+    std::vector<DesktopIcon*> all;
+    collectIconPointers(all);
+    const wxPoint c = iconCenter(cur);
+    DesktopIcon* best = nullptr;
+    long bestPen = std::numeric_limits<long>::max();
+    for (DesktopIcon* o : all) {
+        if (o == cur)
+            continue;
+        const wxPoint p = iconCenter(o);
+        const int dx = p.x - c.x;
+        const int dy = p.y - c.y;
+        long pen = 0;
+        if (keyCode == WXK_RIGHT) {
+            if (dx <= 0)
+                continue;
+            pen = static_cast<long>(std::abs(dy)) * 8L + dx;
+        } else if (keyCode == WXK_LEFT) {
+            if (dx >= 0)
+                continue;
+            pen = static_cast<long>(std::abs(dy)) * 8L - static_cast<long>(dx);
+        } else if (keyCode == WXK_DOWN) {
+            if (dy <= 0)
+                continue;
+            pen = static_cast<long>(std::abs(dx)) * 8L + dy;
+        } else if (keyCode == WXK_UP) {
+            if (dy >= 0)
+                continue;
+            pen = static_cast<long>(std::abs(dx)) * 8L - static_cast<long>(dy);
+        } else {
+            return nullptr;
+        }
+        if (pen < bestPen) {
+            bestPen = pen;
+            best = o;
+        }
+    }
+    return best;
+}
+
+void DesktopWindow::selectTopLeftIcon() {
+    std::vector<DesktopIcon*> all;
+    collectIconPointers(all);
+    if (all.empty())
+        return;
+    DesktopIcon* choice = all[0];
+    wxPoint best = iconCenter(choice);
+    for (size_t i = 1; i < all.size(); ++i) {
+        const wxPoint p = iconCenter(all[i]);
+        if (p.y < best.y || (p.y == best.y && p.x < best.x)) {
+            choice = all[i];
+            best = p;
+        }
+    }
+    setSingleSelectedIcon(choice);
+}
+
+void DesktopWindow::activateSelectedIcon() {
+    if (!m_selectedDesktopIcon)
+        return;
+    if (auto* mi = dynamic_cast<DesktopModuleIcon*>(m_selectedDesktopIcon)) {
+        if (mi->module)
+            launchModule(mi->module);
+    } else if (auto* vi = dynamic_cast<VolumeDesktopIcon*>(m_selectedDesktopIcon)) {
+        if (vi->volume)
+            ExplorerApp::open(vi->volume, "/");
+    }
+}
+
+void DesktopWindow::OnDesktopKeyboardNavigate(wxKeyEvent& event) {
+    const int k = event.GetKeyCode();
+    if (k != WXK_LEFT && k != WXK_RIGHT && k != WXK_UP && k != WXK_DOWN && k != WXK_RETURN &&
+        k != WXK_NUMPAD_ENTER) {
+        event.Skip();
+        return;
+    }
+
+    std::vector<DesktopIcon*> all;
+    collectIconPointers(all);
+    if (all.empty()) {
+        event.Skip();
+        return;
+    }
+
+    if (k == WXK_RETURN || k == WXK_NUMPAD_ENTER) {
+        if (m_selectedDesktopIcon)
+            activateSelectedIcon();
+        return;
+    }
+
+    if (!m_selectedDesktopIcon) {
+        selectTopLeftIcon();
+        Refresh();
+        return;
+    }
+
+    if (DesktopIcon* n = findSpatialNeighbor(m_selectedDesktopIcon, k)) {
+        setSingleSelectedIcon(n);
+        Refresh();
+    }
+}
+
 void DesktopWindow::OnDesktopLeftDown(wxMouseEvent& event) {
-    if (!FindIconAt(event.GetPosition()))
+    if (!FindIconAt(event.GetPosition())) {
         clearDesktopIconSelection();
+        SetFocus();
+    }
     event.Skip();
 }
 
@@ -575,6 +713,7 @@ void DesktopWindow::CreateIconControls(DesktopIcon& icon) {
 
     icon.widget = new LabeledIcon(this, wxID_ANY, bitmap, //
                                   moduleIcon->module->label, icon.position, m_iconSize);
+    wireIconKeyboard(icon.widget);
 
     // Bind events on the composite widget
     icon.widget->onLeftDClick([this](wxMouseEvent& event) { OnIconLeftDoubleClick(event); });
@@ -659,6 +798,8 @@ void DesktopWindow::OnIconLeftDown(wxMouseEvent& event) {
     if (!icon->widget->HasCapture()) {
         icon->widget->CaptureMouse();
     }
+
+    SetFocus();
 
     event.Skip();
 }

@@ -39,7 +39,7 @@ void ExplorerApp::initializeMetadata() {
     doc = "A simple file explorer for browsing volumes and directories.";
     categoryId = ID_CATEGORY_SYSTEM;
 
-    image = ImageSet(Path(slv_core_pop, "interface-essential/folder-add.svg"));
+    image = os::app.getIconTheme()->icon("explorer", "icon");
 }
 
 ProcessPtr ExplorerApp::run(const RunConfig& config) {
@@ -86,7 +86,7 @@ ProcessPtr ExplorerApp::openInternal(Volume* volume, const std::string& dir) {
     proc->uri = kExplorerModuleUri;
     proc->name = "explorer";
     proc->label = "Explorer";
-    proc->icon = ImageSet(Path(slv_core_pop, "interface-essential/folder-add.svg"));
+    proc->icon = os::app.getIconTheme()->icon("explorer", "icon");
 
     auto* frame = new ExplorerFrame(&app, vm, volume, dir);
     frame->SetSize(wxSize(800, 600));

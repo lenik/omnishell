@@ -31,7 +31,7 @@ void ControlPanelApp::initializeMetadata() {
     doc = "Configure system settings, manage modules, and customize your OmniShell environment.";
     categoryId = ID_CATEGORY_SYSTEM;
 
-    image = ImageSet(Path(slv_core_pop, "interface-essential/cog-1.svg"));
+    image = os::app.getIconTheme()->icon("controlpanel", "icon");
 }
 
 ProcessPtr ControlPanelApp::run(const RunConfig& config) {
