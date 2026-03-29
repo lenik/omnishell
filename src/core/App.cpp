@@ -1,16 +1,17 @@
 #include "App.hpp"
+
 #include "ui/arch/UIAction.hpp"
 
-#include <bas/log/uselog.h>
-#include <bas/proc/env.hpp>
 #include <bas/proc/Assets.hpp>
-
+#include <bas/proc/env.hpp>
 #include <bas/volume/LocalVolume.hpp>
 #include <bas/volume/VolumeManager.hpp>
 
+#include <cstdlib>
 #include <filesystem>
 #include <iostream>
-#include <cstdlib>
+
+#include <bas/log/uselog.h>
 
 #include <getopt.h>
 

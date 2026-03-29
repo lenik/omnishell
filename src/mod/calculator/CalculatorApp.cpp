@@ -3,15 +3,15 @@
 #include "CalculatorFrame.hpp"
 
 #include "../../core/App.hpp"
-
-#include <string>
 #include "../../core/ModuleRegistry.hpp"
+#include "../../ui/ThemeStyles.hpp"
 
 #include <bas/volume/Volume.hpp>
 #include <bas/volume/VolumeFile.hpp>
 #include <bas/volume/VolumeManager.hpp>
 
-#include "../../ui/ThemeStyles.hpp"
+#include <string>
+
 using namespace ThemeStyles;
 namespace os {
 

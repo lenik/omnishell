@@ -1,7 +1,8 @@
 #include "zash_interpreter.hpp"
 
-#include "builtins/builtins.hpp"
 #include "zash_driver.hpp"
+
+#include "builtins/builtins.hpp"
 
 #include <algorithm>
 #include <cstdio>

@@ -6,11 +6,11 @@
 #include <bas/volume/VolumeFile.hpp>
 #include <bas/wx/uiframe.hpp>
 
-#include <optional>
-
 #include <wx/event.h>
 #include <wx/longlong.h>
 #include <wx/timer.h>
+
+#include <optional>
 
 class VolumeManager;
 

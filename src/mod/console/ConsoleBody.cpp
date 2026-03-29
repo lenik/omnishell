@@ -1,12 +1,12 @@
 #include "ConsoleBody.hpp"
 
+#include "../../cli/zash/zash_interpreter.hpp"
 #include "../../core/App.hpp"
 #include "../../core/registry/RegistryService.hpp"
-
-#include "../../cli/zash/zash_interpreter.hpp"
 #include "../../ui/ThemeStyles.hpp"
 #include "../../wx/artprovs.hpp"
 #include "../../wx/wxConsole.hpp"
+
 #include <wx/panel.h>
 #include <wx/sizer.h>
 

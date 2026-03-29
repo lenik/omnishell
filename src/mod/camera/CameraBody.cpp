@@ -3,18 +3,15 @@
 #include "../../core/App.hpp"
 #include "../../core/ModuleRegistry.hpp"
 #include "../../shell/Shell.hpp"
-
 #include "../../ui/Location.hpp"
 #include "../../ui/ThemeStyles.hpp"
 #include "../../ui/dialogs/ChooseFileDialog.hpp"
 #include "../../ui/dialogs/ChooseFolderDialog.hpp"
 #include "../../ui/widget/FileListView.hpp"
-
-#include "../mediaplayer/MediaPlayerApp.hpp"
-#include "../photoviewer/PhotoViewerApp.hpp"
-#include "../paint/PaintApp.hpp"
-
 #include "../../wx/artprovs.hpp"
+#include "../mediaplayer/MediaPlayerApp.hpp"
+#include "../paint/PaintApp.hpp"
+#include "../photoviewer/PhotoViewerApp.hpp"
 
 #include <bas/volume/DirEntry.hpp>
 #include <bas/volume/Volume.hpp>

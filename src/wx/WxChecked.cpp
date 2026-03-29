@@ -1,21 +1,19 @@
 #include "WxChecked.hpp"
 
-#include <wx/wx.h>
-
 #include <wx/choice.h>
 #include <wx/combobox.h>
+#include <wx/intl.h>
 #include <wx/listbase.h>
 #include <wx/listctrl.h>
 #include <wx/menu.h>
 #include <wx/statbmp.h>
 #include <wx/statusbr.h>
+#include <wx/taskbar.h>
 #include <wx/textctrl.h>
 #include <wx/toolbar.h>
-#include <wx/treebase.h>
-#include <wx/taskbar.h>
 #include <wx/toplevel.h>
-
-#include <wx/intl.h>
+#include <wx/treebase.h>
+#include <wx/wx.h>
 
 #include <iostream>
 

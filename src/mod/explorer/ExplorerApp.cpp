@@ -5,6 +5,7 @@
 #include "../../core/App.hpp"
 #include "../../core/ModuleRegistry.hpp"
 #include "../../shell/Shell.hpp"
+#include "../../ui/ThemeStyles.hpp"
 
 #include <bas/volume/VolumeManager.hpp>
 
@@ -13,7 +14,6 @@
 
 #include <memory>
 
-#include "../../ui/ThemeStyles.hpp"
 using namespace ThemeStyles;
 
 namespace os {

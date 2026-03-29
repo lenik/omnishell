@@ -3,9 +3,10 @@
 
 #include "wxTerminal.hpp"
 
+#include <wx/panel.h>
+
 #include <memory>
 #include <mutex>
-#include <wx/panel.h>
 
 namespace os {
 

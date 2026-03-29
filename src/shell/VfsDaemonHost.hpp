@@ -1,7 +1,7 @@
 #ifndef OMNISHELL_SHELL_VFS_DAEMON_HOST_HPP
 #define OMNISHELL_SHELL_VFS_DAEMON_HOST_HPP
 
-#include "daemon/HttpDaemon.hpp"
+#include "../daemon/HttpDaemon.hpp"
 
 #include <memory>
 #include <string>

@@ -1,11 +1,10 @@
 #ifndef OMNISHELL_CORE_MODULE_HPP
 #define OMNISHELL_CORE_MODULE_HPP
 
+#include "App.hpp"
 #include "Category.hpp"
 #include "Process.hpp"
 #include "RunConfig.hpp"
-
-#include "App.hpp"
 
 #include <bas/ui/arch/ImageSet.hpp>
 #include <bas/volume/VolumeManager.hpp>

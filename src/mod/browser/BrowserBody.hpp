@@ -3,8 +3,8 @@
 
 #include <bas/ui/arch/UIFragment.hpp>
 #include <bas/wx/uiframe.hpp>
-#include <wx/event.h>
 
+#include <wx/event.h>
 #include <wx/string.h>
 
 #include <string>

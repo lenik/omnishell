@@ -1,12 +1,13 @@
 #include "IconTheme.hpp"
+
 #include "ui/arch/ImageSet.hpp"
 #include "ui/arch/UIAction.hpp"
 #include "wx/artprov.h"
-#include <optional>
 
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
 
+#include <optional>
 #include <sstream>
 
 namespace os {

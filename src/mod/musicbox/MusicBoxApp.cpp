@@ -6,7 +6,6 @@
 #include "../../core/ModuleRegistry.hpp"
 #include "../../core/registry/RegistryService.hpp"
 #include "../../shell/Shell.hpp"
-
 #include "../../ui/ThemeStyles.hpp"
 
 using namespace ThemeStyles;

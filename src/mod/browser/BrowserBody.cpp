@@ -3,18 +3,18 @@
 #include "../../shell/Shell.hpp"
 #include "../../shell/VfsWebViewHandlers.hpp"
 
-#include <bas/wx/uiframe.hpp>
 #include <bas/volume/VolumeManager.hpp>
+#include <bas/wx/uiframe.hpp>
 
 #include <wx/accel.h>
 #include <wx/button.h>
 #include <wx/combobox.h>
+#include <wx/event.h>
 #include <wx/log.h>
 #include <wx/panel.h>
 #include <wx/sizer.h>
 #include <wx/uri.h>
 #include <wx/webview.h>
-#include <wx/event.h>
 
 #include <cctype>
 #include <cstdio>

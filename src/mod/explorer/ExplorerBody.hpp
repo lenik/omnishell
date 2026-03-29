@@ -3,12 +3,11 @@
 
 #include "../../ui/LocationHistory.hpp"
 #include "../../ui/widget/BreadcrumbNav.hpp"
-#include "../../ui/widget/FileListView.hpp"
 #include "../../ui/widget/DirTreeView.hpp"
+#include "../../ui/widget/FileListView.hpp"
 
 #include <bas/ui/arch/UIAction.hpp>
 #include <bas/ui/arch/UIFragment.hpp>
-
 #include <bas/volume/Volume.hpp>
 #include <bas/volume/VolumeManager.hpp>
 

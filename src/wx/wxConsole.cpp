@@ -1,19 +1,19 @@
 #include "wxConsole.hpp"
 
-#include "cli/zash/parser/zash_ast.h"
-#include "cli/zash/zash_driver.hpp"
-#include "cli/zash/zash_interpreter.hpp"
+#include "../cli/zash/parser/zash_ast.h"
+#include "../cli/zash/zash_driver.hpp"
+#include "../cli/zash/zash_interpreter.hpp"
 
 #include <wx/utils.h>
 
 #include <algorithm>
 #include <cstdlib>
 #include <cstring>
-#include <string>
-#include <thread>
 #include <filesystem>
 #include <set>
+#include <string>
 #include <string_view>
+#include <thread>
 #include <vector>
 
 #if defined(__unix__) || defined(__APPLE__)

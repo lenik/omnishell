@@ -1,15 +1,14 @@
 #include "zash_driver.hpp"
 
-#include "parser/zash_ast.h"
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include "zash.tab.h"
 #include "zash_yy.h"
 
+#include "parser/zash_ast.h"
+
 #include <pthread.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 extern ZashProgram *zash_parse_result;
 

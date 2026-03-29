@@ -1,6 +1,7 @@
 #include "Category.hpp"
 
 #include "../ui/ThemeStyles.hpp"
+
 using namespace ThemeStyles;
 
 namespace os {

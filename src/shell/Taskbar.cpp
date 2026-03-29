@@ -2,8 +2,12 @@
 
 #include "Shell.hpp"
 
-#include <bas/ui/arch/ImageSet.hpp>
 #include "../core/App.hpp"
+#include "../ui/ThemeStyles.hpp"
+#include "../wx/wxcWindow.hpp"
+
+#include <bas/ui/arch/ImageSet.hpp>
+
 #include <wx/datetime.h>
 #include <wx/dcbuffer.h>
 #include <wx/log.h>
@@ -12,8 +16,6 @@
 
 #include <algorithm>
 
-#include "../ui/ThemeStyles.hpp"
-#include "../wx/wxcWindow.hpp"
 using namespace ThemeStyles;
 
 namespace {

@@ -1,6 +1,7 @@
 #include "SnippingToolBody.hpp"
 
 #include <wx/button.h>
+#include <wx/choice.h>
 #include <wx/clipbrd.h>
 #include <wx/dataobj.h>
 #include <wx/dcmemory.h>
@@ -10,7 +11,6 @@
 #include <wx/sizer.h>
 #include <wx/statbmp.h>
 #include <wx/stattext.h>
-#include <wx/choice.h>
 
 namespace os {
 

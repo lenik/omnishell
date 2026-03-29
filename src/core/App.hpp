@@ -3,12 +3,12 @@
 
 #include "RunConfig.hpp"
 
+#include "../ui/IconTheme.hpp"
+
 #include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
-
-#include "../ui/IconTheme.hpp"
 
 class VolumeManager;
 

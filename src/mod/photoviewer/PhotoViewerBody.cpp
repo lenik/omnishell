@@ -2,11 +2,11 @@
 
 #include <bas/volume/VolumeFile.hpp>
 
-#include <wx/mstream.h>
 #include <wx/dcbuffer.h>
 #include <wx/msgdlg.h>
-#include <wx/statbmp.h>
+#include <wx/mstream.h>
 #include <wx/sizer.h>
+#include <wx/statbmp.h>
 #include <wx/utils.h>
 
 #include <algorithm>

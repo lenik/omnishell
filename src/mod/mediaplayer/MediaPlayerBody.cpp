@@ -4,8 +4,8 @@
 #include "../../shell/Shell.hpp"
 #include "../../ui/ThemeStyles.hpp"
 #include "../../ui/dialogs/ChooseFileDialog.hpp"
-
 #include "../../wx/artprovs.hpp"
+
 #include <bas/volume/Volume.hpp>
 #include <bas/volume/VolumeManager.hpp>
 

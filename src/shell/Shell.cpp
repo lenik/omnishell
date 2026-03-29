@@ -3,8 +3,8 @@
 #include "../core/App.hpp"
 #include "../core/ModuleRegistry.hpp"
 #include "../core/ServiceManager.hpp"
-#include "../core/registry/FileAssociations.hpp"
 #include "../core/VolUrl.hpp"
+#include "../core/registry/FileAssociations.hpp"
 #include "../mod/explorer/ExplorerApp.hpp"
 
 #include <bas/volume/Volume.hpp>

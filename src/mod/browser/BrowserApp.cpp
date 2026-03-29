@@ -4,10 +4,10 @@
 
 #include "../../core/App.hpp"
 #include "../../core/ModuleRegistry.hpp"
-#include "../../shell/Shell.hpp"
-
-#include "../../core/registry/RegistryService.hpp"
 #include "../../core/VolUrl.hpp"
+#include "../../core/registry/RegistryService.hpp"
+#include "../../shell/Shell.hpp"
+#include "../../ui/ThemeStyles.hpp"
 
 #include <bas/volume/Volume.hpp>
 #include <bas/volume/VolumeFile.hpp>
@@ -15,7 +15,6 @@
 
 #include <wx/msgdlg.h>
 
-#include "../../ui/ThemeStyles.hpp"
 using namespace ThemeStyles;
 
 namespace os {

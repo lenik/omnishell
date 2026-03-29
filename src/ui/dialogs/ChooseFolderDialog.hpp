@@ -1,14 +1,14 @@
 #ifndef OMNISHELL_UI_CHOOSE_FOLDER_DIALOG_HPP
 #define OMNISHELL_UI_CHOOSE_FOLDER_DIALOG_HPP
 
-#include "../widget/DirTreeView.hpp"
 #include "../../wx/wxcWindow.hpp"
+#include "../widget/DirTreeView.hpp"
+
+#include <bas/volume/VolumeFile.hpp>
 
 #include <wx/combobox.h>
 #include <wx/textctrl.h>
 #include <wx/wx.h>
-
-#include <bas/volume/VolumeFile.hpp>
 
 #include <optional>
 #include <string>

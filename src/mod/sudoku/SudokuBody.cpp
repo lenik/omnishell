@@ -1,5 +1,7 @@
 #include "SudokuBody.hpp"
 
+#include "../../ui/ThemeStyles.hpp"
+
 #include <wx/artprov.h>
 #include <wx/dcbuffer.h>
 #include <wx/panel.h>
@@ -9,7 +11,6 @@
 #include <cmath>
 #include <vector>
 
-#include "../../ui/ThemeStyles.hpp"
 using namespace ThemeStyles;
 
 namespace os {

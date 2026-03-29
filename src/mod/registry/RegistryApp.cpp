@@ -3,8 +3,8 @@
 #include "RegistryFrame.hpp"
 
 #include "../../core/ModuleRegistry.hpp"
-
 #include "../../ui/ThemeStyles.hpp"
+
 using namespace ThemeStyles;
 
 namespace os {

@@ -1,13 +1,13 @@
 #ifndef OMNISHELL_MOD_CAMERA_CAMERABODY_HPP
 #define OMNISHELL_MOD_CAMERA_CAMERABODY_HPP
 
-#include <bas/ui/arch/UIFragment.hpp>
-#include <bas/wx/uiframe.hpp>
-
 #include "CameraGstPreview.hpp"
 
+#include <bas/ui/arch/UIFragment.hpp>
 #include <bas/volume/VolumeFile.hpp>
 #include <bas/volume/VolumeManager.hpp>
+#include <bas/wx/uiframe.hpp>
+
 #include <memory>
 #include <optional>
 #include <unordered_set>

@@ -1,12 +1,13 @@
 #include "MinesweeperBody.hpp"
 
 #include "../../core/App.hpp"
+#include "../../ui/ThemeStyles.hpp"
+
 #include <wx/artprov.h>
 
 #include <algorithm>
 #include <random>
 
-#include "../../ui/ThemeStyles.hpp"
 using namespace ThemeStyles;
 
 namespace os {

@@ -4,10 +4,10 @@
 #include "DesktopWindow.hpp"
 #include "StartMenu.hpp"
 #include "Taskbar.hpp"
+#include "VfsDaemonHost.hpp"
 
 #include "../core/ModuleRegistry.hpp"
 #include "../wx/wxcWindow.hpp"
-#include "VfsDaemonHost.hpp"
 
 #include <bas/wx/app.hpp>
 

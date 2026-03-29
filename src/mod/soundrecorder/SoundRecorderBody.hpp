@@ -4,9 +4,10 @@
 #include <bas/ui/arch/UIFragment.hpp>
 #include <bas/wx/uiframe.hpp>
 
+#include <wx/timer.h>
+
 #include <cstdint>
 #include <vector>
-#include <wx/timer.h>
 
 #if HAVE_WX_MEDIA
 #include <wx/mediactrl.h>

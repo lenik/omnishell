@@ -1,7 +1,7 @@
 #ifndef OMNISHELL_MOD_MUSICBOX_MUSICBOXFRAME_HPP
 #define OMNISHELL_MOD_MUSICBOX_MUSICBOXFRAME_HPP
 
-#include "mod/musicbox/MusicBoxBody.hpp"
+#include "MusicBoxBody.hpp"
 
 #include <bas/wx/uiframe.hpp>
 

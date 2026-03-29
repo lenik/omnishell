@@ -1,9 +1,9 @@
 #ifndef OMNISHELL_MOD_PASSWORDMANAGER_PASSWORD_MANAGER_HPP
 #define OMNISHELL_MOD_PASSWORDMANAGER_PASSWORD_MANAGER_HPP
 
-#include "../../core/auth/IAuthProxy.hpp"
-
 #include "PasswordDb.hpp"
+
+#include "../../core/auth/IAuthProxy.hpp"
 
 #include <wx/window.h>
 

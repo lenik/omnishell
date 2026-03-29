@@ -5,17 +5,17 @@
 
 #include <bas/fmt/FileForm.hpp>
 #include <bas/ui/arch/UIFragment.hpp>
-#include <bas/wx/uiframe.hpp>
 #include <bas/volume/VolumeFile.hpp>
 #include <bas/volume/VolumeManager.hpp>
-
-#include <optional>
+#include <bas/wx/uiframe.hpp>
 
 #include <wx/choicdlg.h>
 #include <wx/event.h>
 #include <wx/string.h>
 #include <wx/textctrl.h>
 #include <wx/textdlg.h>
+
+#include <optional>
 
 namespace os {
 

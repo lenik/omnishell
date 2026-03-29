@@ -2,11 +2,10 @@
 
 #include "PaintFrame.hpp"
 
-#include "../../ui/ThemeStyles.hpp"
-
 #include "../../core/App.hpp"
 #include "../../core/ModuleRegistry.hpp"
 #include "../../core/VolUrl.hpp"
+#include "../../ui/ThemeStyles.hpp"
 
 #include <bas/volume/Volume.hpp>
 #include <bas/volume/VolumeFile.hpp>

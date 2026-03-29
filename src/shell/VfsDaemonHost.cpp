@@ -2,14 +2,17 @@
 
 #include <bas/volume/VolumeManager.hpp>
 
-#include <arpa/inet.h>
-#include <netinet/in.h>
-#include <sys/socket.h>
-#include <unistd.h>
-
 #include <cctype>
 #include <cstdio>
 #include <sstream>
+
+#include <netinet/in.h>
+
+#include <arpa/inet.h>
+
+#include <sys/socket.h>
+
+#include <unistd.h>
 
 namespace os {
 

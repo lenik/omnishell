@@ -1,5 +1,6 @@
 #include "NotepadBody.hpp"
 
+#include "../../ui/ThemeStyles.hpp"
 #include "../../ui/dialogs/ChooseFileDialog.hpp"
 
 #include <bas/volume/VolumeFile.hpp>
@@ -11,7 +12,6 @@
 #include <wx/string.h>
 #include <wx/textctrl.h>
 
-#include "../../ui/ThemeStyles.hpp"
 using namespace ThemeStyles;
 
 namespace os {

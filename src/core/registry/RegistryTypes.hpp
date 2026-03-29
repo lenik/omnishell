@@ -1,12 +1,12 @@
 #ifndef OMNISHELL_CORE_REGISTRY_TYPES_HPP
 #define OMNISHELL_CORE_REGISTRY_TYPES_HPP
 
-#include <date/tz.h>
-
 #include <chrono>
 #include <optional>
 #include <string>
 #include <variant>
+
+#include <date/tz.h>
 
 namespace os::reg {
 

@@ -1,5 +1,7 @@
 #include "SolitaireBody.hpp"
 
+#include "../../ui/ThemeStyles.hpp"
+
 #include <wx/artprov.h>
 #include <wx/dcbuffer.h>
 #include <wx/image.h>
@@ -12,7 +14,6 @@
 #include <random>
 #include <vector>
 
-#include "../../ui/ThemeStyles.hpp"
 using namespace ThemeStyles;
 
 namespace os {

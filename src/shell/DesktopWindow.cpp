@@ -6,6 +6,7 @@
 #include "../core/ModuleRegistry.hpp"
 #include "../core/RegistryDb.hpp"
 #include "../mod/explorer/ExplorerApp.hpp"
+#include "../ui/ThemeStyles.hpp"
 
 #include <bas/ui/arch/ImageSet.hpp>
 #include <bas/volume/Volume.hpp>
@@ -22,7 +23,6 @@
 #include <limits>
 #include <sstream>
 
-#include "../ui/ThemeStyles.hpp"
 using namespace ThemeStyles;
 
 namespace {

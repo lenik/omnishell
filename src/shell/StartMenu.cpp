@@ -2,8 +2,11 @@
 
 #include "Shell.hpp"
 
-#include <bas/ui/arch/ImageSet.hpp>
 #include "../core/App.hpp"
+#include "../ui/ThemeStyles.hpp"
+#include "../wx/wxcWindow.hpp"
+
+#include <bas/ui/arch/ImageSet.hpp>
 
 #include <wx/image.h>
 #include <wx/log.h>
@@ -15,8 +18,6 @@
 #include <algorithm>
 #include <set>
 
-#include "../ui/ThemeStyles.hpp"
-#include "../wx/wxcWindow.hpp"
 using namespace ThemeStyles;
 
 namespace os {

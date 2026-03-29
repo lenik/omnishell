@@ -4,11 +4,11 @@
 #include <bas/ui/arch/UIFragment.hpp>
 #include <bas/wx/uiframe.hpp>
 
-#include <cstdint>
-#include <vector>
-
 #include <wx/image.h>
 #include <wx/panel.h>
+
+#include <cstdint>
+#include <vector>
 
 class wxBitmapToggleButton;
 

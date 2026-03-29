@@ -3,13 +3,12 @@
 #include "../../core/App.hpp"
 #include "../../core/registry/RegistryService.hpp"
 #include "../../shell/Shell.hpp"
+#include "../../ui/ThemeStyles.hpp"
 #include "../../ui/dialogs/ChooseFileDialog.hpp"
 #include "../../ui/dialogs/ChooseFolderDialog.hpp"
-
-#include "../../ui/ThemeStyles.hpp"
 #include "../../ui/widget/FileListView.hpp"
-
 #include "../../wx/artprovs.hpp"
+
 #include <bas/volume/DirEntry.hpp>
 #include <bas/volume/Volume.hpp>
 #include <bas/volume/VolumeManager.hpp>
