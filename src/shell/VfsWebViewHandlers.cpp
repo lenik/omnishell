@@ -14,7 +14,6 @@
 #include <wx/uri.h>
 #include <wx/webview.h>
 
-#include <algorithm>
 #include <memory>
 #include <string>
 #include <vector>
@@ -254,10 +253,15 @@ class AssetSchemeHandler : public wxWebViewHandler {
 } // namespace
 
 void RegisterDaemonWebViewHandlers(wxWebView* web, VolumeManager* vm, const std::string& httpBase) {
-    if (!web || !vm || httpBase.empty())
+    if (!web)
         return;
-    web->RegisterHandler(wxSharedPtr<wxWebViewHandler>(new VolSchemeHandler(vm, httpBase)));
+
+    // Always register `asset://` (embedded resources). It doesn't require VFS daemon / httpBase.
     web->RegisterHandler(wxSharedPtr<wxWebViewHandler>(new AssetSchemeHandler()));
+
+    // Register `vol://` only when VFS daemon is available.
+    if (vm && !httpBase.empty())
+        web->RegisterHandler(wxSharedPtr<wxWebViewHandler>(new VolSchemeHandler(vm, httpBase)));
 }
 
 } // namespace os

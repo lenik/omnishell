@@ -18,6 +18,7 @@ c = meson.get_compiler('c')
     threads_dep = dependency('threads')
     date_dep = declare_dependency(dependencies: [threads_dep, date_tz_lib])
     openssl_dep = dependency('openssl', required : true)
+    curl_dep = dependency('libcurl', required : true)
 
 # boost libraries
     boost_system_dep = dependency('boost', modules: ['system'], required: true)
@@ -293,12 +294,19 @@ assets_o = custom_target(
     depends : assets_zip,
 )
 
+exe_inc = [
+    include_directories('src'),
+    include_directories('src/daemon'),
+    include_directories('.'),
+]
+
 exe_deps = [
     bas_c_dep,
     bas_cpp_dep,
     bas_ui_dep,
     boost_dep,
     openssl_dep,
+    curl_dep,
     wx_dep,
     wx_webview_lib,
 ]
@@ -337,12 +345,6 @@ endif
 #     ]
 # endif
 
-exe_inc = [
-    include_directories('src'),
-    include_directories('src/daemon'),
-    include_directories('.'),
-]
-
 lib_omnishell = library('omnishell',
     cpp_sources,
     zash_sources,
@@ -361,7 +363,7 @@ lib_omnishell = library('omnishell',
     install : true,
 )
 
-omni_dep_list = [boost_dep, date_dep, openssl_dep, wx_webview_lib]
+omni_dep_list = [boost_dep, date_dep, openssl_dep, curl_dep, wx_webview_lib]
 if have_wx_media
     omni_dep_list += [wx_media_lib]
 endif
@@ -380,7 +382,7 @@ pkgconfig.generate(
     description : 'omnishell',
     version : meson.project_version(),
     subdirs : 'omnishell',
-    requires : ['bas-c', 'bas-cpp', 'bas-ui', 'boost', 'openssl'],
+    requires : ['bas-c', 'bas-cpp', 'bas-ui', 'boost', 'openssl', 'libcurl'],
 )
 
 # ---- Headers for libbas-c package (includedir/bas-c) ----
