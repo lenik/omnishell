@@ -81,7 +81,7 @@
         "icon"              : {                                 "asset": "streamline-vectors/core/pop/entertainment/dice-5.svg" }
     },
     "mediaplayer": {
-        "icon"              : {                                 "asset": "streamline-vectors/core/pop/entertainment/media-play.svg" }
+        "icon"              : {                                 "asset": "streamline-vectors/core/pop/entertainment/play-list-4.svg" }
     },
     "minesweeper": {
         "icon"              : {                                 "asset": "streamline-vectors/core/pop/interface-essential/bomb.svg" }
@@ -89,7 +89,7 @@
     "musicbox": {
         "file.import_dir"   : { "wxartid": "wxART_FILE_OPEN",   "asset": "streamline-vectors/core/pop/interface-essential/music-folder-song.svg" },
         "file.import_files" : { "wxartid": "wxART_FILE_OPEN",   "asset": "streamline-vectors/core/pop/interface-essential/multiple-file-2.svg" },
-        "icon"              : {                                 "asset": "streamline-vectors/core/pop/entertainment/music-note-1.svg" }
+        "icon"              : {                                 "asset": "streamline-vectors/core/pop/entertainment/music-note-2.svg" }
     },
     "notepad": {
         "icon"              : {                                 "asset": "streamline-vectors/core/pop/interface-essential/blank-notepad.svg" }
