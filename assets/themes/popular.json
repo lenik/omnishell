@@ -2,6 +2,9 @@
     "browser": {
         "icon"              : {                                 "asset": "streamline-vectors/core/pop/programming/browser-website-1.svg" }
     },
+    "backgroundsettings": {
+        "icon"              : {                                 "asset": "streamline-vectors/core/pop/interface-essential/dashboard-3.svg" }
+    },
     "calculator": {
         "icon"              : {                                 "asset": "streamline-vectors/core/pop/interface-essential/calculator.svg" }
     },

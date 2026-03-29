@@ -245,8 +245,21 @@ void DesktopWindow::loadBackgroundSettings() {
 
     if (mode == "image") {
         std::string path = RegistryDb::getInstance().getString("Desktop.Background.ImagePath", "");
+        std::string volumeId =
+            RegistryDb::getInstance().getString("Desktop.Background.ImageVolumeId", "");
         if (!path.empty() && m_volumeManager) {
-            Volume* vol = m_volumeManager->getDefaultVolume();
+            Volume* vol = nullptr;
+            if (!volumeId.empty()) {
+                for (size_t i = 0; i < m_volumeManager->getVolumeCount(); ++i) {
+                    Volume* v = m_volumeManager->getVolume(i);
+                    if (v && v->getId() == volumeId) {
+                        vol = v;
+                        break;
+                    }
+                }
+            }
+            if (!vol)
+                vol = m_volumeManager->getDefaultVolume();
             if (vol) {
                 try {
                     VolumeFile vf(vol, path);

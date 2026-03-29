@@ -116,6 +116,10 @@ void BackgroundSettingsBody::onChooseImage(PerformContext*) {
     if (!vf)
         return;
     m_selectedImagePath = vf->getPath();
+    if (vf->getVolume())
+        m_selectedImageVolumeId = vf->getVolume()->getId();
+    else
+        m_selectedImageVolumeId.clear();
 }
 
 void BackgroundSettingsBody::onApplyColor(PerformContext*) {
@@ -140,7 +144,18 @@ void BackgroundSettingsBody::onApplyImage(PerformContext*) {
     if (m_selectedImagePath.empty())
         return;
 
-    Volume* vol = shell->getVolumeManager()->getDefaultVolume();
+    Volume* vol = nullptr;
+    if (!m_selectedImageVolumeId.empty()) {
+        for (size_t i = 0; i < shell->getVolumeManager()->getVolumeCount(); ++i) {
+            Volume* v = shell->getVolumeManager()->getVolume(i);
+            if (v && v->getId() == m_selectedImageVolumeId) {
+                vol = v;
+                break;
+            }
+        }
+    }
+    if (!vol)
+        vol = shell->getVolumeManager()->getDefaultVolume();
     if (!vol)
         return;
 
@@ -156,6 +171,7 @@ void BackgroundSettingsBody::onApplyImage(PerformContext*) {
 
         RegistryDb::getInstance().set("Desktop.Background.Mode", "image");
         RegistryDb::getInstance().set("Desktop.Background.ImagePath", m_selectedImagePath);
+        RegistryDb::getInstance().set("Desktop.Background.ImageVolumeId", vol->getId());
         RegistryDb::getInstance().save();
         shell->getDesktopWindow()->setBackgroundImage(wxBitmap(img));
     } catch (...) {

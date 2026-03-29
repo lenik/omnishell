@@ -22,6 +22,7 @@ private:
     wxPanel* m_root{nullptr};
     wxColourPickerCtrl* m_picker{nullptr};
     std::string m_selectedImagePath;
+    std::string m_selectedImageVolumeId;
 
     void onChooseImage(PerformContext* ctx);
     void onApplyColor(PerformContext* ctx);
