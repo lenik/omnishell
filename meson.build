@@ -7,6 +7,16 @@ project(
 
 add_languages('c', native: false)
 
+# Generate a compile-time config header with the project version.
+conf = configuration_data()
+conf.set('PROJECT_VERSION', meson.project_version())
+conf.set('OMNISHELL_VERSION', meson.project_version())
+configure_file(
+    input: 'config.h.in',
+    output: 'config.h',
+    configuration: conf,
+)
+
 pkgdatadir = get_option('datadir') / meson.project_name()
 
 fs = import('fs')
@@ -17,23 +27,25 @@ c = meson.get_compiler('c')
 bas_c_dep = dependency('bas-c', required: true)
 bas_cpp_dep = dependency('bas-cpp', required: true)
 bas_ui_dep = dependency('bas-ui', required: true)
-date_tz_lib = cpp.find_library('date-tz', required: true)
-threads_dep = dependency('threads')
-date_dep = declare_dependency(dependencies: [threads_dep, date_tz_lib])
-openssl_dep = dependency('openssl', required: true)
+
+bison = find_program('bison', required: true)
 curl_dep = dependency('libcurl', required: true)
+date_dep = subproject('date_tz').get_variable('date_dep')
+flex = find_program('flex', required: true)
+openssl_dep = dependency('openssl', required: true)
+
+wx_sub = subproject('wx_logic')
+wx_dep = wx_sub.get_variable('wx_dep')
+wx_ver = wx_sub.get_variable('wx_ver')
 
 # boost libraries
 boost_system_dep = dependency('boost', modules: ['system'], required: true)
-
-# wxWidgets dependencies (must use a single GTK toolkit to avoid "GTK+ 2.x and GTK+ 3 in the same process" error)
-wx_dep = dependency('wxwidgets', method: 'config-tool', required: true)
 
 # Decide whether we need vendored Boost.JSON; actual boost_dep is defined later
 # (Meson requires add_project_arguments() to happen before any build targets).
 use_vendored_boost_json = (
     not boost_system_dep.found()
-    or (boost_system_dep.version() < '1.68' or wx_dep.version() < '3.1')
+    or (boost_system_dep.version() < '1.68' or wx_ver == '3.0')
 )
 if use_vendored_boost_json
     boost_inc = [
@@ -44,27 +56,6 @@ if use_vendored_boost_json
 else
     boost_inc = []
 endif
-
-# Detect toolkit from default wx-config so we link only gtk2 or only gtk3
-wx_config = find_program('wx-config', required: true)
-wx_libs_out = run_command(wx_config, '--libs', check: true, capture: true).stdout()
-wx_use_gtk3 = wx_libs_out.contains('gtk3')
-if wx_use_gtk3
-    wx_gtk_prefix = 'wx_gtk3u'
-    wx_ver = '3.0'
-else
-    wx_gtk_prefix = 'wx_gtk2u'
-    wx_ver = '3.1'
-endif
-# wxWidgets media (wxMediaCtrl) and extras - use same toolkit as core
-# Media/webview optional on GTK2 (often not built for gtk2)
-wx_media_lib = cpp.find_library(wx_gtk_prefix + '_media-' + wx_ver, required: false)
-wx_richtext_lib = cpp.find_library(wx_gtk_prefix + '_richtext-' + wx_ver, required: true)
-wx_stc_lib = cpp.find_library(wx_gtk_prefix + '_stc-' + wx_ver, required: true)
-wx_webview_lib = cpp.find_library(wx_gtk_prefix + '_webview-' + wx_ver, required: true)
-
-bison = find_program('bison', required: true)
-flex = find_program('flex', required: true)
 
 zash_bison = custom_target(
     'zash_bison',
@@ -93,23 +84,9 @@ zash_inc = [
     include_directories('src/cli/zash/parser'),
 ]
 
-# wx_dep = dependency('wxwidgets', modules : [
-#     'core',
-#     'media',
-#     'richtext',
-#     'stc',
-#     'webview',
-#     ], required : true)
-
-if wx_dep.version() < '3.1'
-    # wx 3.0: media and webview are in separate libs; core setup has wxUSE_*=0, so enable for our build
-    wx_defines = ['-DwxUSE_MEDIACTRL=1', '-DwxUSE_WEBVIEW=1']
-    add_project_arguments(wx_defines, language: 'cpp')
-endif
-
 # Disable all warnings (wx 3.0 and deps are noisy)
 cpp_nowarn = cpp.get_supported_arguments(['-w', '/w'])
-cpp_nowarn = cpp_nowarn + wx_defines
+cpp_nowarn = cpp_nowarn
 
 # Boost dependency (needs to be declared after add_project_arguments()).
 if use_vendored_boost_json
@@ -201,15 +178,15 @@ cpp_sources = files(
     'src/mod/explorer/ExplorerApp.cpp',
     'src/mod/explorer/ExplorerBody.cpp',
     'src/mod/explorer/ExplorerFrame.cpp',
-    'src/mod/fiveormore/FiveOrMoreApp.cpp',
-    'src/mod/fiveormore/FiveOrMoreBody.cpp',
-    'src/mod/fiveormore/FiveOrMoreFrame.cpp',
+    # 'src/mod/fiveormore/FiveOrMoreApp.cpp',
+    # 'src/mod/fiveormore/FiveOrMoreBody.cpp',
+    # 'src/mod/fiveormore/FiveOrMoreFrame.cpp',
     'src/mod/mediaplayer/MediaPlayerApp.cpp',
     'src/mod/mediaplayer/MediaPlayerBody.cpp',
     'src/mod/mediaplayer/MediaPlayerFrame.cpp',
-    'src/mod/minesweeper/MinesweeperApp.cpp',
-    'src/mod/minesweeper/MinesweeperBody.cpp',
-    'src/mod/minesweeper/MinesweeperFrame.cpp',
+    # 'src/mod/minesweeper/MinesweeperApp.cpp',
+    # 'src/mod/minesweeper/MinesweeperBody.cpp',
+    # 'src/mod/minesweeper/MinesweeperFrame.cpp',
     'src/mod/musicbox/MusicBoxApp.cpp',
     'src/mod/musicbox/MusicBoxBody.cpp',
     'src/mod/musicbox/MusicBoxFrame.cpp',
@@ -230,18 +207,18 @@ cpp_sources = files(
     'src/mod/snippingtool/SnippingToolApp.cpp',
     'src/mod/snippingtool/SnippingToolBody.cpp',
     'src/mod/snippingtool/SnippingToolFrame.cpp',
-    'src/mod/solitaire/SolitaireApp.cpp',
-    'src/mod/solitaire/SolitaireBody.cpp',
-    'src/mod/solitaire/SolitaireFrame.cpp',
+    # 'src/mod/solitaire/SolitaireApp.cpp',
+    # 'src/mod/solitaire/SolitaireBody.cpp',
+    # 'src/mod/solitaire/SolitaireFrame.cpp',
     'src/mod/soundrecorder/SoundRecorderApp.cpp',
     'src/mod/soundrecorder/SoundRecorderBody.cpp',
     'src/mod/soundrecorder/SoundRecorderFrame.cpp',
-    'src/mod/stopwatch/StopWatchApp.cpp',
-    'src/mod/stopwatch/StopWatchBody.cpp',
-    'src/mod/stopwatch/StopWatchFrame.cpp',
-    'src/mod/sudoku/SudokuApp.cpp',
-    'src/mod/sudoku/SudokuBody.cpp',
-    'src/mod/sudoku/SudokuFrame.cpp',
+    # 'src/mod/stopwatch/StopWatchApp.cpp',
+    # 'src/mod/stopwatch/StopWatchBody.cpp',
+    # 'src/mod/stopwatch/StopWatchFrame.cpp',
+    # 'src/mod/sudoku/SudokuApp.cpp',
+    # 'src/mod/sudoku/SudokuBody.cpp',
+    # 'src/mod/sudoku/SudokuFrame.cpp',
     'src/mod/taskmanager/TaskManagerApp.cpp',
     'src/mod/taskmanager/TaskManagerBody.cpp',
     'src/mod/taskmanager/TaskManagerFrame.cpp',
@@ -315,48 +292,34 @@ exe_deps = [
     bas_cpp_dep,
     bas_ui_dep,
     boost_dep,
+    date_dep,
     openssl_dep,
     curl_dep,
     wx_dep,
-    wx_webview_lib,
 ]
 
-have_wx_media = wx_media_lib.found()
 lib_omnishell_cpp_args = cpp_nowarn + [
     '-DLOGGER_NAME=omni',
     '-DASSETS_NAME=omni',
 ]
-lib_omnishell_deps = exe_deps + [threads_dep]
+
 if host_machine.system() != 'windows'
     util_lib = cpp.find_library('util', required: true)
-    lib_omnishell_deps += util_lib
-endif
-if have_wx_media
-    lib_omnishell_deps += [wx_media_lib]
-    lib_omnishell_cpp_args += ['-DHAVE_WX_MEDIA=1']
+    exe_deps += util_lib
 endif
 
 alsa_dep = cpp.find_library('asound', required: false)
 if host_machine.system() == 'linux' and alsa_dep.found()
-    lib_omnishell_deps += alsa_dep
+    exe_deps += alsa_dep
     lib_omnishell_cpp_args += ['-DOMNISHELL_HAVE_ALSA=1']
 endif
 
 gst_dep = dependency('gstreamer-1.0', required: false)
 gst_app_dep = dependency('gstreamer-app-1.0', required: false)
 if gst_dep.found() and gst_app_dep.found()
-    lib_omnishell_deps += [gst_dep, gst_app_dep]
+    exe_deps += [gst_dep, gst_app_dep]
     lib_omnishell_cpp_args += ['-DOMNISHELL_HAVE_GSTREAMER=1']
 endif
-
-# if wx_dep.version() < '3.1'
-#     exe_deps += [
-#         wx_media_lib,
-#         wx_richtext_lib,
-#         wx_stc_lib,
-#         wx_webview_lib,
-#     ]
-# endif
 
 lib_omnishell = library(
     'omnishell',
@@ -366,7 +329,7 @@ lib_omnishell = library(
     zash_flex,
     'src/module.cpp',
     assets_o,
-    dependencies: lib_omnishell_deps,
+    dependencies: exe_deps,
     include_directories: exe_inc + zash_inc,
     c_args: c.get_supported_arguments(['-Wno-unused-parameter']),
     cpp_args: lib_omnishell_cpp_args,
@@ -378,15 +341,10 @@ lib_omnishell = library(
     install: true,
 )
 
-omni_dep_list = [boost_dep, date_dep, openssl_dep, curl_dep, wx_webview_lib]
-if have_wx_media
-    omni_dep_list += [wx_media_lib]
-endif
-
 omnishell_dep = declare_dependency(
     link_with: lib_omnishell,
     include_directories: exe_inc,
-    dependencies: omni_dep_list,
+    dependencies: [boost_dep, date_dep, openssl_dep, curl_dep, wx_dep],
 )
 
 # ---- pkg-config ----
@@ -507,6 +465,7 @@ foreach app_cpp : app_cpp_list
         dependencies: exe_deps + [omnishell_dep],
         cpp_args: cpp_nowarn + ['-DLOGGER_NAME=' + app_name, '-DASSETS_NAME=omni'],
         cpp_pch: wx_pch,
+        override_options: ['b_asneeded=false'],
         install: true,
         install_dir: install_dir,
     )

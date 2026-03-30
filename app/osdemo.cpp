@@ -4,20 +4,23 @@
  * Main entry point. Parses VFS command-line options (see VFS_README),
  * initializes global `os::app`, then runs the wxWidgets shell.
  */
-
 #include "core/App.hpp"
 #include "shell/Shell.hpp"
 
 #include <bas/proc/env.hpp>
 #include <bas/proc/stackdump.h>
+#include <bas/proc/AssetsRegistry.hpp>
 #include <bas/volume/LocalVolume.hpp>
 #include <bas/volume/Volume.hpp>
 #include <bas/volume/VolumeManager.hpp>
+#include <bas/volume/OverlayVolume.hpp>
 
 #include <bas/wx/app.hpp>
 #include <bas/wx/uiframe.hpp>
 
 #include <iostream>
+
+extern "C" void omnishell_ensure_omni_assets_registered();
 
 #if defined(__unix__) || defined(__APPLE__)
 #include <getopt.h>
@@ -26,6 +29,14 @@
 int main(int argc, char** argv) {
     stackdump_install_crash_handler(&stackdump_color_schema_default);
     stackdump_set_interactive(1);
+
+    omnishell_ensure_omni_assets_registered();
+    OverlayVolume* overlay = AssetsRegistry::instance().get();
+    for (const auto& layer : overlay->layers()) {
+        std::cout << "Layer " << layer->getId() << ": " << layer->getSource() //
+                  << " [ " << layer->readDir("/").size() << " ]"               //
+                  << std::endl;
+    }
 
     os::app.captureLaunchContext(argc, argv);
 

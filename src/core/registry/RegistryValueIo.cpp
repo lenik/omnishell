@@ -4,7 +4,6 @@
 #include <cctype>
 #include <climits>
 #include <cstdlib>
-#include <sstream>
 
 namespace os::reg {
 
@@ -44,16 +43,19 @@ std::string valueToString(const registry_value_t& v) {
             else if constexpr (std::is_same_v<T, std::string>)
                 return x;
             else if constexpr (std::is_same_v<T, sys_time>) {
-                auto sec = std::chrono::duration_cast<std::chrono::seconds>(x.time_since_epoch()).count();
+                auto sec =
+                    std::chrono::duration_cast<std::chrono::seconds>(x.time_since_epoch()).count();
                 return std::string("sys:") + std::to_string(sec);
             } else if constexpr (std::is_same_v<T, local_time>) {
                 auto sec =
                     std::chrono::duration_cast<std::chrono::seconds>(x.time_since_epoch()).count();
                 return std::string("local:") + std::to_string(sec);
             } else if constexpr (std::is_same_v<T, zoned_time>) {
-                auto sec = std::chrono::duration_cast<std::chrono::seconds>(x.get_sys_time().time_since_epoch())
+                auto sec = std::chrono::duration_cast<std::chrono::seconds>(
+                               x.get_sys_time().time_since_epoch())
                                .count();
-                return std::string("zoned:") + x.get_time_zone()->name() + ":" + std::to_string(sec);
+                return std::string("zoned:") + x.get_time_zone()->name() + ":" +
+                       std::to_string(sec);
             } else if constexpr (std::is_same_v<T, year_month_day>) {
                 if (!x.ok())
                     return "ymd:0-0-0";
@@ -62,7 +64,8 @@ std::string valueToString(const registry_value_t& v) {
                        std::to_string(static_cast<unsigned>(x.day()));
             } else if constexpr (std::is_same_v<T, time_of_day>) {
                 return "tod:" + std::to_string(x.hours().count()) + ":" +
-                       std::to_string(x.minutes().count()) + ":" + std::to_string(x.seconds().count());
+                       std::to_string(x.minutes().count()) + ":" +
+                       std::to_string(x.seconds().count());
             }
             return {};
         },
