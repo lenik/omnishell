@@ -56,7 +56,7 @@ std::optional<VolumeFile> ChooseFolderDialog::getVolumeFile() const {
     if (!vol)
         return std::nullopt;
     try {
-        std::string path = vol->normalize(m_currentPath, false);
+        std::string path = vol->normalizeArg(m_currentPath);
         return VolumeFile(vol, path);
     } catch (...) {
         return std::nullopt;
@@ -146,7 +146,7 @@ void ChooseFolderDialog::SetCurrentPath(const std::string& path) {
         Volume* vol = m_volumeManager->getVolume(m_selectedVolumeIndex);
         if (vol) {
             try {
-                p = vol->normalize(p, false);
+                p = vol->normalizeArg(p);
             } catch (...) {
             }
         }
@@ -176,7 +176,7 @@ void ChooseFolderDialog::OnOK(wxCommandEvent& event) {
     Volume* vol = m_volumeManager->getVolume(m_selectedVolumeIndex);
     std::string path;
     try {
-        path = vol->normalize(m_currentPath, false);
+        path = vol->normalizeArg(m_currentPath);
     } catch (...) {
         wxMessageBox("Invalid path", "Error", wxOK | wxICON_ERROR);
         return;

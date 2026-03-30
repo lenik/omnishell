@@ -105,7 +105,7 @@ std::vector<VolumeFile> ChooseFileDialog::getVolumeFiles() const {
     path += fn.ToStdString();
 
     try {
-        path = vol->normalize(path, false);
+        path = vol->normalizeArg(path);
     } catch (...) {
         return result;
     }
@@ -263,7 +263,7 @@ void ChooseFileDialog::SetCurrentPath(const std::string& path) {
         Volume* vol = m_volumeManager->getVolume(m_selectedVolumeIndex);
         if (vol) {
             try {
-                p = vol->normalize(p, false);
+                p = vol->normalizeArg(p);
             } catch (...) {
             }
         }
@@ -306,7 +306,7 @@ void ChooseFileDialog::OnOK(wxCommandEvent& event) {
     }
     Volume* vol = m_volumeManager->getVolume(m_selectedVolumeIndex);
     try {
-        path = vol->normalize(path, false);
+        path = vol->normalizeArg(path);
     } catch (...) {
         wxMessageBox("Invalid path", "Error", wxOK | wxICON_ERROR);
         return;

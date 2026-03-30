@@ -2,7 +2,7 @@
 
 #include "ui/arch/UIAction.hpp"
 
-#include <bas/proc/Assets.hpp>
+#include <bas/proc/UseAssets.hpp>
 #include <bas/proc/env.hpp>
 #include <bas/volume/LocalVolume.hpp>
 #include <bas/volume/VolumeManager.hpp>
@@ -66,8 +66,8 @@ const IconTheme* App::getIconTheme() const {
     // assets.zip stores files under the assets/ directory root, so json lives at themes/popular.json.
     static constexpr const char* kPopularThemePath = "themes/popular.json";
     try {
-        if (assets_contains(kPopularThemePath)) {
-            const auto data = assets_get_data(kPopularThemePath);
+        if (omni_assets->exists(kPopularThemePath)) {
+            const auto data = omni_assets->readFile(kPopularThemePath);
             if (!data.empty()) {
                 std::string text(reinterpret_cast<const char*>(data.data()), data.size());
                 (void)m_iconTheme.loadFromJsonText(text);

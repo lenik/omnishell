@@ -42,7 +42,7 @@ bool parseVolUrl(VolumeManager* vm, std::string_view url, VolumeFile& out) {
     if (path[0] != '/')
         path.insert(path.begin(), '/');
     try {
-        path = v->normalize(path, false);
+        path = v->normalize(path);
     } catch (...) {
         return false;
     }

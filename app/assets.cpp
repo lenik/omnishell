@@ -1,4 +1,4 @@
-#include "proc/Assets.hpp"
+#include <bas/proc/UseAssets.hpp>
 #include "ui/arch/ImageSet.hpp"
 #include "wx/artprov.h"
 #include "wx/image.h"
@@ -31,14 +31,14 @@ int main(int argc, char** argv) {
             if (i != 1)
                 std::cout << std::endl;
             std::cout << "Listing directory: " << dir << std::endl;
-            auto files = assets_listdir(dir);
+            auto files = omni_assets->readDir(dir);
             for (const auto& file : files) {
                 std::cout << file->name << " " << file->size << std::endl;
             }
         }
     } else {
         std::cout << "Assets tree:" << std::endl;
-        assets_dump_tree();
+        omni_assets->tree();
     }
     return 0;
 }

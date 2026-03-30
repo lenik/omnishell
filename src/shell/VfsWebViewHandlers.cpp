@@ -5,7 +5,7 @@
 #include "FileController.hpp"
 #include "VolumeIndex.hpp"
 
-#include <bas/proc/Assets.hpp>
+#include <bas/proc/UseAssets.hpp>
 #include <bas/volume/Volume.hpp>
 #include <bas/volume/VolumeManager.hpp>
 
@@ -141,7 +141,7 @@ class VolSchemeHandler : public wxWebViewHandler {
 
         std::string pathInfo;
         try {
-            std::string norm = m_vm->getVolume(idx)->normalize(wxToUtf8(pathWx), true);
+            std::string norm = m_vm->getVolume(idx)->normalizeArg(wxToUtf8(pathWx), "/");
             if (norm.empty() || norm == "/")
                 pathInfo.clear();
             else if (norm.front() == '/')
@@ -189,7 +189,7 @@ class AssetSchemeHandler : public wxWebViewHandler {
   public:
     AssetSchemeHandler()
         : wxWebViewHandler("asset")
-        , m_assets(assets.get()) {
+        , m_assets(omni_assets.get()) {
         if (m_assets)
             m_controller = std::make_unique<AssetController>(m_assets);
     }
@@ -210,7 +210,7 @@ class AssetSchemeHandler : public wxWebViewHandler {
 
         std::string pathInfo;
         try {
-            std::string norm = m_assets->normalize(wxToUtf8(pathWx), true);
+            std::string norm = m_assets->normalizeArg(wxToUtf8(pathWx), "/");
             if (norm.empty() || norm == "/")
                 pathInfo.clear();
             else if (norm.front() == '/')
