@@ -2,7 +2,7 @@
 
 #include "ui/arch/UIAction.hpp"
 
-#include <bas/proc/UseAssets.hpp>
+#include <bas/proc/AssetsRegistry.hpp>
 #include <bas/proc/env.hpp>
 #include <bas/volume/LocalVolume.hpp>
 #include <bas/volume/VolumeManager.hpp>
@@ -65,9 +65,10 @@ const IconTheme* App::getIconTheme() const {
     // Lazy-load from embedded assets.
     // assets.zip stores files under the assets/ directory root, so json lives at themes/popular.json.
     static constexpr const char* kPopularThemePath = "themes/popular.json";
+    Volume* assets = AssetsRegistry::instance().get();
     try {
-        if (omni_assets->exists(kPopularThemePath)) {
-            const auto data = omni_assets->readFile(kPopularThemePath);
+        if (assets->exists(kPopularThemePath)) {
+            const auto data = assets->readFile(kPopularThemePath);
             if (!data.empty()) {
                 std::string text(reinterpret_cast<const char*>(data.data()), data.size());
                 (void)m_iconTheme.loadFromJsonText(text);

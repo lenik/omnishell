@@ -8,7 +8,7 @@
 #include "core/ModuleRegistry.hpp"
 #include "mod/console/ConsoleApp.hpp"
 
-#include <bas/proc/env.cpp>
+#include <bas/proc/env.hpp>
 #include <bas/proc/stackdump.h>
 #include <bas/volume/LocalVolume.hpp>
 #include <bas/volume/VolumeManager.hpp>

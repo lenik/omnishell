@@ -1,4 +1,4 @@
-#include <bas/proc/UseAssets.hpp>
+#include <bas/proc/AssetsRegistry.hpp>
 #include "ui/arch/ImageSet.hpp"
 #include "wx/artprov.h"
 #include "wx/image.h"
@@ -25,20 +25,22 @@ int main(int argc, char** argv) {
         std::cout << "Failed to convert to bitmap" << std::endl;
     }
 
+    Volume* assets = AssetsRegistry::instance().get();
+
     if (argc > 1) {
         for (int i = 1; i < argc; i++) {
             std::string dir = argv[i];
             if (i != 1)
                 std::cout << std::endl;
             std::cout << "Listing directory: " << dir << std::endl;
-            auto files = omni_assets->readDir(dir);
+            auto files = assets->readDir(dir);
             for (const auto& file : files) {
                 std::cout << file->name << " " << file->size << std::endl;
             }
         }
     } else {
         std::cout << "Assets tree:" << std::endl;
-        omni_assets->tree();
+        assets->tree();
     }
     return 0;
 }

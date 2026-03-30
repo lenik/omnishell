@@ -8,7 +8,7 @@
 #include "FileController.hpp"
 #include "VolumeIndex.hpp"
 
-#include <bas/proc/UseAssets.hpp>
+#include <bas/proc/AssetsRegistry.hpp>
 #include <bas/volume/VolumeManager.hpp>
 
 #include <cstdlib>
@@ -137,7 +137,8 @@ HttpDaemon::HttpDaemon(VolumeManager* volumeManager,
     , m_fileController(std::make_unique<FileController>(volumeManager))
     , m_apiFileController(std::make_unique<ApiFileController>(volumeManager)) {
     if (!volumeManager) throw std::invalid_argument("HttpDaemon::HttpDaemon: null volumeManager");
-    m_assetController = std::make_unique<AssetController>(omni_assets.get());
+    Volume* assets = AssetsRegistry::instance().get();
+    m_assetController = std::make_unique<AssetController>(assets);
 }
 
 HttpDaemon::~HttpDaemon() {

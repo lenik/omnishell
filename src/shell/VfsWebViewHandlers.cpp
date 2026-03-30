@@ -5,7 +5,7 @@
 #include "FileController.hpp"
 #include "VolumeIndex.hpp"
 
-#include <bas/proc/UseAssets.hpp>
+#include <bas/proc/AssetsRegistry.hpp>
 #include <bas/volume/Volume.hpp>
 #include <bas/volume/VolumeManager.hpp>
 
@@ -189,7 +189,7 @@ class AssetSchemeHandler : public wxWebViewHandler {
   public:
     AssetSchemeHandler()
         : wxWebViewHandler("asset")
-        , m_assets(omni_assets.get()) {
+        , m_assets(AssetsRegistry::instance().get()) {
         if (m_assets)
             m_controller = std::make_unique<AssetController>(m_assets);
     }
