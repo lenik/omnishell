@@ -28,6 +28,9 @@ bas_c_dep = dependency('bas-c', required: true)
 bas_cpp_dep = dependency('bas-cpp', required: true)
 bas_ui_dep = dependency('bas-ui', required: true)
 
+boost_sub = subproject('boost')
+boost_json_dep = boost_sub.get_variable('boost_json_dep')
+
 bison = find_program('bison', required: true)
 curl_dep = dependency('libcurl', required: true)
 date_dep = subproject('date_tz').get_variable('date_dep')
@@ -37,25 +40,6 @@ openssl_dep = dependency('openssl', required: true)
 wx_sub = subproject('wx_logic')
 wx_dep = wx_sub.get_variable('wx_dep')
 wx_ver = wx_sub.get_variable('wx_ver')
-
-# boost libraries
-boost_system_dep = dependency('boost', modules: ['system'], required: true)
-
-# Decide whether we need vendored Boost.JSON; actual boost_dep is defined later
-# (Meson requires add_project_arguments() to happen before any build targets).
-use_vendored_boost_json = (
-    not boost_system_dep.found()
-    or (boost_system_dep.version() < '1.68' or wx_ver == '3.0')
-)
-if use_vendored_boost_json
-    boost_inc = [
-        include_directories('third_party/boost_json/include'),
-        include_directories('third_party/boost_core/include'),
-        include_directories('third_party/boost_assert/include'),
-    ]
-else
-    boost_inc = []
-endif
 
 zash_bison = custom_target(
     'zash_bison',
@@ -89,39 +73,6 @@ cpp_nowarn = cpp.get_supported_arguments(['-w', '/w'])
 cpp_nowarn = cpp_nowarn
 
 # Boost dependency (needs to be declared after add_project_arguments()).
-if use_vendored_boost_json
-    boost_json_lib = static_library(
-        'boost_json',
-        'third_party/boost_json/src/src.cpp',
-        include_directories: boost_inc,
-    )
-    boost_dep = declare_dependency(
-        include_directories: boost_inc,
-        link_with: boost_json_lib,
-        dependencies: [
-            dependency(
-                'boost',
-                modules: [
-                    'locale',
-                    'system',
-                ],
-                required: true,
-            ),
-        ],
-    )
-else
-    boost_dep = dependency(
-        'boost',
-        modules: [
-            'assert',
-            'core',
-            'json',
-            'locale',
-            'system',
-        ],
-        required: true,
-    )
-endif
 
 # Precompiled header for wxWidgets
 wx_pch = 'src/wx_pch.h'
@@ -291,7 +242,7 @@ exe_deps = [
     bas_c_dep,
     bas_cpp_dep,
     bas_ui_dep,
-    boost_dep,
+    boost_json_dep,
     date_dep,
     openssl_dep,
     curl_dep,
@@ -344,7 +295,7 @@ lib_omnishell = library(
 omnishell_dep = declare_dependency(
     link_with: lib_omnishell,
     include_directories: exe_inc,
-    dependencies: [boost_dep, date_dep, openssl_dep, curl_dep, wx_dep],
+    dependencies: [boost_json_dep, date_dep, openssl_dep, curl_dep, wx_dep],
 )
 
 # ---- pkg-config ----
