@@ -1,8 +1,9 @@
 #include "IconTheme.hpp"
 
-#include "ui/arch/ImageSet.hpp"
-#include "ui/arch/UIAction.hpp"
-#include "wx/artprov.h"
+#include <bas/ui/arch/ImageSet.hpp>
+#include <bas/ui/arch/UIAction.hpp>
+
+#include <wx/artprov.h>
 
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/property_tree/ptree.hpp>

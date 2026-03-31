@@ -501,10 +501,10 @@ void DesktopWindow::OnLeftDoubleClick(wxMouseEvent& event) {
 void DesktopWindow::OnRightClick(wxMouseEvent& event) {
     // Desktop context menu
     wxMenu menu;
-    menu.Append(wxID_ANY, "Refresh Desktop");
-    menu.Append(wxID_ANY, "Arrange Icons");
+    wxMenuItem* refreshItem = menu.Append(wxID_ANY, "Refresh Desktop");
+    wxMenuItem* arrangeItem = menu.Append(wxID_ANY, "Arrange Icons");
     menu.AppendSeparator();
-    menu.Append(wxID_ANY, "Properties");
+    wxMenuItem* propertiesItem = menu.Append(wxID_ANY, "Properties");
 
     Bind(
         wxEVT_MENU,
@@ -520,12 +520,31 @@ void DesktopWindow::OnRightClick(wxMouseEvent& event) {
             }
             arrangeIcons();
         },
-        menu.FindItemByPosition(0)->GetId());
+        refreshItem ? refreshItem->GetId() : wxID_ANY);
 
     Bind(
         wxEVT_MENU,
-        [this](wxCommandEvent&) { arrangeIcons(); },
-        menu.FindItemByPosition(1)->GetId());
+        [this](wxCommandEvent&) {
+            arrangeIcons();
+            saveLayout(); // Persist arranged icon positions.
+        },
+        arrangeItem ? arrangeItem->GetId() : wxID_ANY);
+
+    Bind(
+        wxEVT_MENU,
+        [this](wxCommandEvent&) {
+            auto* shell = ShellApp::getInstance();
+            auto* registry = shell ? shell->getModuleRegistry() : nullptr;
+            if (!registry)
+                return;
+
+            static const std::string kBackgroundSettingsUri = "omnishell.BackgroundSettings";
+            ModulePtr mod = registry->getOrCreateModule(kBackgroundSettingsUri);
+            if (!mod)
+                return;
+            launchModule(mod);
+        },
+        propertiesItem ? propertiesItem->GetId() : wxID_ANY);
 
     PopupMenu(&menu, event.GetPosition());
 

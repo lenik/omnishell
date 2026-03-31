@@ -12,7 +12,7 @@
 #include <algorithm>
 #include <sstream>
 
-#include <zash_interpreter.hpp>
+#include <zash/zash_interpreter.hpp>
 
 using namespace ThemeStyles;
 

@@ -4,10 +4,9 @@
 extern "C" void omnishell_ensure_omni_assets_registered();
 #endif
 
-#include "ui/arch/ImageSet.hpp"
-
 #include <bas/log/uselog.h>
 #include <bas/proc/AssetsRegistry.hpp>
+#include <bas/ui/arch/ImageSet.hpp>
 #include <bas/volume/OverlayVolume.hpp>
 
 #include <wx/artprov.h>

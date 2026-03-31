@@ -2,9 +2,9 @@
 
 #include <wx/utils.h>
 
-#include <zash_ast.h>
-#include <zash_driver.hpp>
-#include <zash_interpreter.hpp>
+#include <zash/zash_ast.h>
+#include <zash/zash_driver.hpp>
+#include <zash/zash_interpreter.hpp>
 
 #include <algorithm>
 #include <cstdlib>

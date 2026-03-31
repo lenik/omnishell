@@ -1,9 +1,9 @@
 #include "VfsWebViewHandlers.hpp"
 
-#include "AssetController.hpp"
-#include "DirIndex.hpp"
-#include "FileController.hpp"
-#include "VolumeIndex.hpp"
+#include "../daemon/AssetController.hpp"
+#include "../daemon/DirIndex.hpp"
+#include "../daemon/FileController.hpp"
+#include "../daemon/VolumeIndex.hpp"
 
 #include <bas/proc/AssetsRegistry.hpp>
 #include <bas/volume/Volume.hpp>

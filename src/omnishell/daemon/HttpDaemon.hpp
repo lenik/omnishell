@@ -31,6 +31,10 @@ private:
     int m_httpsPort;
     std::atomic<bool> m_running;
     std::vector<std::thread> m_serverThreads;
+
+    // Listening sockets for serverLoop() (used to interrupt blocking accept() on stop()).
+    std::atomic<int> m_httpListenSocket{-1};
+    std::atomic<int> m_httpsListenSocket{-1};
     
     std::unique_ptr<VolumeIndex> m_volumeIndex;
     std::unique_ptr<ApiVolumeIndex> m_apiVolumeIndex;

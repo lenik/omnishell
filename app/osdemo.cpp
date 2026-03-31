@@ -4,8 +4,8 @@
  * Main entry point. Parses VFS command-line options (see VFS_README),
  * initializes global `os::app`, then runs the wxWidgets shell.
  */
-#include "core/App.hpp"
-#include "shell/Shell.hpp"
+#include <omnishell/core/App.hpp>
+#include <omnishell/shell/Shell.hpp>
 
 #include <bas/proc/env.hpp>
 #include <bas/proc/stackdump.h>

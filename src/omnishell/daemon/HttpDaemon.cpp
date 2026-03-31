@@ -8,6 +8,7 @@
 #include "FileController.hpp"
 #include "VolumeIndex.hpp"
 
+#include <bas/log/uselog.h>
 #include <bas/proc/AssetsRegistry.hpp>
 #include <bas/volume/VolumeManager.hpp>
 
@@ -77,24 +78,39 @@ std::string percentDecodeHttpPath(const std::string& rawPath) {
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L
 #include <openssl/evp.h>
 #else
-#include <openssl/rsa.h>
 #include <openssl/bn.h>
+#include <openssl/rsa.h>
 #endif
 
 static SSL_CTX* create_self_signed_ctx() {
     SSL_CTX* ctx = SSL_CTX_new(TLS_server_method());
-    if (!ctx) return nullptr;
+    if (!ctx)
+        return nullptr;
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L
     EVP_PKEY* pkey = nullptr;
     EVP_PKEY_CTX* kctx = EVP_PKEY_CTX_new_from_name(nullptr, "RSA", nullptr);
-    if (!kctx) { SSL_CTX_free(ctx); return nullptr; }
-    if (EVP_PKEY_keygen_init(kctx) <= 0) { EVP_PKEY_CTX_free(kctx); SSL_CTX_free(ctx); return nullptr; }
+    if (!kctx) {
+        SSL_CTX_free(ctx);
+        return nullptr;
+    }
+    if (EVP_PKEY_keygen_init(kctx) <= 0) {
+        EVP_PKEY_CTX_free(kctx);
+        SSL_CTX_free(ctx);
+        return nullptr;
+    }
     EVP_PKEY_CTX_set_rsa_keygen_bits(kctx, 2048);
-    if (EVP_PKEY_keygen(kctx, &pkey) <= 0 || !pkey) { EVP_PKEY_CTX_free(kctx); SSL_CTX_free(ctx); return nullptr; }
+    if (EVP_PKEY_keygen(kctx, &pkey) <= 0 || !pkey) {
+        EVP_PKEY_CTX_free(kctx);
+        SSL_CTX_free(ctx);
+        return nullptr;
+    }
     EVP_PKEY_CTX_free(kctx);
 #else
     EVP_PKEY* pkey = EVP_PKEY_new();
-    if (!pkey) { SSL_CTX_free(ctx); return nullptr; }
+    if (!pkey) {
+        SSL_CTX_free(ctx);
+        return nullptr;
+    }
     RSA* rsa = RSA_new();
     BIGNUM* bn = BN_new();
     BN_set_word(bn, RSA_F4);
@@ -103,7 +119,11 @@ static SSL_CTX* create_self_signed_ctx() {
     EVP_PKEY_assign(pkey, EVP_PKEY_RSA, rsa);
 #endif
     X509* cert = X509_new();
-    if (!cert) { EVP_PKEY_free(pkey); SSL_CTX_free(ctx); return nullptr; }
+    if (!cert) {
+        EVP_PKEY_free(pkey);
+        SSL_CTX_free(ctx);
+        return nullptr;
+    }
     X509_set_version(cert, 2);
     ASN1_INTEGER_set(X509_get_serialNumber(cert), 1);
     X509_gmtime_adj(X509_get_notBefore(cert), 0);
@@ -111,7 +131,7 @@ static SSL_CTX* create_self_signed_ctx() {
     X509_set_pubkey(cert, pkey);
     X509_NAME* name = X509_get_subject_name(cert);
     X509_NAME_add_entry_by_txt(name, "CN", MBSTRING_ASC,
-        reinterpret_cast<const unsigned char*>("localhost"), -1, -1, 0);
+                               reinterpret_cast<const unsigned char*>("localhost"), -1, -1, 0);
     X509_set_issuer_name(cert, name);
     X509_sign(cert, pkey, EVP_sha256());
     SSL_CTX_use_certificate(ctx, cert);
@@ -121,29 +141,23 @@ static SSL_CTX* create_self_signed_ctx() {
     return ctx;
 }
 
-HttpDaemon::HttpDaemon(VolumeManager* volumeManager, 
-                       const std::string& bindAddress, 
-                       int httpPort, 
+HttpDaemon::HttpDaemon(VolumeManager* volumeManager, const std::string& bindAddress, int httpPort,
                        int httpsPort)
-    : m_volumeManager(volumeManager)
-    , m_bindAddress(bindAddress)
-    , m_httpPort(httpPort)
-    , m_httpsPort(httpsPort)
-    , m_running(false)
-    , m_volumeIndex(std::make_unique<VolumeIndex>(volumeManager))
-    , m_apiVolumeIndex(std::make_unique<ApiVolumeIndex>(volumeManager))
-    , m_dirIndex(std::make_unique<DirIndex>(volumeManager))
-    , m_apiDirIndex(std::make_unique<ApiDirIndex>(volumeManager))
-    , m_fileController(std::make_unique<FileController>(volumeManager))
-    , m_apiFileController(std::make_unique<ApiFileController>(volumeManager)) {
-    if (!volumeManager) throw std::invalid_argument("HttpDaemon::HttpDaemon: null volumeManager");
+    : m_volumeManager(volumeManager), m_bindAddress(bindAddress), m_httpPort(httpPort),
+      m_httpsPort(httpsPort), m_running(false),
+      m_volumeIndex(std::make_unique<VolumeIndex>(volumeManager)),
+      m_apiVolumeIndex(std::make_unique<ApiVolumeIndex>(volumeManager)),
+      m_dirIndex(std::make_unique<DirIndex>(volumeManager)),
+      m_apiDirIndex(std::make_unique<ApiDirIndex>(volumeManager)),
+      m_fileController(std::make_unique<FileController>(volumeManager)),
+      m_apiFileController(std::make_unique<ApiFileController>(volumeManager)) {
+    if (!volumeManager)
+        throw std::invalid_argument("HttpDaemon::HttpDaemon: null volumeManager");
     Volume* assets = AssetsRegistry::instance().get();
     m_assetController = std::make_unique<AssetController>(assets);
 }
 
-HttpDaemon::~HttpDaemon() {
-    stop();
-}
+HttpDaemon::~HttpDaemon() { stop(); }
 
 bool HttpDaemon::initHttps() {
     SSL_library_init();
@@ -152,7 +166,8 @@ bool HttpDaemon::initHttps() {
     const char* cert_file = "config/server-cert.pem";
     const char* key_file = "config/server-key.pem";
     m_ssl_ctx = SSL_CTX_new(TLS_server_method());
-    if (!m_ssl_ctx) return false;
+    if (!m_ssl_ctx)
+        return false;
     if (SSL_CTX_use_certificate_chain_file(m_ssl_ctx, cert_file) == 1 &&
         SSL_CTX_use_PrivateKey_file(m_ssl_ctx, key_file, SSL_FILETYPE_PEM) == 1) {
         if (SSL_CTX_check_private_key(m_ssl_ctx) == 1)
@@ -161,9 +176,10 @@ bool HttpDaemon::initHttps() {
     SSL_CTX_free(m_ssl_ctx);
     m_ssl_ctx = create_self_signed_ctx();
     if (m_ssl_ctx) {
-        std::cerr << "HTTPS: using built-in self-signed certificate (use -k or --insecure in curl)." << std::endl;
+        loglog_fmt("HTTPS: using built-in self-signed certificate (use -k or --insecure in curl).");
         return true;
     }
+    logerror_fmt("HTTPS setup failed; HTTPS will not be available.");
     return false;
 }
 
@@ -181,7 +197,7 @@ bool HttpDaemon::start(bool withHttps) {
 
     if (withHttps) {
         if (!initHttps()) {
-            std::cerr << "HTTPS setup failed; HTTPS will not be available." << std::endl;
+            logerror_fmt("HTTPS setup failed; HTTPS will not be available.");
         }
     }
 
@@ -201,6 +217,27 @@ bool HttpDaemon::start(bool withHttps) {
 void HttpDaemon::stop() {
     if (m_running) {
         m_running = false;
+
+        // Interrupt serverLoop() threads blocked on accept().
+        // Closing the listening sockets from another thread should cause accept()
+        // to return (typically with EBADF), letting loops exit.
+        {
+            const int httpSock = m_httpListenSocket.load();
+            if (httpSock >= 0) {
+                ::shutdown(httpSock, SHUT_RDWR);
+                ::close(httpSock);
+                m_httpListenSocket = -1;
+            }
+        }
+        {
+            const int httpsSock = m_httpsListenSocket.load();
+            if (httpsSock >= 0) {
+                ::shutdown(httpsSock, SHUT_RDWR);
+                ::close(httpsSock);
+                m_httpsListenSocket = -1;
+            }
+        }
+
         for (auto& thread : m_serverThreads) {
             if (thread.joinable()) {
                 thread.join();
@@ -214,69 +251,80 @@ void HttpDaemon::stop() {
 void HttpDaemon::serverLoop(int port, bool useHttps) {
     int serverSocket = socket(AF_INET, SOCK_STREAM, 0);
     if (serverSocket < 0) {
-        std::cerr << "Failed to create socket" << std::endl;
+        logerror_fmt("Failed to create socket");
         m_running = false;
         return;
     }
-    
+
+    // Store early to minimize races with stop() being called before we reach listen().
+    if (useHttps)
+        m_httpsListenSocket.store(serverSocket);
+    else
+        m_httpListenSocket.store(serverSocket);
+
     // Set socket options
     int opt = 1;
     setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
-    
+
     struct sockaddr_in serverAddr;
     memset(&serverAddr, 0, sizeof(serverAddr));
     serverAddr.sin_family = AF_INET;
     serverAddr.sin_port = htons(port);
-    
+
     if (inet_pton(AF_INET, m_bindAddress.c_str(), &serverAddr.sin_addr) <= 0) {
-        std::cerr << "Invalid bind address: " << m_bindAddress << std::endl;
+        logerror_fmt("Invalid bind address: %s", m_bindAddress.c_str());
         close(serverSocket);
         m_running = false;
         return;
     }
-    
+
     if (bind(serverSocket, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) < 0) {
-        std::cerr << "Failed to bind to " << m_bindAddress << ":" << port << std::endl;
+        logerror_fmt("Failed to bind to %s:%d", m_bindAddress.c_str(), port);
         close(serverSocket);
         m_running = false;
         return;
     }
-    
+
     if (listen(serverSocket, 10) < 0) {
-        std::cerr << "Failed to listen on socket" << std::endl;
+        logerror_fmt("Failed to listen on port %d", port);
         close(serverSocket);
         m_running = false;
         return;
     }
-    
-    std::cout << (useHttps ? "HTTPS" : "HTTP") << " daemon listening on " 
-              << m_bindAddress << ":" << port << std::endl;
-    
+
+    loglog_fmt("%s daemon listening on %s:%d", //
+               (useHttps ? "HTTPS" : "HTTP"), m_bindAddress.c_str(), port);
+
     while (m_running) {
         struct sockaddr_in clientAddr;
         socklen_t clientLen = sizeof(clientAddr);
-        
+
         int clientSocket = accept(serverSocket, (struct sockaddr*)&clientAddr, &clientLen);
         if (clientSocket < 0) {
             if (m_running) {
-                std::cerr << "Failed to accept client connection" << std::endl;
+                logerror_fmt("Failed to accept client connection");
             }
             continue;
         }
-        
+
         // Handle request in a separate thread for better concurrency
         std::thread clientThread(&HttpDaemon::handleRequest, this, clientSocket, useHttps);
         clientThread.detach();
     }
-    
+
     close(serverSocket);
+
+    if (useHttps)
+        m_httpsListenSocket = -1;
+    else
+        m_httpListenSocket = -1;
 }
 
 void HttpDaemon::handleRequest(int clientSocket, bool useHttps) {
     char buffer[4096];
     ssize_t bytesRead = 0;
     SSL* ssl = nullptr;
-    
+
     if (useHttps && m_ssl_ctx) {
         ssl = SSL_new(m_ssl_ctx);
         if (!ssl) {
@@ -293,31 +341,34 @@ void HttpDaemon::handleRequest(int clientSocket, bool useHttps) {
     } else {
         bytesRead = recv(clientSocket, buffer, sizeof(buffer) - 1, 0);
     }
-    
+
     if (bytesRead <= 0) {
-        if (ssl) { SSL_shutdown(ssl); SSL_free(ssl); }
+        if (ssl) {
+            SSL_shutdown(ssl);
+            SSL_free(ssl);
+        }
         close(clientSocket);
         return;
     }
-    
+
     buffer[bytesRead] = '\0';
     std::string request(buffer);
-    
+
     // Parse HTTP request
     std::istringstream requestStream(request);
     std::string method, path, version;
     requestStream >> method >> path >> version;
-    
+
     // Extract body if present
     std::string body;
     size_t bodyStart = request.find("\r\n\r\n");
     if (bodyStart != std::string::npos) {
         body = request.substr(bodyStart + 4);
     }
-    
+
     // Generate response
     std::string response = generateResponse(method, path, body);
-    
+
     if (ssl) {
         SSL_write(ssl, response.c_str(), static_cast<int>(response.length()));
         SSL_shutdown(ssl);
@@ -328,28 +379,27 @@ void HttpDaemon::handleRequest(int clientSocket, bool useHttps) {
     close(clientSocket);
 }
 
-std::string HttpDaemon::generateResponse(const std::string& method, const std::string& path, const std::string& body) {
+std::string HttpDaemon::generateResponse(const std::string& method, const std::string& path,
+                                         const std::string& body) {
     std::ostringstream response;
-    
+
     // CORS headers for web interface
-    std::string corsHeaders = 
-        "Access-Control-Allow-Origin: *\r\n"
-        "Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS\r\n"
-        "Access-Control-Allow-Headers: Content-Type, Authorization\r\n";
-    
+    std::string corsHeaders = "Access-Control-Allow-Origin: *\r\n"
+                              "Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS\r\n"
+                              "Access-Control-Allow-Headers: Content-Type, Authorization\r\n";
+
     if (method == "OPTIONS") {
         // Handle preflight CORS request
         response << "HTTP/1.1 200 OK\r\n"
-                 << corsHeaders
-                 << "Content-Length: 0\r\n"
+                 << corsHeaders << "Content-Length: 0\r\n"
                  << "\r\n";
         return response.str();
     }
-    
+
     try {
         const std::string decodedPath = percentDecodeHttpPath(path);
         std::string routeResponse = routeRequest(method, decodedPath, body);
-        
+
         // Check if routeRequest already returned a complete HTTP response
         if (!routeResponse.empty() && routeResponse.find("HTTP/") == 0) {
             // Already a complete HTTP response (e.g., from FileController)
@@ -363,11 +413,10 @@ std::string HttpDaemon::generateResponse(const std::string& method, const std::s
             }
             return routeResponse;
         }
-        
+
         if (routeResponse.empty()) {
             response << "HTTP/1.1 404 Not Found\r\n"
-                     << corsHeaders
-                     << "Content-Type: application/json\r\n"
+                     << corsHeaders << "Content-Type: application/json\r\n"
                      << "Content-Length: 23\r\n"
                      << "\r\n"
                      << "{\"error\":\"Path not found\"}";
@@ -377,10 +426,9 @@ std::string HttpDaemon::generateResponse(const std::string& method, const std::s
             if (decodedPath.find("/volume/") == 0) {
                 contentType = "text/html";
             }
-            
+
             response << "HTTP/1.1 200 OK\r\n"
-                     << corsHeaders
-                     << "Content-Type: " << contentType << "\r\n"
+                     << corsHeaders << "Content-Type: " << contentType << "\r\n"
                      << "Content-Length: " << routeResponse.length() << "\r\n"
                      << "\r\n"
                      << routeResponse;
@@ -388,19 +436,19 @@ std::string HttpDaemon::generateResponse(const std::string& method, const std::s
     } catch (const std::exception& e) {
         std::string errorMsg = "{\"error\":\"" + std::string(e.what()) + "\"}";
         response << "HTTP/1.1 500 Internal Server Error\r\n"
-                 << corsHeaders
-                 << "Content-Type: application/json\r\n"
+                 << corsHeaders << "Content-Type: application/json\r\n"
                  << "Content-Length: " << errorMsg.length() << "\r\n"
                  << "\r\n"
                  << errorMsg;
     }
-    
+
     return response.str();
 }
 
-std::string HttpDaemon::routeRequest(const std::string& method, const std::string& path, const std::string& body) {
+std::string HttpDaemon::routeRequest(const std::string& method, const std::string& path,
+                                     const std::string& body) {
     // Route to appropriate handler based on path
-    
+
     // /asset/ -> AssetController
     if (path == "/asset" || path.find("/asset/") == 0) {
         if (method == "GET") {
@@ -414,7 +462,7 @@ std::string HttpDaemon::routeRequest(const std::string& method, const std::strin
         }
         return "";
     }
-    
+
     // /api/volume/ -> ApiVolumeIndex
     if (path == "/api/volume/" || path == "/api/volume") {
         if (method == "GET") {
@@ -422,15 +470,15 @@ std::string HttpDaemon::routeRequest(const std::string& method, const std::strin
         }
         return "";
     }
-    
+
     // /api/volume/{index}/{path} -> ApiDirIndex or ApiFileController
     if (path.find("/api/volume/") == 0) {
         size_t volStart = 11; // After "/api/volume/"
         size_t volEnd = path.find('/', volStart);
-        
+
         std::string indexStr;
         std::string pathInfo;
-        
+
         if (volEnd == std::string::npos) {
             // No trailing slash - treat as root directory of volume
             // e.g., /api/volume/1 -> /api/volume/1/
@@ -440,7 +488,7 @@ std::string HttpDaemon::routeRequest(const std::string& method, const std::strin
             indexStr = path.substr(volStart, volEnd - volStart);
             pathInfo = path.substr(volEnd + 1); // After "/api/volume/{index}/"
         }
-        
+
         if (indexStr.empty()) {
             if (method == "GET")
                 return m_apiVolumeIndex->handleGet();
@@ -457,13 +505,13 @@ std::string HttpDaemon::routeRequest(const std::string& method, const std::strin
         if (volumeIndex >= m_volumeManager->getVolumeCount()) {
             return "";
         }
-        
+
         if (method == "GET") {
             // If pathInfo is empty, it's the root directory
             if (pathInfo.empty()) {
                 return m_apiDirIndex->handleGet(volumeIndex, "");
             }
-            
+
             // Try directory first, then file
             if (m_volumeManager->getVolume(volumeIndex)->isDirectory("/" + pathInfo)) {
                 return m_apiDirIndex->handleGet(volumeIndex, pathInfo);
@@ -481,7 +529,7 @@ std::string HttpDaemon::routeRequest(const std::string& method, const std::strin
         }
         return "";
     }
-    
+
     // /volume/ -> VolumeIndex
     if (path == "/volume/" || path == "/volume") {
         if (method == "GET") {
@@ -489,15 +537,15 @@ std::string HttpDaemon::routeRequest(const std::string& method, const std::strin
         }
         return "";
     }
-    
+
     // /volume/{index}/{path} -> DirIndex or FileController
     if (path.find("/volume/") == 0) {
         size_t volStart = 8; // After "/volume/"
         size_t volEnd = path.find('/', volStart);
-        
+
         std::string indexStr;
         std::string pathInfo;
-        
+
         if (volEnd == std::string::npos) {
             // No trailing slash - treat as root directory of volume
             // e.g., /volume/1 -> /volume/1/
@@ -507,7 +555,7 @@ std::string HttpDaemon::routeRequest(const std::string& method, const std::strin
             indexStr = path.substr(volStart, volEnd - volStart);
             pathInfo = path.substr(volEnd + 1); // After "/volume/{index}/"
         }
-        
+
         if (indexStr.empty()) {
             if (method == "GET")
                 return m_volumeIndex->handleGet();
@@ -517,7 +565,8 @@ std::string HttpDaemon::routeRequest(const std::string& method, const std::strin
         char* endPtr = nullptr;
         unsigned long parsed = std::strtoul(indexStr.c_str(), &endPtr, 10);
         if (endPtr == indexStr.c_str() || *endPtr != '\0') {
-            return "<!DOCTYPE html><html><head><meta charset=\"utf-8\"/><title>Bad volume index</title></head><body><p>Volume "
+            return "<!DOCTYPE html><html><head><meta charset=\"utf-8\"/><title>Bad volume "
+                   "index</title></head><body><p>Volume "
                    "index must be a non-negative integer.</p></body></html>";
         }
         const size_t volumeIndex = static_cast<size_t>(parsed);
@@ -525,13 +574,13 @@ std::string HttpDaemon::routeRequest(const std::string& method, const std::strin
         if (volumeIndex >= m_volumeManager->getVolumeCount()) {
             return "";
         }
-        
+
         if (method == "GET") {
             // If pathInfo is empty, it's the root directory
             if (pathInfo.empty()) {
                 return m_dirIndex->handleGet(volumeIndex, "");
             }
-            
+
             // Try directory first, then file
             if (m_volumeManager->getVolume(volumeIndex)->isDirectory("/" + pathInfo)) {
                 return m_dirIndex->handleGet(volumeIndex, pathInfo);
@@ -541,13 +590,13 @@ std::string HttpDaemon::routeRequest(const std::string& method, const std::strin
         }
         return "";
     }
-    
+
     // Root status
     if (path == "/" || path == "/api/status") {
         std::ostringstream json;
         json << "{\"status\":\"ok\",\"volumes\":" << m_volumeManager->getVolumeCount() << "}";
         return json.str();
     }
-    
+
     return "";
 }

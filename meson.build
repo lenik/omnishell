@@ -23,10 +23,18 @@ fs = import('fs')
 cpp = meson.get_compiler('cpp')
 c = meson.get_compiler('c')
 
-# libbas
+subproject('bas-c')
+subproject('bas-cpp')
+subproject('bas-ui')
+subproject('zash')
+
 bas_c_dep = dependency('bas-c', required: true)
 bas_cpp_dep = dependency('bas-cpp', required: true)
 bas_ui_dep = dependency('bas-ui', required: true)
+
+bas_c_static_dep = dependency('bas-c-static', required: true)
+bas_cpp_static_dep = dependency('bas-cpp-static', required: true)
+bas_ui_static_dep = dependency('bas-ui-static', required: true)
 
 boost_sub = subproject('boost')
 boost_json_dep = boost_sub.get_variable('boost_json_dep')
@@ -36,133 +44,128 @@ openssl_dep = dependency('openssl', required: true)
 wx_sub = subproject('wx_logic')
 wx_dep = wx_sub.get_variable('wx_dep')
 wx_ver = wx_sub.get_variable('wx_ver')
-zash_dep = subproject('zash').get_variable('zash_dep')
+zash_dep = dependency('zash', required: true)
+zash_static_dep = dependency('zash-static', required: true)
 
 # Disable all warnings (wx 3.0 and deps are noisy)
 cpp_nowarn = cpp.get_supported_arguments(['-w', '/w'])
-cpp_nowarn = cpp_nowarn
-
-# Boost dependency (needs to be declared after add_project_arguments()).
-
-# Precompiled header for wxWidgets
-wx_pch = 'src/wx_pch.h'
-
-# Source files - reorganized structure
+cpp_args = cpp_nowarn + ['-DLOGGER_NAME=omni', '-DASSETS_NAME=omni']
+cpp_pch = 'src/wx_pch.h'
 cpp_sources = files(
-    'src/core/App.cpp',
-    'src/core/Category.cpp',
-    'src/core/Module.cpp',
-    'src/core/ModuleRegistry.cpp',
-    'src/core/Process.cpp',
-    'src/core/ServiceManager.cpp',
-    'src/core/TrayIcon.cpp',
-    'src/core/VolUrl.cpp',
-    'src/core/registry/FileAssociations.cpp',
-    'src/core/registry/IRegistry.cpp',
-    'src/core/registry/JsonRegistry.cpp',
-    'src/core/registry/LocalRegistry.cpp',
-    'src/core/registry/RegistryKeyUtil.cpp',
-    'src/core/registry/RegistryService.cpp',
-    'src/core/registry/RegistryValueIo.cpp',
-    'src/core/registry/VolumeRegistry.cpp',
-    'src/daemon/ApiDirIndex.cpp',
-    'src/daemon/ApiFileController.cpp',
-    'src/daemon/ApiVolumeIndex.cpp',
-    'src/daemon/AssetController.cpp',
-    'src/daemon/DirIndex.cpp',
-    'src/daemon/FileController.cpp',
-    'src/daemon/FileIndex.cpp',
-    'src/daemon/HttpDaemon.cpp',
-    'src/daemon/VolumeIndex.cpp',
-    'src/mod/background/BackgroundSettingsApp.cpp',
-    'src/mod/background/BackgroundSettingsBody.cpp',
-    'src/mod/background/BackgroundSettingsFrame.cpp',
-    'src/mod/browser/BrowserApp.cpp',
-    'src/mod/browser/BrowserBody.cpp',
-    'src/mod/browser/BrowserFrame.cpp',
-    'src/mod/calculator/CalculatorApp.cpp',
-    'src/mod/calculator/CalculatorBody.cpp',
-    'src/mod/calculator/CalculatorFrame.cpp',
-    'src/mod/calendar/CalendarApp.cpp',
-    'src/mod/calendar/CalendarBody.cpp',
-    'src/mod/calendar/CalendarFrame.cpp',
-    'src/mod/camera/CameraApp.cpp',
-    'src/mod/camera/CameraBody.cpp',
-    'src/mod/camera/CameraFrame.cpp',
-    'src/mod/camera/CameraGstPreview.cpp',
-    'src/mod/console/ConsoleApp.cpp',
-    'src/mod/console/ConsoleBody.cpp',
-    'src/mod/console/ConsoleFrame.cpp',
-    'src/mod/controlpanel/ControlPanelApp.cpp',
-    'src/mod/controlpanel/ControlPanelBody.cpp',
-    'src/mod/controlpanel/ControlPanelFrame.cpp',
-    'src/mod/explorer/ExplorerApp.cpp',
-    'src/mod/explorer/ExplorerBody.cpp',
-    'src/mod/explorer/ExplorerFrame.cpp',
-    # 'src/mod/fiveormore/FiveOrMoreApp.cpp',
-    # 'src/mod/fiveormore/FiveOrMoreBody.cpp',
-    # 'src/mod/fiveormore/FiveOrMoreFrame.cpp',
-    'src/mod/mediaplayer/MediaPlayerApp.cpp',
-    'src/mod/mediaplayer/MediaPlayerBody.cpp',
-    'src/mod/mediaplayer/MediaPlayerFrame.cpp',
-    # 'src/mod/minesweeper/MinesweeperApp.cpp',
-    # 'src/mod/minesweeper/MinesweeperBody.cpp',
-    # 'src/mod/minesweeper/MinesweeperFrame.cpp',
-    'src/mod/musicbox/MusicBoxApp.cpp',
-    'src/mod/musicbox/MusicBoxBody.cpp',
-    'src/mod/musicbox/MusicBoxFrame.cpp',
-    'src/mod/notepad/NotepadApp.cpp',
-    'src/mod/notepad/NotepadBody.cpp',
-    'src/mod/notepad/NotepadFrame.cpp',
-    'src/mod/paint/PaintApp.cpp',
-    'src/mod/paint/PaintBody.cpp',
-    'src/mod/paint/PaintFrame.cpp',
-    'src/mod/passwordmanager/LoginDialog.cpp',
-    'src/mod/passwordmanager/PasswordManager.cpp',
-    'src/mod/photoviewer/PhotoViewerApp.cpp',
-    'src/mod/photoviewer/PhotoViewerBody.cpp',
-    'src/mod/photoviewer/PhotoViewerFrame.cpp',
-    'src/mod/registry/RegistryApp.cpp',
-    'src/mod/registry/RegistryBody.cpp',
-    'src/mod/registry/RegistryFrame.cpp',
-    'src/mod/snippingtool/SnippingToolApp.cpp',
-    'src/mod/snippingtool/SnippingToolBody.cpp',
-    'src/mod/snippingtool/SnippingToolFrame.cpp',
-    # 'src/mod/solitaire/SolitaireApp.cpp',
-    # 'src/mod/solitaire/SolitaireBody.cpp',
-    # 'src/mod/solitaire/SolitaireFrame.cpp',
-    'src/mod/soundrecorder/SoundRecorderApp.cpp',
-    'src/mod/soundrecorder/SoundRecorderBody.cpp',
-    'src/mod/soundrecorder/SoundRecorderFrame.cpp',
-    # 'src/mod/stopwatch/StopWatchApp.cpp',
-    # 'src/mod/stopwatch/StopWatchBody.cpp',
-    # 'src/mod/stopwatch/StopWatchFrame.cpp',
-    # 'src/mod/sudoku/SudokuApp.cpp',
-    # 'src/mod/sudoku/SudokuBody.cpp',
-    # 'src/mod/sudoku/SudokuFrame.cpp',
-    'src/mod/taskmanager/TaskManagerApp.cpp',
-    'src/mod/taskmanager/TaskManagerBody.cpp',
-    'src/mod/taskmanager/TaskManagerFrame.cpp',
-    'src/shell/DesktopWindow.cpp',
-    'src/shell/Shell.cpp',
-    'src/shell/StartMenu.cpp',
-    'src/shell/Taskbar.cpp',
-    'src/shell/VfsDaemonHost.cpp',
-    'src/shell/VfsWebViewHandlers.cpp',
-    'src/ui/IconTheme.cpp',
-    'src/ui/Location.cpp',
-    'src/ui/LocationHistory.cpp',
-    'src/ui/dialogs/ChooseFileDialog.cpp',
-    'src/ui/dialogs/ChooseFolderDialog.cpp',
-    'src/ui/dialogs/ChoosePrinterDialog.cpp',
-    'src/ui/widget/BreadcrumbNav.cpp',
-    'src/ui/widget/DirTreeView.cpp',
-    'src/ui/widget/FileListView.cpp',
-    'src/wx/LabeledIcon.cpp',
-    'src/wx/WxChecked.cpp',
-    'src/wx/term/xterm.cpp',
-    'src/wx/wxConsole.cpp',
-    'src/wx/wxTerminal.cpp',
+    'src/omnishell/core/App.cpp',
+    'src/omnishell/core/Category.cpp',
+    'src/omnishell/core/Module.cpp',
+    'src/omnishell/core/ModuleRegistry.cpp',
+    'src/omnishell/core/Process.cpp',
+    'src/omnishell/core/ServiceManager.cpp',
+    'src/omnishell/core/TrayIcon.cpp',
+    'src/omnishell/core/VolUrl.cpp',
+    'src/omnishell/core/registry/FileAssociations.cpp',
+    'src/omnishell/core/registry/IRegistry.cpp',
+    'src/omnishell/core/registry/JsonRegistry.cpp',
+    'src/omnishell/core/registry/LocalRegistry.cpp',
+    'src/omnishell/core/registry/RegistryKeyUtil.cpp',
+    'src/omnishell/core/registry/RegistryService.cpp',
+    'src/omnishell/core/registry/RegistryValueIo.cpp',
+    'src/omnishell/core/registry/VolumeRegistry.cpp',
+    'src/omnishell/daemon/ApiDirIndex.cpp',
+    'src/omnishell/daemon/ApiFileController.cpp',
+    'src/omnishell/daemon/ApiVolumeIndex.cpp',
+    'src/omnishell/daemon/AssetController.cpp',
+    'src/omnishell/daemon/DirIndex.cpp',
+    'src/omnishell/daemon/FileController.cpp',
+    'src/omnishell/daemon/FileIndex.cpp',
+    'src/omnishell/daemon/HttpDaemon.cpp',
+    'src/omnishell/daemon/VolumeIndex.cpp',
+    'src/omnishell/mod/background/BackgroundSettingsApp.cpp',
+    'src/omnishell/mod/background/BackgroundSettingsBody.cpp',
+    'src/omnishell/mod/background/BackgroundSettingsFrame.cpp',
+    'src/omnishell/mod/browser/BrowserApp.cpp',
+    'src/omnishell/mod/browser/BrowserBody.cpp',
+    'src/omnishell/mod/browser/BrowserFrame.cpp',
+    'src/omnishell/mod/calculator/CalculatorApp.cpp',
+    'src/omnishell/mod/calculator/CalculatorBody.cpp',
+    'src/omnishell/mod/calculator/CalculatorFrame.cpp',
+    'src/omnishell/mod/calendar/CalendarApp.cpp',
+    'src/omnishell/mod/calendar/CalendarBody.cpp',
+    'src/omnishell/mod/calendar/CalendarFrame.cpp',
+    'src/omnishell/mod/camera/CameraApp.cpp',
+    'src/omnishell/mod/camera/CameraBody.cpp',
+    'src/omnishell/mod/camera/CameraFrame.cpp',
+    'src/omnishell/mod/camera/CameraGstPreview.cpp',
+    'src/omnishell/mod/console/ConsoleApp.cpp',
+    'src/omnishell/mod/console/ConsoleBody.cpp',
+    'src/omnishell/mod/console/ConsoleFrame.cpp',
+    'src/omnishell/mod/controlpanel/ControlPanelApp.cpp',
+    'src/omnishell/mod/controlpanel/ControlPanelBody.cpp',
+    'src/omnishell/mod/controlpanel/ControlPanelFrame.cpp',
+    'src/omnishell/mod/explorer/ExplorerApp.cpp',
+    'src/omnishell/mod/explorer/ExplorerBody.cpp',
+    'src/omnishell/mod/explorer/ExplorerFrame.cpp',
+    # 'src/omnishell/mod/fiveormore/FiveOrMoreApp.cpp',
+    # 'src/omnishell/mod/fiveormore/FiveOrMoreBody.cpp',
+    # 'src/omnishell/mod/fiveormore/FiveOrMoreFrame.cpp',
+    'src/omnishell/mod/mediaplayer/MediaPlayerApp.cpp',
+    'src/omnishell/mod/mediaplayer/MediaPlayerBody.cpp',
+    'src/omnishell/mod/mediaplayer/MediaPlayerFrame.cpp',
+    # 'src/omnishell/mod/minesweeper/MinesweeperApp.cpp',
+    # 'src/omnishell/mod/minesweeper/MinesweeperBody.cpp',
+    # 'src/omnishell/mod/minesweeper/MinesweeperFrame.cpp',
+    'src/omnishell/mod/musicbox/MusicBoxApp.cpp',
+    'src/omnishell/mod/musicbox/MusicBoxBody.cpp',
+    'src/omnishell/mod/musicbox/MusicBoxFrame.cpp',
+    'src/omnishell/mod/notepad/NotepadApp.cpp',
+    'src/omnishell/mod/notepad/NotepadBody.cpp',
+    'src/omnishell/mod/notepad/NotepadFrame.cpp',
+    'src/omnishell/mod/paint/PaintApp.cpp',
+    'src/omnishell/mod/paint/PaintBody.cpp',
+    'src/omnishell/mod/paint/PaintFrame.cpp',
+    'src/omnishell/mod/passwordmanager/LoginDialog.cpp',
+    'src/omnishell/mod/passwordmanager/PasswordManager.cpp',
+    'src/omnishell/mod/photoviewer/PhotoViewerApp.cpp',
+    'src/omnishell/mod/photoviewer/PhotoViewerBody.cpp',
+    'src/omnishell/mod/photoviewer/PhotoViewerFrame.cpp',
+    'src/omnishell/mod/registry/RegistryApp.cpp',
+    'src/omnishell/mod/registry/RegistryBody.cpp',
+    'src/omnishell/mod/registry/RegistryFrame.cpp',
+    'src/omnishell/mod/snippingtool/SnippingToolApp.cpp',
+    'src/omnishell/mod/snippingtool/SnippingToolBody.cpp',
+    'src/omnishell/mod/snippingtool/SnippingToolFrame.cpp',
+    # 'src/omnishell/mod/solitaire/SolitaireApp.cpp',
+    # 'src/omnishell/mod/solitaire/SolitaireBody.cpp',
+    # 'src/omnishell/mod/solitaire/SolitaireFrame.cpp',
+    'src/omnishell/mod/soundrecorder/SoundRecorderApp.cpp',
+    'src/omnishell/mod/soundrecorder/SoundRecorderBody.cpp',
+    'src/omnishell/mod/soundrecorder/SoundRecorderFrame.cpp',
+    # 'src/omnishell/mod/stopwatch/StopWatchApp.cpp',
+    # 'src/omnishell/mod/stopwatch/StopWatchBody.cpp',
+    # 'src/omnishell/mod/stopwatch/StopWatchFrame.cpp',
+    # 'src/omnishell/mod/sudoku/SudokuApp.cpp',
+    # 'src/omnishell/mod/sudoku/SudokuBody.cpp',
+    # 'src/omnishell/mod/sudoku/SudokuFrame.cpp',
+    'src/omnishell/mod/taskmanager/TaskManagerApp.cpp',
+    'src/omnishell/mod/taskmanager/TaskManagerBody.cpp',
+    'src/omnishell/mod/taskmanager/TaskManagerFrame.cpp',
+    'src/omnishell/shell/DesktopWindow.cpp',
+    'src/omnishell/shell/Shell.cpp',
+    'src/omnishell/shell/StartMenu.cpp',
+    'src/omnishell/shell/Taskbar.cpp',
+    'src/omnishell/shell/VfsDaemonHost.cpp',
+    'src/omnishell/shell/VfsWebViewHandlers.cpp',
+    'src/omnishell/ui/IconTheme.cpp',
+    'src/omnishell/ui/Location.cpp',
+    'src/omnishell/ui/LocationHistory.cpp',
+    'src/omnishell/ui/dialogs/ChooseFileDialog.cpp',
+    'src/omnishell/ui/dialogs/ChooseFolderDialog.cpp',
+    'src/omnishell/ui/dialogs/ChoosePrinterDialog.cpp',
+    'src/omnishell/ui/widget/BreadcrumbNav.cpp',
+    'src/omnishell/ui/widget/DirTreeView.cpp',
+    'src/omnishell/ui/widget/FileListView.cpp',
+    'src/omnishell/wx/LabeledIcon.cpp',
+    'src/omnishell/wx/WxChecked.cpp',
+    'src/omnishell/wx/term/xterm.cpp',
+    'src/omnishell/wx/wxConsole.cpp',
+    'src/omnishell/wx/wxTerminal.cpp',
 )
 
 # Assets will be zipped and linked as a section in the executable
@@ -204,7 +207,6 @@ assets_o = custom_target(
 
 exe_inc = [
     include_directories('src'),
-    include_directories('src/daemon'),
     include_directories('.'),
 ]
 
@@ -220,28 +222,40 @@ exe_deps = [
     zash_dep,
 ]
 
-lib_omnishell_cpp_args = cpp_nowarn + [
-    '-DLOGGER_NAME=omni',
-    '-DASSETS_NAME=omni',
+exe_static_deps = [
+    bas_c_static_dep,
+    bas_cpp_static_dep,
+    bas_ui_static_dep,
+    boost_json_dep,
+    date_dep,
+    openssl_dep,
+    curl_dep,
+    wx_dep,
+    zash_static_dep,
 ]
 
 if host_machine.system() != 'windows'
     util_lib = cpp.find_library('util', required: true)
     exe_deps += util_lib
+    exe_static_deps += util_lib
 endif
 
 alsa_dep = cpp.find_library('asound', required: false)
 if host_machine.system() == 'linux' and alsa_dep.found()
+    cpp_args += ['-DOMNISHELL_HAVE_ALSA=1']
     exe_deps += alsa_dep
-    lib_omnishell_cpp_args += ['-DOMNISHELL_HAVE_ALSA=1']
+    exe_static_deps += alsa_dep
 endif
 
 gst_dep = dependency('gstreamer-1.0', required: false)
 gst_app_dep = dependency('gstreamer-app-1.0', required: false)
 if gst_dep.found() and gst_app_dep.found()
+    cpp_args += ['-DOMNISHELL_HAVE_GSTREAMER=1']
     exe_deps += [gst_dep, gst_app_dep]
-    lib_omnishell_cpp_args += ['-DOMNISHELL_HAVE_GSTREAMER=1']
+    exe_static_deps += [gst_dep, gst_app_dep]
 endif
+
+override_options = ['b_lundef=false']  # Allows undefined symbols at link time
 
 lib_omnishell = library(
     'omnishell',
@@ -251,12 +265,25 @@ lib_omnishell = library(
     dependencies: exe_deps,
     include_directories: exe_inc,
     c_args: c.get_supported_arguments(['-Wno-unused-parameter']),
-    cpp_args: lib_omnishell_cpp_args,
-    cpp_pch: wx_pch,
+    cpp_args: cpp_args,
+    cpp_pch: cpp_pch,
     link_args: ['-rdynamic'],
-    override_options: ['b_lundef=false'], # Allows undefined symbols at link time
+    override_options: override_options, # Allows undefined symbols at link time
     version: meson.project_version(),
     soversion: meson.project_version().split('.')[0],
+    install: true,
+)
+
+lib_omnishell_static = static_library(
+    'omnishell',
+    cpp_sources,
+    'src/module.cpp',
+    assets_o,
+    dependencies: exe_static_deps,
+    include_directories: exe_inc,
+    cpp_args: cpp_args,
+    cpp_pch: cpp_pch,
+    override_options: override_options,
     install: true,
 )
 
@@ -266,11 +293,29 @@ omnishell_dep = declare_dependency(
     dependencies: exe_deps,
 )
 
+omnishell_static_dep = declare_dependency(
+    link_with: lib_omnishell_static,
+    include_directories: exe_inc,
+    dependencies: exe_static_deps,
+)
+
+meson.override_dependency('omnishell', omnishell_dep)
+meson.override_dependency('omnishell-static', omnishell_static_dep)
+
 # ---- pkg-config ----
 pkgconfig = import('pkgconfig')
 pkgconfig.generate(
     lib_omnishell,
     name: 'omnishell',
+    description: 'omnishell',
+    version: meson.project_version(),
+    subdirs: 'omnishell',
+    requires: ['bas-c', 'bas-cpp', 'bas-ui', 'boost', 'openssl', 'libcurl'],
+)
+
+pkgconfig.generate(
+    lib_omnishell_static,
+    name: 'omnishell-static',
     description: 'omnishell',
     version: meson.project_version(),
     subdirs: 'omnishell',
@@ -299,7 +344,7 @@ endforeach
 
 install_subdir(
     'src',
-    install_dir: get_option('includedir') / 'omnishell',
+    install_dir: get_option('includedir'),
     exclude_files: other_list,
     strip_directory: true,
 )
@@ -351,7 +396,7 @@ foreach test_rel_path : all_test_files
         include_directories: exe_inc,
         dependencies: exe_deps + [omnishell_dep],
         cpp_args: cpp_nowarn + ['-DLOGGER_NAME=' + test_name, '-DASSETS_NAME=omni'],
-        cpp_pch: wx_pch,
+        cpp_pch: cpp_pch,
         install: false,
     )
 
@@ -383,7 +428,7 @@ foreach app_cpp : app_cpp_list
         include_directories: exe_inc,
         dependencies: exe_deps + [omnishell_dep],
         cpp_args: cpp_nowarn + ['-DLOGGER_NAME=' + app_name, '-DASSETS_NAME=omni'],
-        cpp_pch: wx_pch,
+        cpp_pch: cpp_pch,
         override_options: ['b_asneeded=false'],
         install: true,
         install_dir: install_dir,

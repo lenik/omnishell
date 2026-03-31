@@ -266,6 +266,18 @@ void ShellApp::createUI() {
     m_mainWindow->CenterOnScreen();
     m_mainWindow->Show(true);
 
+    // Ensure the app quits when the main shell frame is closed.
+    // Without this, wxWidgets may destroy the frame but keep the event loop running.
+    if (m_mainWindow) {
+        m_mainWindow->Bind(wxEVT_CLOSE_WINDOW, [this](wxCloseEvent& e) {
+            e.Skip(); // Let the frame close normally.
+            wxTheApp->CallAfter([]() {
+                if (wxTheApp)
+                    wxTheApp->ExitMainLoop();
+            });
+        });
+    }
+
     wxLogInfo("Shell UI created");
 }
 

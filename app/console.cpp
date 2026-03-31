@@ -4,9 +4,9 @@
  * Initializes global os::app, VolumeManager, then wx + ModuleRegistry and runs ConsoleApp.
  */
 
-#include "core/App.hpp"
-#include "core/ModuleRegistry.hpp"
-#include "mod/console/ConsoleApp.hpp"
+#include <omnishell/core/App.hpp>
+#include <omnishell/core/ModuleRegistry.hpp>
+#include <omnishell/mod/console/ConsoleApp.hpp>
 
 #include <bas/proc/env.hpp>
 #include <bas/proc/stackdump.h>

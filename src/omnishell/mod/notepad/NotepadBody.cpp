@@ -1,6 +1,5 @@
 #include "NotepadBody.hpp"
 
-#include "../../ui/ThemeStyles.hpp"
 #include "../../ui/dialogs/ChooseFileDialog.hpp"
 
 #include <bas/volume/VolumeFile.hpp>
@@ -11,8 +10,6 @@
 #include <wx/msgdlg.h>
 #include <wx/string.h>
 #include <wx/textctrl.h>
-
-using namespace ThemeStyles;
 
 namespace os {
 
@@ -121,7 +118,9 @@ void NotepadBody::createFragmentView(CreateViewContext* ctx) {
     m_text->Bind(wxEVT_TEXT, &NotepadBody::onFrameText, this);
 }
 
-wxEvtHandler* NotepadBody::getEventHandler() { return m_text->GetEventHandler(); }
+wxEvtHandler* NotepadBody::getEventHandler() {
+    return m_frame ? m_frame->GetEventHandler() : nullptr;
+}
 
 void NotepadBody::onFrameClose(wxCloseEvent& event) {
     if (m_modified) {
