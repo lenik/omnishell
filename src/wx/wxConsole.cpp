@@ -1,10 +1,10 @@
 #include "wxConsole.hpp"
 
-#include "../cli/zash/parser/zash_ast.h"
-#include "../cli/zash/zash_driver.hpp"
-#include "../cli/zash/zash_interpreter.hpp"
-
 #include <wx/utils.h>
+
+#include <zash_ast.h>
+#include <zash_driver.hpp>
+#include <zash_interpreter.hpp>
 
 #include <algorithm>
 #include <cstdlib>

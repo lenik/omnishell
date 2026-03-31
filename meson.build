@@ -30,43 +30,13 @@ bas_ui_dep = dependency('bas-ui', required: true)
 
 boost_sub = subproject('boost')
 boost_json_dep = boost_sub.get_variable('boost_json_dep')
-
-bison = find_program('bison', required: true)
 curl_dep = dependency('libcurl', required: true)
 date_dep = subproject('date_tz').get_variable('date_dep')
-flex = find_program('flex', required: true)
 openssl_dep = dependency('openssl', required: true)
-
 wx_sub = subproject('wx_logic')
 wx_dep = wx_sub.get_variable('wx_dep')
 wx_ver = wx_sub.get_variable('wx_ver')
-
-zash_bison = custom_target(
-    'zash_bison',
-    input: 'src/cli/zash/zash.y',
-    output: ['zash.tab.c', 'zash.tab.h'],
-    command: [bison, '-d', '-o', '@OUTPUT0@', '@INPUT@'],
-)
-
-zash_flex = custom_target(
-    'zash_flex',
-    input: 'src/cli/zash/zash.lex',
-    output: 'lex.yy.c',
-    command: [flex, '-o', '@OUTPUT0@', '@INPUT@'],
-    depends: zash_bison,
-)
-
-zash_sources = files(
-    'src/cli/zash/builtins/builtins.cpp',
-    'src/cli/zash/parser/zash_alloc.c',
-    'src/cli/zash/zash_driver.c',
-    'src/cli/zash/zash_interpreter.cpp',
-)
-
-zash_inc = [
-    include_directories('src/cli/zash'),
-    include_directories('src/cli/zash/parser'),
-]
+zash_dep = subproject('zash').get_variable('zash_dep')
 
 # Disable all warnings (wx 3.0 and deps are noisy)
 cpp_nowarn = cpp.get_supported_arguments(['-w', '/w'])
@@ -247,6 +217,7 @@ exe_deps = [
     openssl_dep,
     curl_dep,
     wx_dep,
+    zash_dep,
 ]
 
 lib_omnishell_cpp_args = cpp_nowarn + [
@@ -275,13 +246,10 @@ endif
 lib_omnishell = library(
     'omnishell',
     cpp_sources,
-    zash_sources,
-    zash_bison,
-    zash_flex,
     'src/module.cpp',
     assets_o,
     dependencies: exe_deps,
-    include_directories: exe_inc + zash_inc,
+    include_directories: exe_inc,
     c_args: c.get_supported_arguments(['-Wno-unused-parameter']),
     cpp_args: lib_omnishell_cpp_args,
     cpp_pch: wx_pch,
@@ -295,7 +263,7 @@ lib_omnishell = library(
 omnishell_dep = declare_dependency(
     link_with: lib_omnishell,
     include_directories: exe_inc,
-    dependencies: [boost_json_dep, date_dep, openssl_dep, curl_dep, wx_dep],
+    dependencies: exe_deps,
 )
 
 # ---- pkg-config ----

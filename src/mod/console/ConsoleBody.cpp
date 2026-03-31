@@ -1,6 +1,5 @@
 #include "ConsoleBody.hpp"
 
-#include "../../cli/zash/zash_interpreter.hpp"
 #include "../../core/App.hpp"
 #include "../../core/registry/RegistryService.hpp"
 #include "../../ui/ThemeStyles.hpp"
@@ -12,6 +11,8 @@
 
 #include <algorithm>
 #include <sstream>
+
+#include <zash_interpreter.hpp>
 
 using namespace ThemeStyles;
 
