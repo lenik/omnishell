@@ -8,6 +8,8 @@
 #include <wx/sizer.h>
 #include <wx/treectrl.h>
 
+#include <vector>
+
 namespace os {
 
 class RegistryTreePathData : public wxTreeItemData {
@@ -29,6 +31,7 @@ private:
     wxTreeCtrl* m_tree{nullptr};
     wxListCtrl* m_list{nullptr};
     std::string m_selectedPath;
+    std::vector<std::string> m_propertyRowFullPaths;
 
     void buildTree();
     void populateProperties(const std::string& nodePath);

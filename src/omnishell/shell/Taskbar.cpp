@@ -9,6 +9,7 @@
 #include <bas/ui/arch/ImageSet.hpp>
 
 #include <wx/datetime.h>
+#include <wx/intl.h>
 #include <wx/dcbuffer.h>
 #include <wx/log.h>
 #include <wx/toplevel.h>
@@ -55,7 +56,7 @@ class TaskbarStartPlate : public os::wxcPanel {
         dc.SetTextForeground(*wxWHITE);
         dc.SetFont(wxFont(12, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD));
         const int ty = std::max(0, (sz.GetHeight() - dc.GetCharHeight()) / 2);
-        dc.DrawText("Start", textX, ty);
+        dc.DrawText(_("Start"), textX, ty);
     }
 
     wxBitmap m_icon;

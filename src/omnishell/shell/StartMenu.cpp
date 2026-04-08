@@ -9,6 +9,7 @@
 #include <bas/ui/arch/ImageSet.hpp>
 
 #include <wx/image.h>
+#include <wx/intl.h>
 #include <wx/log.h>
 #include <wx/sizer.h>
 #include <wx/statline.h>
@@ -119,7 +120,7 @@ StartMenu::StartMenu(wxWindow* parent)
     // Always keep a top padding even when search box is hidden.
     mainSizer->AddSpacer(10);
 
-    m_searchBox = new wxTextCtrl(contentPanel, wxID_ANY, "Search programs...", wxDefaultPosition,
+    m_searchBox = new wxTextCtrl(contentPanel, wxID_ANY, _("Search programs..."), wxDefaultPosition,
                                  wxSize(-1, 28), wxTE_PROCESS_ENTER);
     m_searchBox->SetName(wxT("search"));
     wxcBind(*m_searchBox, wxEVT_TEXT, &StartMenu::OnSearch, this);
@@ -157,7 +158,7 @@ StartMenu::StartMenu(wxWindow* parent)
             allBtn->SetBitmapMargins(4, 0);
         }
     }
-    allBtn->SetToolTip("All programs");
+    allBtn->SetToolTip(_("All programs"));
     allBtn->SetName(wxT("category_all"));
     wxcBind(*allBtn, wxEVT_BUTTON, [this](wxCommandEvent&) {
         m_activeCategoryId = ID_CATEGORY_NONE;
@@ -488,19 +489,10 @@ void StartMenu::OnMenuItemClick(wxMouseEvent& event) {
             HideMenu();
             return;
         }
-        wxString lbl;
-        for (wxWindowList::const_iterator it = row->GetChildren().begin();
-             it != row->GetChildren().end(); ++it) {
-            wxStaticText* st = dynamic_cast<wxStaticText*>(*it);
-            if (st) {
-                lbl = st->GetLabel();
-                break;
-            }
-        }
-        if (lbl.StartsWith("Exit")) {
+        if (mr.kind == ROW_PSEUDO_EXIT) {
             if (wxTheApp)
                 wxTheApp->ExitMainLoop();
-        } else if (lbl.StartsWith("Trash")) {
+        } else if (mr.kind == ROW_PSEUDO_TRASH) {
             ShellApp* shell = ShellApp::getInstance();
             if (shell) {
                 shell->openExplorerAt("Trash");
@@ -621,7 +613,7 @@ void StartMenu::BuildSubMenuContent(RowKind kind, CategoryId categoryId) {
                 addLeaf(m);
         }
         if (sizer->IsEmpty()) {
-            AddMenuItem(m_subScrollArea, sizer, "  (empty)", nullptr, false, nullptr, ROW_LEAF,
+            AddMenuItem(m_subScrollArea, sizer, _("  (empty)"), nullptr, false, nullptr, ROW_LEAF,
                         ID_CATEGORY_NONE);
             m_subMenuModules.push_back(nullptr);
         }
@@ -647,7 +639,7 @@ void StartMenu::BuildSubMenuContent(RowKind kind, CategoryId categoryId) {
             ++shown;
         }
         if (shown == 0) {
-            AddMenuItem(m_subScrollArea, sizer, "  (no recent items)", nullptr, false, nullptr,
+            AddMenuItem(m_subScrollArea, sizer, _("  (no recent items)"), nullptr, false, nullptr,
                         ROW_LEAF, ID_CATEGORY_NONE);
             m_subMenuModules.push_back(nullptr);
         }
@@ -759,14 +751,14 @@ void StartMenu::CreateMenuContent() {
                     catIcon.IsOk() ? &catIcon : nullptr, ROW_CATEGORY_FOLDER, cat.id);
     }
     addSep();
-    addPseudo("Recent files", iconRecent.IsOk() ? &iconRecent : nullptr, ROW_RECENT_FOLDER);
-    addPseudo("Trash", iconTrash.IsOk() ? &iconTrash : nullptr, ROW_LEAF);
+    addPseudo(_("Recent files"), iconRecent.IsOk() ? &iconRecent : nullptr, ROW_RECENT_FOLDER);
+    addPseudo(_("Trash"), iconTrash.IsOk() ? &iconTrash : nullptr, ROW_PSEUDO_TRASH);
     addSep();
     addModule(findByName("console"));
     addModule(findByName("controlpanel"));
     addModule(findByName("registry"));
     addSep();
-    addPseudo("Exit", iconExit.IsOk() ? &iconExit : nullptr, ROW_LEAF);
+    addPseudo(_("Exit"), iconExit.IsOk() ? &iconExit : nullptr, ROW_PSEUDO_EXIT);
 
     m_scrollArea->SetSizer(sizer);
     m_scrollArea->Layout();

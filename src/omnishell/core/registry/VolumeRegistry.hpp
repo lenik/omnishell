@@ -1,20 +1,22 @@
 #ifndef OMNISHELL_CORE_VOLUME_REGISTRY_HPP
 #define OMNISHELL_CORE_VOLUME_REGISTRY_HPP
 
-#include "IRegistry.hpp"
+#include "AbstractRegistry.hpp"
+#include "RegistryPath.hpp"
 
 #include <bas/volume/VolumeFile.hpp>
 
 #include <map>
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace os {
 
 /**
- * Registry tree on a Volume: root path + segments as dirs, leaf ".json" files (JSON string body).
+ * Dual-layout registry on a Volume (same key rules as LocalRegistry: '/' = path, '.' = JSON object).
  */
-class VolumeRegistry : public IRegistry {
+class VolumeRegistry : public AbstractRegistry {
   public:
     explicit VolumeRegistry(VolumeFile root);
 
@@ -37,11 +39,13 @@ class VolumeRegistry : public IRegistry {
 
     void loadFromVolume();
     bool writeAllToVolume() const;
-    std::unique_ptr<VolumeFile> fileForKey(const std::string& key) const;
+    std::unique_ptr<VolumeFile> fileForDual(const reg::DualPathResolution& r) const;
+
+    void syncDualFileForGroup(const reg::DualPathResolution& sample);
+    void collectKeysForGroup(const reg::DualPathResolution& sample,
+                             std::map<std::vector<std::string>, std::string>& out) const;
 
     VolumeFile m_root;
-    mutable bool m_loaded{false};
-    mutable std::map<std::string, std::string> m_data;
 };
 
 } // namespace os

@@ -49,7 +49,13 @@ protected:
     void OnLeaveWindow(wxMouseEvent& event);
     void OnSubMenuLeaveWindow(wxMouseEvent& event);
 
-    enum RowKind { ROW_LEAF, ROW_CATEGORY_FOLDER, ROW_RECENT_FOLDER };
+    enum RowKind {
+        ROW_LEAF,
+        ROW_CATEGORY_FOLDER,
+        ROW_RECENT_FOLDER,
+        ROW_PSEUDO_TRASH,
+        ROW_PSEUDO_EXIT,
+    };
     struct MenuRow { wxWindow* row; ModulePtr module; RowKind kind; CategoryId categoryId; };
 
     void FilterModules(const std::string& searchText);

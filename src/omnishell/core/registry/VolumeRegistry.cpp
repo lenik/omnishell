@@ -1,110 +1,32 @@
 #include "VolumeRegistry.hpp"
 
+#include "RegistryDocument.hpp"
 #include "RegistryKeyUtil.hpp"
 #include "RegistryValueIo.hpp"
 
 #include <wx/log.h>
 
+#include <boost/json.hpp>
+
 #include <algorithm>
 #include <cctype>
+#include <functional>
 
 namespace os {
 
 namespace {
 
-std::vector<std::string> splitKey(const std::string& s) {
-    std::vector<std::string> out;
-    size_t start = 0;
-    while (start < s.size()) {
-        size_t dot = s.find('.', start);
-        if (dot == std::string::npos) {
-            out.push_back(s.substr(start));
-            break;
-        }
-        out.push_back(s.substr(start, dot - start));
-        start = dot + 1;
-    }
-    return out;
-}
-
-std::string keyToRelPath(const std::string& key) {
-    auto parts = splitKey(key);
-    if (parts.empty())
-        return "";
+std::string dualToRelPath(const reg::DualPathResolution& r) {
     std::string rel;
-    for (size_t i = 0; i + 1 < parts.size(); ++i)
-        rel += parts[i] + "/";
-    rel += parts.back() + ".json";
+    for (const auto& d : r.dirSegments) {
+        if (!rel.empty())
+            rel += '/';
+        rel += d;
+    }
+    if (!rel.empty())
+        rel += '/';
+    rel += r.fileStem + ".json";
     return rel;
-}
-
-std::string escapeJson(const std::string& in) {
-    std::string out;
-    for (char c : in) {
-        switch (c) {
-        case '\\':
-            out += "\\\\";
-            break;
-        case '"':
-            out += "\\\"";
-            break;
-        case '\n':
-            out += "\\n";
-            break;
-        case '\r':
-            out += "\\r";
-            break;
-        case '\t':
-            out += "\\t";
-            break;
-        default:
-            out += c;
-        }
-    }
-    return out;
-}
-
-std::string parseJsonStringLiteral(std::string_view s) {
-    while (!s.empty() && std::isspace(static_cast<unsigned char>(s.front())))
-        s.remove_prefix(1);
-    while (!s.empty() && std::isspace(static_cast<unsigned char>(s.back())))
-        s.remove_suffix(1);
-    if (s.empty())
-        return "";
-    if (s.front() != '"')
-        return std::string(s);
-    std::string out;
-    for (size_t i = 1; i < s.size(); ++i) {
-        char c = s[i];
-        if (c == '"')
-            break;
-        if (c == '\\' && i + 1 < s.size()) {
-            ++i;
-            switch (s[i]) {
-            case 'n':
-                out += '\n';
-                break;
-            case 'r':
-                out += '\r';
-                break;
-            case 't':
-                out += '\t';
-                break;
-            case '\\':
-                out += '\\';
-                break;
-            case '"':
-                out += '"';
-                break;
-            default:
-                out += s[i];
-                break;
-            }
-        } else {
-            out += c;
-        }
-    }
-    return out;
 }
 
 bool endsWithJson(std::string_view n) {
@@ -122,11 +44,77 @@ void VolumeRegistry::ensureLoaded() const {
     const_cast<VolumeRegistry*>(this)->m_loaded = true;
 }
 
+void VolumeRegistry::collectKeysForGroup(const reg::DualPathResolution& sample,
+                                         std::map<std::vector<std::string>, std::string>& out) const {
+    out.clear();
+    for (const auto& kv : m_data) {
+        reg::DualPathResolution r;
+        if (!reg::resolveDualPath(kv.first, r))
+            continue;
+        if (r.dirSegments != sample.dirSegments || r.fileStem != sample.fileStem)
+            continue;
+        out[r.objectPath] = kv.second;
+    }
+}
+
+std::unique_ptr<VolumeFile> VolumeRegistry::fileForDual(const reg::DualPathResolution& r) const {
+    std::string rel = dualToRelPath(r);
+    if (rel.empty())
+        return nullptr;
+    return m_root.resolve(rel);
+}
+
+void VolumeRegistry::syncDualFileForGroup(const reg::DualPathResolution& sample) {
+    std::map<std::vector<std::string>, std::string> leaves;
+    collectKeysForGroup(sample, leaves);
+
+    auto f = fileForDual(sample);
+    if (!f) {
+        wxLogWarning("VolumeRegistry: cannot resolve path for sync");
+        return;
+    }
+
+    if (leaves.empty()) {
+        f->removeFile();
+        return;
+    }
+
+    bool hasNested = false;
+    for (const auto& e : leaves) {
+        if (!e.first.empty()) {
+            hasNested = true;
+            break;
+        }
+    }
+
+    boost::json::value doc;
+    if (!hasNested && leaves.size() == 1 && leaves.begin()->first.empty()) {
+        doc = boost::json::value(leaves.begin()->second);
+    } else {
+        doc = boost::json::object{};
+        for (const auto& e : leaves) {
+            if (!e.first.empty())
+                reg::setNestedString(doc, e.first, e.second);
+        }
+    }
+
+    if (!f->createParentDirectories()) {
+        wxLogWarning("VolumeRegistry: createParentDirectories failed");
+        return;
+    }
+    std::string body = reg::serializeJsonPretty(doc);
+    try {
+        f->writeFileString(body, "UTF-8");
+    } catch (...) {
+        wxLogWarning("VolumeRegistry: write failed");
+    }
+}
+
 void VolumeRegistry::loadFromVolume() {
     m_data.clear();
 
     std::function<void(const VolumeFile&, const std::string&)> walk;
-    walk = [&](const VolumeFile& dir, const std::string& prefix) {
+    walk = [&](const VolumeFile& dir, const std::string& slashPrefix) {
         std::vector<std::unique_ptr<FileStatus>> list;
         dir.readDir(list, false);
         for (const auto& es : list) {
@@ -136,17 +124,36 @@ void VolumeRegistry::loadFromVolume() {
                 auto sub = dir.resolve(es->name);
                 if (sub) {
                     std::string next =
-                        prefix.empty() ? std::string(es->name) : prefix + "." + std::string(es->name);
+                        slashPrefix.empty() ? std::string(es->name) : slashPrefix + "/" + std::string(es->name);
                     walk(*sub, next);
                 }
             } else if (endsWithJson(es->name)) {
                 std::string name = es->name;
                 std::string stem = name.substr(0, name.size() - 5);
-                std::string key = prefix.empty() ? stem : prefix + "." + stem;
-                auto f = dir.resolve(es->name);
-                if (f && f->isFile()) {
+                std::string dualBase = slashPrefix.empty() ? stem : slashPrefix + "/" + stem;
+                auto vf = dir.resolve(es->name);
+                if (vf && vf->isFile()) {
                     try {
-                        m_data[key] = parseJsonStringLiteral(f->readFileString("UTF-8"));
+                        std::string body = vf->readFileString("UTF-8");
+                        boost::json::value rootVal = reg::parseJsonOrStringBody(body);
+                        if (reg::isScalarStringFile(rootVal)) {
+                            m_data[dualBase] = std::string(rootVal.as_string().c_str());
+                        } else if (rootVal.is_object()) {
+                            std::function<void(const boost::json::object&, const std::string&)> flatten;
+                            flatten = [&](const boost::json::object& o, const std::string& dotPath) {
+                                for (const auto& it : o) {
+                                    const std::string k(it.key());
+                                    std::string nextPath = dotPath.empty() ? k : dotPath + "." + k;
+                                    if (it.value().is_object()) {
+                                        flatten(it.value().as_object(), nextPath);
+                                    } else if (it.value().is_string()) {
+                                        m_data[dualBase + "." + nextPath] =
+                                            std::string(it.value().as_string().c_str());
+                                    }
+                                }
+                            };
+                            flatten(rootVal.as_object(), "");
+                        }
                     } catch (...) {
                     }
                 }
@@ -161,39 +168,30 @@ void VolumeRegistry::loadFromVolume() {
     }
 
     if (m_data.empty()) {
-        m_data["System.OS.Name"] = "Omnishell";
-        m_data["System.OS.Version"] = "1.1.1";
-        m_data["User.Name"] = "Guest";
-        m_data["User.Role"] = "Guest";
+        m_data["System/OS/Name"] = "Omnishell";
+        m_data["System/OS/Version"] = "1.1.1";
+        m_data["User/Name"] = "Guest";
+        m_data["User/Role"] = "Guest";
         if (!writeAllToVolume())
             wxLogWarning("VolumeRegistry: seed write failed");
         else
             wxLogInfo("VolumeRegistry: seeded defaults (%zu entries)", m_data.size());
-    } else if (!m_data.empty()) {
+    } else {
         wxLogInfo("VolumeRegistry: loaded %zu entries from volume", m_data.size());
     }
 }
 
-std::unique_ptr<VolumeFile> VolumeRegistry::fileForKey(const std::string& key) const {
-    std::string rel = keyToRelPath(key);
-    if (rel.empty())
-        return nullptr;
-    return m_root.resolve(rel);
-}
-
 bool VolumeRegistry::writeAllToVolume() const {
+    std::map<std::pair<std::vector<std::string>, std::string>, bool> seen;
     for (const auto& kv : m_data) {
-        auto f = fileForKey(kv.first);
-        if (!f)
-            return false;
-        if (!f->createParentDirectories())
-            return false;
-        std::string body = "\"" + escapeJson(kv.second) + "\"";
-        try {
-            f->writeFileString(body, "UTF-8");
-        } catch (...) {
-            return false;
-        }
+        reg::DualPathResolution r;
+        if (!reg::resolveDualPath(kv.first, r))
+            continue;
+        auto gk = std::make_pair(r.dirSegments, r.fileStem);
+        if (seen.count(gk))
+            continue;
+        seen[gk] = true;
+        const_cast<VolumeRegistry*>(this)->syncDualFileForGroup(r);
     }
     return true;
 }
@@ -213,12 +211,12 @@ bool VolumeRegistry::save() const {
 
 std::vector<std::string> VolumeRegistry::list(const std::string& node_key, bool full_key) const {
     ensureLoaded();
-    return reg::listChildKeys(m_data, node_key, full_key);
+    return reg::listChildKeys(m_data, reg::normalizeDualLookupKey(node_key), full_key);
 }
 
 reg::variant_t VolumeRegistry::getVariant(const std::string& key) const {
     ensureLoaded();
-    auto it = m_data.find(key);
+    auto it = m_data.find(reg::normalizeDualLookupKey(key));
     if (it == m_data.end())
         return std::nullopt;
     return reg::parseValue(it->second);
@@ -226,58 +224,81 @@ reg::variant_t VolumeRegistry::getVariant(const std::string& key) const {
 
 void VolumeRegistry::setVariant(const std::string& key, reg::variant_t value) {
     ensureLoaded();
+    const std::string nk = reg::normalizeDualLookupKey(key);
+    reg::DualPathResolution r;
+    if (!reg::resolveDualPath(nk, r))
+        return;
+
     reg::variant_t old;
-    if (auto it = m_data.find(key); it != m_data.end())
+    if (auto it = m_data.find(nk); it != m_data.end())
         old = reg::parseValue(it->second);
 
     if (!value.has_value()) {
-        if (m_data.erase(key)) {
-            auto f = fileForKey(key);
-            if (f)
-                f->removeFile();
-            emitChanged(key, std::nullopt, old);
+        if (m_data.erase(nk)) {
+            syncDualFileForGroup(r);
+            emitChanged(nk, std::nullopt, old);
         }
         return;
     }
-    m_data[key] = reg::valueToString(*value);
-    emitChanged(key, value, old);
+    m_data[nk] = reg::valueToString(*value);
+    syncDualFileForGroup(r);
+    emitChanged(nk, value, old);
 }
 
 bool VolumeRegistry::has(const std::string& key) const {
     ensureLoaded();
-    return m_data.find(key) != m_data.end();
+    return m_data.find(reg::normalizeDualLookupKey(key)) != m_data.end();
 }
 
 bool VolumeRegistry::remove(const std::string& key) {
     ensureLoaded();
-    auto it = m_data.find(key);
+    const std::string nk = reg::normalizeDualLookupKey(key);
+    reg::DualPathResolution r;
+    if (!reg::resolveDualPath(nk, r))
+        return false;
+    auto it = m_data.find(nk);
     if (it == m_data.end())
         return false;
     reg::variant_t oldv = reg::parseValue(it->second);
     m_data.erase(it);
-    auto f = fileForKey(key);
-    if (f)
-        f->removeFile();
-    emitChanged(key, std::nullopt, oldv);
+    syncDualFileForGroup(r);
+    emitChanged(nk, std::nullopt, oldv);
     return true;
 }
 
 bool VolumeRegistry::delTree(const std::string& key) {
     ensureLoaded();
-    std::vector<std::string> keys = reg::keysForDelTree(m_data, key);
+    std::vector<std::string> keys =
+        reg::keysForDelTree(m_data, reg::normalizeDualLookupKey(key));
     if (keys.empty())
         return false;
+    std::vector<reg::DualPathResolution> groups;
+    for (const auto& k : keys) {
+        reg::DualPathResolution r;
+        if (reg::resolveDualPath(k, r))
+            groups.push_back(std::move(r));
+    }
     for (const auto& k : keys) {
         auto it = m_data.find(k);
         if (it == m_data.end())
             continue;
         reg::variant_t oldv = reg::parseValue(it->second);
         m_data.erase(it);
-        auto f = fileForKey(k);
-        if (f)
-            f->removeFile();
         emitChanged(k, std::nullopt, oldv);
     }
+    std::sort(groups.begin(), groups.end(),
+              [](const reg::DualPathResolution& a, const reg::DualPathResolution& b) {
+                  if (a.dirSegments != b.dirSegments)
+                      return a.dirSegments < b.dirSegments;
+                  return a.fileStem < b.fileStem;
+              });
+    groups.erase(std::unique(groups.begin(), groups.end(),
+                             [](const reg::DualPathResolution& a, const reg::DualPathResolution& b) {
+                                 return a.dirSegments == b.dirSegments && a.fileStem == b.fileStem;
+                             }),
+                 groups.end());
+    for (const auto& r : groups)
+        syncDualFileForGroup(r);
     return true;
 }
 

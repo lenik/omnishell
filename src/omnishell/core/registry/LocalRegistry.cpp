@@ -1,11 +1,15 @@
 #include "LocalRegistry.hpp"
 
+#include "RegistryDocument.hpp"
 #include "RegistryKeyUtil.hpp"
 #include "RegistryValueIo.hpp"
 
 #include <wx/app.h>
 #include <wx/log.h>
 
+#include <boost/json.hpp>
+
+#include <algorithm>
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
@@ -16,101 +20,21 @@ namespace fs = std::filesystem;
 
 namespace {
 
-std::vector<std::string> splitKey(const std::string& s) {
-    std::vector<std::string> out;
-    size_t start = 0;
-    while (start < s.size()) {
-        size_t dot = s.find('.', start);
-        if (dot == std::string::npos) {
-            out.push_back(s.substr(start));
-            break;
-        }
-        out.push_back(s.substr(start, dot - start));
-        start = dot + 1;
-    }
-    return out;
-}
-
-std::string escapeJson(const std::string& in) {
-    std::string out;
-    out.reserve(in.size() + 8);
-    for (char c : in) {
-        switch (c) {
-        case '\\':
-            out += "\\\\";
-            break;
-        case '"':
-            out += "\\\"";
-            break;
-        case '\n':
-            out += "\\n";
-            break;
-        case '\r':
-            out += "\\r";
-            break;
-        case '\t':
-            out += "\\t";
-            break;
-        default:
-            out += c;
-        }
-    }
-    return out;
-}
-
-std::string parseJsonStringLiteral(std::string_view s) {
-    while (!s.empty() && (s.front() == ' ' || s.front() == '\t' || s.front() == '\n' || s.front() == '\r'))
-        s.remove_prefix(1);
-    while (!s.empty() && (s.back() == ' ' || s.back() == '\t' || s.back() == '\n' || s.back() == '\r'))
-        s.remove_suffix(1);
-    if (s.empty())
-        return "";
-    if (s.front() != '"')
-        return std::string(s);
-
-    std::string out;
-    for (size_t i = 1; i < s.size(); ++i) {
-        char c = s[i];
-        if (c == '"')
-            break;
-        if (c == '\\' && i + 1 < s.size()) {
-            ++i;
-            switch (s[i]) {
-            case 'n':
-                out += '\n';
-                break;
-            case 'r':
-                out += '\r';
-                break;
-            case 't':
-                out += '\t';
-                break;
-            case '\\':
-                out += '\\';
-                break;
-            case '"':
-                out += '"';
-                break;
-            default:
-                out += s[i];
-                break;
-            }
-        } else {
-            out += c;
-        }
-    }
-    return out;
-}
-
-fs::path keyToFilePath(const fs::path& root, const std::string& key) {
-    auto parts = splitKey(key);
-    if (parts.empty())
-        return root;
+fs::path dualToFsPath(const fs::path& root, const reg::DualPathResolution& r) {
     fs::path p = root;
-    for (size_t i = 0; i + 1 < parts.size(); ++i)
-        p /= parts[i];
-    p /= parts.back() + ".json";
+    for (const auto& d : r.dirSegments)
+        p /= d;
+    p /= r.fileStem + ".json";
     return p;
+}
+
+std::string readWholeFile(const fs::path& path) {
+    std::ifstream in(path);
+    if (!in.is_open())
+        return "";
+    std::stringstream buffer;
+    buffer << in.rdbuf();
+    return buffer.str();
 }
 
 bool isDirEmpty(const fs::path& dir) {
@@ -121,15 +45,6 @@ bool isDirEmpty(const fs::path& dir) {
     if (ec)
         return true;
     return it == fs::directory_iterator{};
-}
-
-std::string readWholeFile(const fs::path& path) {
-    std::ifstream in(path);
-    if (!in.is_open())
-        return "";
-    std::stringstream buffer;
-    buffer << in.rdbuf();
-    return buffer.str();
 }
 
 } // namespace
@@ -160,6 +75,60 @@ std::string LocalRegistry::getLegacyRegistryJsonPath() const {
     fs::path base = home ? fs::path(home) : fs::path{};
     fs::path dir = base / ".config" / getAppName();
     return (dir / "registry.json").string();
+}
+
+void LocalRegistry::collectKeysForGroup(const reg::DualPathResolution& sample,
+                                        std::map<std::vector<std::string>, std::string>& out) const {
+    out.clear();
+    for (const auto& kv : m_data) {
+        reg::DualPathResolution r;
+        if (!reg::resolveDualPath(kv.first, r))
+            continue;
+        if (r.dirSegments != sample.dirSegments || r.fileStem != sample.fileStem)
+            continue;
+        out[r.objectPath] = kv.second;
+    }
+}
+
+void LocalRegistry::syncDualFileForGroup(const reg::DualPathResolution& sample) {
+    fs::path root = getRegistryRootDir();
+    std::map<std::vector<std::string>, std::string> leaves;
+    collectKeysForGroup(sample, leaves);
+
+    fs::path p = dualToFsPath(root, sample);
+    std::error_code ec;
+
+    if (leaves.empty()) {
+        fs::remove(p, ec);
+        return;
+    }
+
+    bool hasNested = false;
+    for (const auto& e : leaves) {
+        if (!e.first.empty()) {
+            hasNested = true;
+            break;
+        }
+    }
+
+    boost::json::value doc;
+    if (!hasNested && leaves.size() == 1 && leaves.begin()->first.empty()) {
+        doc = boost::json::value(leaves.begin()->second);
+    } else {
+        doc = boost::json::object{};
+        for (const auto& e : leaves) {
+            if (!e.first.empty())
+                reg::setNestedString(doc, e.first, e.second);
+        }
+    }
+
+    fs::create_directories(p.parent_path(), ec);
+    std::ofstream out(p);
+    if (!out.is_open()) {
+        wxLogWarning("LocalRegistry: cannot write %s", p.string());
+        return;
+    }
+    out << reg::serializeJsonPretty(doc);
 }
 
 void LocalRegistry::ensureLoaded() {
@@ -194,19 +163,38 @@ void LocalRegistry::loadFromDiskOrMigrate() {
 
     if (fs::exists(root)) {
         std::function<void(const fs::path&, const std::string&)> walk;
-        walk = [&](const fs::path& dir, const std::string& prefix) {
+        walk = [&](const fs::path& dir, const std::string& slashPrefix) {
             std::error_code ec;
             for (const auto& e : fs::directory_iterator(dir, ec)) {
                 if (ec)
                     break;
                 if (e.is_directory()) {
                     std::string seg = e.path().filename().string();
-                    std::string next = prefix.empty() ? seg : prefix + "." + seg;
+                    std::string next = slashPrefix.empty() ? seg : slashPrefix + "/" + seg;
                     walk(e.path(), next);
                 } else if (e.path().extension() == ".json") {
                     std::string stem = e.path().stem().string();
-                    std::string key = prefix.empty() ? stem : prefix + "." + stem;
-                    m_data[key] = parseJsonStringLiteral(readWholeFile(e.path()));
+                    std::string dualBase = slashPrefix.empty() ? stem : slashPrefix + "/" + stem;
+                    std::string body = readWholeFile(e.path());
+                    boost::json::value rootVal = reg::parseJsonOrStringBody(body);
+                    if (reg::isScalarStringFile(rootVal)) {
+                        m_data[dualBase] = std::string(rootVal.as_string().c_str());
+                    } else if (rootVal.is_object()) {
+                        std::function<void(const boost::json::object&, const std::string&)> flatten;
+                        flatten = [&](const boost::json::object& o, const std::string& dotPath) {
+                            for (const auto& it : o) {
+                                const std::string k(it.key());
+                                std::string nextPath = dotPath.empty() ? k : dotPath + "." + k;
+                                if (it.value().is_object()) {
+                                    flatten(it.value().as_object(), nextPath);
+                                } else if (it.value().is_string()) {
+                                    m_data[dualBase + "." + nextPath] =
+                                        std::string(it.value().as_string().c_str());
+                                }
+                            }
+                        };
+                        flatten(rootVal.as_object(), "");
+                    }
                 }
             }
         };
@@ -214,10 +202,10 @@ void LocalRegistry::loadFromDiskOrMigrate() {
     }
 
     if (m_data.empty()) {
-        m_data["System.OS.Name"] = "Omnishell";
-        m_data["System.OS.Version"] = "1.1.1";
-        m_data["User.Name"] = "Guest";
-        m_data["User.Role"] = "Guest";
+        m_data["System/OS/Name"] = "Omnishell";
+        m_data["System/OS/Version"] = "1.1.1";
+        m_data["User/Name"] = "Guest";
+        m_data["User/Role"] = "Guest";
         std::error_code ec;
         fs::create_directories(root, ec);
         writeAllFiles();
@@ -257,7 +245,7 @@ bool LocalRegistry::parseLegacyFlatJsonFile(const std::string& path) {
             break;
         std::string value = json.substr(valStart + 1, valEnd - valStart - 1);
 
-        m_data[key] = value;
+        m_data[reg::migrateLegacyFlatKey(key)] = value;
         pos = valEnd + 1;
     }
 
@@ -277,15 +265,16 @@ bool LocalRegistry::writeAllFiles() {
     std::error_code ec;
     fs::create_directories(root, ec);
 
+    std::map<std::pair<std::vector<std::string>, std::string>, bool> seen;
     for (const auto& kv : m_data) {
-        fs::path p = keyToFilePath(root, kv.first);
-        fs::create_directories(p.parent_path(), ec);
-        std::ofstream out(p);
-        if (!out.is_open()) {
-            wxLogWarning("LocalRegistry: cannot write %s", p.string());
-            return false;
-        }
-        out << '"' << escapeJson(kv.second) << '"';
+        reg::DualPathResolution r;
+        if (!reg::resolveDualPath(kv.first, r))
+            continue;
+        auto gk = std::make_pair(r.dirSegments, r.fileStem);
+        if (seen.count(gk))
+            continue;
+        seen[gk] = true;
+        syncDualFileForGroup(r);
     }
     return true;
 }
@@ -297,12 +286,12 @@ bool LocalRegistry::save() const {
 
 std::vector<std::string> LocalRegistry::list(const std::string& node_key, bool full_key) const {
     const_cast<LocalRegistry*>(this)->ensureLoaded();
-    return reg::listChildKeys(m_data, node_key, full_key);
+    return reg::listChildKeys(m_data, reg::normalizeDualLookupKey(node_key), full_key);
 }
 
 reg::variant_t LocalRegistry::getVariant(const std::string& key) const {
     const_cast<LocalRegistry*>(this)->ensureLoaded();
-    auto it = m_data.find(key);
+    auto it = m_data.find(reg::normalizeDualLookupKey(key));
     if (it == m_data.end())
         return std::nullopt;
     return reg::parseValue(it->second);
@@ -310,63 +299,89 @@ reg::variant_t LocalRegistry::getVariant(const std::string& key) const {
 
 void LocalRegistry::setVariant(const std::string& key, reg::variant_t value) {
     ensureLoaded();
+    const std::string nk = reg::normalizeDualLookupKey(key);
+    reg::DualPathResolution r;
+    if (!reg::resolveDualPath(nk, r)) {
+        wxLogWarning("LocalRegistry: invalid key (Dual path): %s", key);
+        return;
+    }
+
     reg::variant_t old;
-    if (auto it = m_data.find(key); it != m_data.end())
+    if (auto it = m_data.find(nk); it != m_data.end())
         old = reg::parseValue(it->second);
     else
         old = std::nullopt;
 
     if (!value.has_value()) {
-        if (m_data.erase(key)) {
-            fs::path p = keyToFilePath(getRegistryRootDir(), key);
-            std::error_code ec;
-            fs::remove(p, ec);
-            emitChanged(key, std::nullopt, old);
+        if (m_data.erase(nk)) {
+            syncDualFileForGroup(r);
+            emitChanged(nk, std::nullopt, old);
         }
         return;
     }
 
-    std::string s = reg::valueToString(*value);
-    m_data[key] = std::move(s);
-    emitChanged(key, value, old);
+    m_data[nk] = reg::valueToString(*value);
+    syncDualFileForGroup(r);
+    emitChanged(nk, value, old);
 }
 
 bool LocalRegistry::has(const std::string& key) const {
     const_cast<LocalRegistry*>(this)->ensureLoaded();
-    return m_data.find(key) != m_data.end();
+    return m_data.find(reg::normalizeDualLookupKey(key)) != m_data.end();
 }
 
 bool LocalRegistry::remove(const std::string& key) {
     ensureLoaded();
-    auto it = m_data.find(key);
+    const std::string nk = reg::normalizeDualLookupKey(key);
+    reg::DualPathResolution r;
+    if (!reg::resolveDualPath(nk, r))
+        return false;
+    auto it = m_data.find(nk);
     if (it == m_data.end())
         return false;
     reg::variant_t old = reg::parseValue(it->second);
     m_data.erase(it);
-    fs::path p = keyToFilePath(getRegistryRootDir(), key);
-    std::error_code ec;
-    fs::remove(p, ec);
-    emitChanged(key, std::nullopt, old);
+    syncDualFileForGroup(r);
+    emitChanged(nk, std::nullopt, old);
     return true;
 }
 
 bool LocalRegistry::delTree(const std::string& key) {
     ensureLoaded();
-    std::vector<std::string> keys = reg::keysForDelTree(m_data, key);
+    std::vector<std::string> keys =
+        reg::keysForDelTree(m_data, reg::normalizeDualLookupKey(key));
     if (keys.empty())
         return false;
-    fs::path root = getRegistryRootDir();
+    std::vector<reg::DualPathResolution> groups;
+    for (const auto& k : keys) {
+        reg::DualPathResolution r;
+        if (reg::resolveDualPath(k, r))
+            groups.push_back(std::move(r));
+    }
     for (const auto& k : keys) {
         auto it = m_data.find(k);
         if (it == m_data.end())
             continue;
         reg::variant_t old = reg::parseValue(it->second);
         m_data.erase(it);
-        fs::path p = keyToFilePath(root, k);
-        std::error_code ec;
-        fs::remove(p, ec);
         emitChanged(k, std::nullopt, old);
     }
+    auto uniq = [](std::vector<reg::DualPathResolution>& g) {
+        std::sort(g.begin(), g.end(),
+                  [](const reg::DualPathResolution& a, const reg::DualPathResolution& b) {
+                      if (a.dirSegments != b.dirSegments)
+                          return a.dirSegments < b.dirSegments;
+                      return a.fileStem < b.fileStem;
+                  });
+        g.erase(std::unique(g.begin(), g.end(),
+                            [](const reg::DualPathResolution& a, const reg::DualPathResolution& b) {
+                                return a.dirSegments == b.dirSegments && a.fileStem == b.fileStem;
+                            }),
+                g.end());
+    };
+    uniq(groups);
+    for (const auto& r : groups)
+        syncDualFileForGroup(r);
     return true;
 }
 

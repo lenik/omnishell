@@ -1,0 +1,8 @@
+src/omnishell/shell/Shell.cpp
+src/omnishell/shell/StartMenu.cpp
+src/omnishell/shell/Taskbar.cpp
+src/omnishell/mod/controlpanel/ControlPanelBody.cpp
+src/omnishell/mod/mediaplayer/MediaPlayerBody.cpp
+src/omnishell/wx/WxChecked.cpp
+src/omnishell/mod/passwordmanager/LoginDialog.cpp
+src/omnishell/mod/passwordmanager/PasswordManager.cpp

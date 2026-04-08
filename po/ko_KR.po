@@ -1,0 +1,267 @@
+# ko_KR translations for omnishell.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: omnishell\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-04-07 07:59+0800\n"
+"PO-Revision-Date: 2026-04-07 00:00+0000\n"
+"Last-Translator: OmniShell <>\n"
+"Language-Team: ko_KR <>\n"
+"Language: ko_KR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: src/omnishell/shell/Shell.cpp:97
+msgid "Module is not enabled"
+msgstr "모듈이 사용 설정되어 있지 않습니다"
+
+#: src/omnishell/shell/Shell.cpp:97 src/omnishell/shell/Shell.cpp:114
+msgid "Error"
+msgstr "오류"
+
+#: src/omnishell/shell/Shell.cpp:113
+#, c-format
+msgid "Failed to launch %s: %s"
+msgstr "%s을(를) 시작하지 못했습니다: %s"
+
+#: src/omnishell/shell/StartMenu.cpp:123
+msgid "Search programs..."
+msgstr "프로그램 검색..."
+
+#: src/omnishell/shell/StartMenu.cpp:161
+msgid "All programs"
+msgstr "모든 프로그램"
+
+#: src/omnishell/shell/StartMenu.cpp:616
+msgid "  (empty)"
+msgstr "  (비어 있음)"
+
+#: src/omnishell/shell/StartMenu.cpp:642
+msgid "  (no recent items)"
+msgstr "  (최근 항목 없음)"
+
+#: src/omnishell/shell/StartMenu.cpp:754
+msgid "Recent files"
+msgstr "최근 파일"
+
+#: src/omnishell/shell/StartMenu.cpp:755
+msgid "Trash"
+msgstr "휴지통"
+
+#: src/omnishell/shell/StartMenu.cpp:761
+msgid "Exit"
+msgstr "종료"
+
+#: src/omnishell/shell/Taskbar.cpp:59
+msgid "Start"
+msgstr "시작"
+
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:29
+msgid "Categories:"
+msgstr "범주:"
+
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:35
+msgid "Module Manager"
+msgstr "모듈 관리자"
+
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:35
+msgid "Manage installed modules"
+msgstr "설치된 모듈 관리"
+
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:36
+msgid "System Settings"
+msgstr "시스템 설정"
+
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:36
+msgid "Configure system options"
+msgstr "시스템 옵션 구성"
+
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:37
+msgid "User Configuration"
+msgstr "사용자 구성"
+
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:37
+msgid "User preferences"
+msgstr "사용자 기본 설정"
+
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:38
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:252
+msgid "Desktop"
+msgstr "바탕 화면"
+
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:38
+msgid "Desktop appearance"
+msgstr "바탕 화면 모양"
+
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:39
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:288
+msgid "Display"
+msgstr "디스플레이"
+
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:39
+msgid "Screen settings"
+msgstr "화면 설정"
+
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:40
+msgid "About"
+msgstr "정보"
+
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:40
+msgid "System information"
+msgstr "시스템 정보"
+
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:58
+msgid "Select a category to view options"
+msgstr "옵션을 보려면 범주를 선택하세요"
+
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:117
+msgid "Installed Modules:"
+msgstr "설치된 모듈:"
+
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:125
+msgid "Name"
+msgstr "이름"
+
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:126
+msgid "Description"
+msgstr "설명"
+
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:127
+msgid "Status"
+msgstr "상태"
+
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:140
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:158
+msgid "Enabled"
+msgstr "사용"
+
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:140
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:158
+msgid "Disabled"
+msgstr "사용 안 함"
+
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:148
+msgid "Enable"
+msgstr "사용"
+
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:150
+msgid "Disable"
+msgstr "사용 안 함"
+
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:152
+msgid "Close"
+msgstr "닫기"
+
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:214
+msgid "System"
+msgstr "시스템"
+
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:219
+#, c-format
+msgid "OS Name: %s"
+msgstr "OS 이름: %s"
+
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:221
+#, c-format
+msgid "OS Version: %s"
+msgstr "OS 버전: %s"
+
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:236
+msgid "User"
+msgstr "사용자"
+
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:241
+#, c-format
+msgid "Name: %s"
+msgstr "이름: %s"
+
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:243
+#, c-format
+msgid "Role: %s"
+msgstr "역할: %s"
+
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:257
+msgid "Background Settings"
+msgstr "배경 설정"
+
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:273
+msgid "Arrange Desktop Icons"
+msgstr "바탕 화면 아이콘 정렬"
+
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:295
+#, c-format
+msgid "Resolution: %d x %d"
+msgstr "해상도: %d x %d"
+
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:304
+msgid "About OmniShell"
+msgstr "OmniShell 정보"
+
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:309
+msgid "OmniShell Desktop Environment"
+msgstr "OmniShell 데스크톱 환경"
+
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:311
+msgid "Version: 1.1.1"
+msgstr "버전: 1.1.1"
+
+#: src/omnishell/mod/mediaplayer/MediaPlayerBody.cpp:280
+msgid "wxMediaCtrl is not available (link wxWidgets media library)."
+msgstr "wxMediaCtrl을(를) 사용할 수 없습니다(wxWidgets 미디어 라이브러리를 연결하세요)."
+
+#: src/omnishell/mod/mediaplayer/MediaPlayerBody.cpp:310
+msgid "Play"
+msgstr "재생"
+
+#: src/omnishell/mod/mediaplayer/MediaPlayerBody.cpp:311
+msgid "Pause"
+msgstr "일시 정지"
+
+#: src/omnishell/mod/mediaplayer/MediaPlayerBody.cpp:312
+msgid "Stop"
+msgstr "중지"
+
+#: src/omnishell/mod/mediaplayer/MediaPlayerBody.cpp:454
+msgid "Open media"
+msgstr "미디어 열기"
+
+#: src/omnishell/mod/mediaplayer/MediaPlayerBody.cpp:456
+msgid "Audio/Video"
+msgstr "오디오/비디오"
+
+#: src/omnishell/mod/mediaplayer/MediaPlayerBody.cpp:458
+msgid "All files"
+msgstr "모든 파일"
+
+#: src/omnishell/wx/WxChecked.cpp:255
+#, c-format
+msgid ""
+"Unhandled exception in %s\n"
+"\n"
+"%s"
+msgstr ""
+"처리되지 않은 예외(%s)\n"
+"\n"
+"%s"
+
+#: src/omnishell/wx/WxChecked.cpp:261
+#, c-format
+msgid "Unknown exception in %s"
+msgstr "알 수 없는 예외(%s)"
+
+#: src/omnishell/mod/passwordmanager/LoginDialog.cpp:17
+msgid "User name:"
+msgstr "사용자 이름:"
+
+#: src/omnishell/mod/passwordmanager/LoginDialog.cpp:20
+msgid "Password:"
+msgstr "암호:"
+
+#: src/omnishell/mod/passwordmanager/PasswordManager.cpp:20
+msgid "Sign in"
+msgstr "로그인"

@@ -21,7 +21,6 @@ moc_*.h
 .qmake.stash
 .qtc_clangd/
 /AppDir
-/Makefile
 /extern
 /libsf
 build/
@@ -48,4 +47,7 @@ omnishell.layout
 *_test[1-9]
 
 #/third_party
+
+# make l10n-mo default output
+po/mo/
 

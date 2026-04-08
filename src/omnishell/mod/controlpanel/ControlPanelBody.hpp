@@ -37,7 +37,17 @@ class ControlPanelBody : public UIFragment {
     wxListView* m_categoryList{nullptr};
     wxPanel* m_contentPanel{nullptr};
 
+    enum class PanelCategory {
+        ModuleManager,
+        SystemSettings,
+        UserConfiguration,
+        Desktop,
+        Display,
+        About,
+    };
+
     struct Category {
+        PanelCategory id;
         wxString name;
         wxString description;
         int imageIndex;

@@ -1,19 +1,22 @@
 #ifndef OMNISHELL_CORE_JSON_REGISTRY_HPP
 #define OMNISHELL_CORE_JSON_REGISTRY_HPP
 
-#include "IRegistry.hpp"
+#include "AbstractRegistry.hpp"
 
-#include <map>
 #include <string>
 
 namespace os {
 
 /**
- * Single-file flat JSON map { "a.b": "value", ... } (legacy format).
+ * JSON tree registry: both '/' and '.' map into nested JSON. The parent path + .json is the file;
+ * the last slash-separated field (dot-separated) is the object path inside that file.
+ * Example: foo/bar/cat.dog.k -> file <root>/foo/bar.json, { "cat": { "dog": { "k": "..." } } }.
+ *
+ * Root may be a directory (tree of .json files) or a single .json file (its stem is the top name).
  */
-class JsonRegistry : public IRegistry {
+class JsonRegistry : public AbstractRegistry {
   public:
-    explicit JsonRegistry(std::string json_file_path);
+    explicit JsonRegistry(std::string root_path);
 
     bool load() override;
     bool save() const override;
@@ -32,12 +35,18 @@ class JsonRegistry : public IRegistry {
   private:
     void ensureLoaded() const;
 
-    bool parseFlatJson(const std::string& json);
-    bool writeFlatJson() const;
+    bool loadFromDisk();
+    bool writeAllFiles() const;
 
-    std::string m_path;
-    mutable bool m_loaded{false};
-    mutable std::map<std::string, std::string> m_data;
+    void syncJsonFile(const std::string& jsonFileRel);
+    void collectKeysForJsonFile(const std::string& jsonFileRel,
+                                std::map<std::vector<std::string>, std::string>& out) const;
+
+    std::string fileAbsPath(const std::string& jsonFileRel) const;
+
+    std::string m_rootDir;
+    /** If non-empty, only this file (relative name) under m_rootDir is used. */
+    std::string m_singleJsonFile;
 };
 
 } // namespace os

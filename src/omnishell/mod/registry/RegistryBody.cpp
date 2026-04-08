@@ -1,37 +1,94 @@
 #include "RegistryBody.hpp"
 
 #include "../../core/RegistryDb.hpp"
+#include "../../core/registry/RegistryKeyUtil.hpp"
+#include "../../core/registry/RegistryPath.hpp"
 
 #include <wx/listctrl.h>
 #include <wx/splitter.h>
 #include <wx/textdlg.h>
 #include <wx/treectrl.h>
 
+#include <algorithm>
+#include <functional>
 #include <map>
 #include <set>
 
 namespace os {
 
 namespace {
-static std::vector<std::string> splitKey(const std::string& s) {
-    std::vector<std::string> out;
-    size_t start = 0;
-    while (start < s.size()) {
-        size_t dot = s.find('.', start);
-        if (dot == std::string::npos) {
-            out.push_back(s.substr(start));
-            break;
-        }
-        out.push_back(s.substr(start, dot - start));
-        start = dot + 1;
-    }
-    return out;
+
+size_t minPos(size_t a, size_t b) {
+    if (a == std::string::npos)
+        return b;
+    if (b == std::string::npos)
+        return a;
+    return std::min(a, b);
 }
 
-static std::string joinPath(const std::string& base, const std::string& seg) {
-    if (base.empty())
-        return seg;
-    return base + "." + seg;
+std::string firstSeg(const std::string& s) {
+    size_t slash = s.find('/');
+    size_t dot = s.find('.');
+    size_t end = minPos(slash, dot);
+    if (end == std::string::npos)
+        return s;
+    return s.substr(0, end);
+}
+
+void addFolderPrefixes(std::set<std::string>& fp, const std::string& key) {
+    using reg::splitKeyByChar;
+    auto slash = splitKeyByChar(key, '/');
+    if (slash.empty())
+        return;
+    std::string acc;
+    for (size_t i = 0; i + 1 < slash.size(); ++i) {
+        if (i)
+            acc += '/';
+        acc += slash[i];
+        fp.insert(acc);
+    }
+    std::string baseSlash;
+    if (slash.size() >= 2) {
+        for (size_t i = 0; i + 1 < slash.size(); ++i) {
+            if (i)
+                baseSlash += '/';
+            baseSlash += slash[i];
+        }
+    }
+    auto dots = splitKeyByChar(slash.back(), '.');
+    for (size_t j = 0; j + 1 < dots.size(); ++j) {
+        std::string p = baseSlash;
+        if (!p.empty())
+            p += '/';
+        for (size_t k = 0; k <= j; ++k) {
+            if (k)
+                p += '.';
+            p += dots[k];
+        }
+        fp.insert(p);
+    }
+}
+
+std::string parentDir(const std::set<std::string>& s, const std::string& path) {
+    for (size_t i = path.size(); i-- > 0;) {
+        if (path[i] == '/' || path[i] == '.') {
+            std::string p = path.substr(0, i);
+            if (s.count(p))
+                return p;
+        }
+    }
+    return s.count("") ? std::string{""} : std::string{};
+}
+
+std::string childLabel(const std::string& parent, const std::string& path) {
+    if (parent.empty())
+        return firstSeg(path);
+    if (path.size() > parent.size() && path.compare(0, parent.size(), parent) == 0 &&
+        path.size() > parent.size() &&
+        (path[parent.size()] == '/' || path[parent.size()] == '.')) {
+        return firstSeg(path.substr(parent.size() + 1));
+    }
+    return firstSeg(path);
 }
 
 enum {
@@ -115,14 +172,8 @@ void RegistryBody::buildTree() {
     const auto data = RegistryDb::getInstance().snapshotStrings();
     std::set<std::string> folderPaths;
     folderPaths.insert("");
-    for (const auto& kv : data) {
-        auto parts = splitKey(kv.first);
-        std::string path;
-        for (size_t i = 0; i + 1 < parts.size(); ++i) {
-            path = joinPath(path, parts[i]);
-            folderPaths.insert(path);
-        }
-    }
+    for (const auto& kv : data)
+        addFolderPrefixes(folderPaths, kv.first);
 
     std::map<std::string, wxTreeItemId> nodeByPath;
     nodeByPath[""] = root;
@@ -130,24 +181,14 @@ void RegistryBody::buildTree() {
     for (const auto& folderPath : folderPaths) {
         if (folderPath.empty())
             continue;
-        auto parts = splitKey(folderPath);
-        std::string path;
-        wxTreeItemId parent = root;
-        for (const auto& part : parts) {
-            std::string next = joinPath(path, part);
-            if (!folderPaths.count(next))
-                break;
-            auto it = nodeByPath.find(next);
-            if (it == nodeByPath.end()) {
-                wxTreeItemId nid =
-                    m_tree->AppendItem(parent, part, -1, -1, new RegistryTreePathData(next));
-                nodeByPath[next] = nid;
-                parent = nid;
-            } else {
-                parent = it->second;
-            }
-            path = next;
-        }
+        std::string pdir = parentDir(folderPaths, folderPath);
+        auto pit = nodeByPath.find(pdir);
+        if (pit == nodeByPath.end())
+            continue;
+        std::string lbl = childLabel(pdir, folderPath);
+        wxTreeItemId nid =
+            m_tree->AppendItem(pit->second, lbl, -1, -1, new RegistryTreePathData(folderPath));
+        nodeByPath[folderPath] = nid;
     }
 
     m_tree->Expand(root);
@@ -157,41 +198,20 @@ void RegistryBody::populateProperties(const std::string& nodePath) {
     if (!m_list)
         return;
     m_list->DeleteAllItems();
+    m_propertyRowFullPaths.clear();
 
     const auto data = RegistryDb::getInstance().snapshotStrings();
-    const std::string prefix = nodePath.empty() ? "" : (nodePath + ".");
-
-    struct Entry {
-        std::string name;
-        bool hasValue{false};
-        std::string value;
-    };
-    std::map<std::string, Entry> entries;
-
-    for (const auto& kv : data) {
-        const std::string& key = kv.first;
-        if (!prefix.empty()) {
-            if (key.rfind(prefix, 0) != 0)
-                continue;
-        }
-        std::string rest = prefix.empty() ? key : key.substr(prefix.size());
-        if (rest.empty())
-            continue;
-        size_t dot = rest.find('.');
-        std::string child = dot == std::string::npos ? rest : rest.substr(0, dot);
-
-        auto& e = entries[child];
-        e.name = child;
-        if (dot == std::string::npos) {
-            e.hasValue = true;
-            e.value = kv.second;
-        }
-    }
+    const std::string nk = reg::normalizeDualLookupKey(nodePath);
+    std::vector<std::string> kids = reg::listChildKeys(data, nk, true);
 
     long idx = 0;
-    for (const auto& [name, e] : entries) {
+    for (const std::string& fk : kids) {
+        std::string name = childLabel(nk, fk);
+        auto it = data.find(fk);
+        bool leaf = it != data.end();
+        m_propertyRowFullPaths.push_back(fk);
         m_list->InsertItem(idx, name);
-        m_list->SetItem(idx, 1, e.hasValue ? e.value : "(folder)");
+        m_list->SetItem(idx, 1, leaf ? it->second : "(folder)");
         ++idx;
     }
 }
@@ -203,44 +223,38 @@ void RegistryBody::editSelectedProperty() {
     item = m_list->GetNextItem(item, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED);
     if (item == -1)
         return;
+    if (item < 0 || static_cast<size_t>(item) >= m_propertyRowFullPaths.size())
+        return;
 
-    wxString name = m_list->GetItemText(item, 0);
     wxString val = m_list->GetItemText(item, 1);
+    const std::string fullPath = m_propertyRowFullPaths[static_cast<size_t>(item)];
+
     if (val == "(folder)") {
-        const std::string next = m_selectedPath.empty() ? name.ToStdString()
-                                                       : (m_selectedPath + "." + name.ToStdString());
-        wxTreeItemId root = m_tree->GetRootItem();
-        std::vector<std::string> parts = splitKey(next);
-        wxTreeItemId cur = root;
-        for (const auto& p : parts) {
-            wxTreeItemIdValue cookie;
-            wxTreeItemId child = m_tree->GetFirstChild(cur, cookie);
-            bool found = false;
-            while (child.IsOk()) {
-                if (m_tree->GetItemText(child).ToStdString() == p) {
-                    cur = child;
-                    found = true;
-                    break;
-                }
-                child = m_tree->GetNextChild(cur, cookie);
+        std::function<void(wxTreeItemId)> dfs;
+        dfs = [&](wxTreeItemId id) {
+            if (!id.IsOk())
+                return;
+            auto* d = dynamic_cast<RegistryTreePathData*>(m_tree->GetItemData(id));
+            if (d && d->path == fullPath) {
+                m_tree->SelectItem(id);
+                return;
             }
-            if (!found)
-                break;
-        }
-        if (cur.IsOk())
-            m_tree->SelectItem(cur);
+            wxTreeItemIdValue cookie;
+            for (wxTreeItemId ch = m_tree->GetFirstChild(id, cookie); ch.IsOk();
+                 ch = m_tree->GetNextChild(id, cookie)) {
+                dfs(ch);
+            }
+        };
+        dfs(m_tree->GetRootItem());
         return;
     }
-
-    const std::string fullKey =
-        m_selectedPath.empty() ? name.ToStdString() : (m_selectedPath + "." + name.ToStdString());
 
     wxTextEntryDialog dlg(m_frame, "Value:", "Edit Registry Value", val);
     if (dlg.ShowModal() != wxID_OK)
         return;
     wxString newVal = dlg.GetValue();
 
-    RegistryDb::getInstance().set(fullKey, newVal.ToStdString());
+    RegistryDb::getInstance().set(fullPath, newVal.ToStdString());
     RegistryDb::getInstance().save();
     populateProperties(m_selectedPath);
 }
