@@ -23,10 +23,21 @@ fs = import('fs')
 cpp = meson.get_compiler('cpp')
 c = meson.get_compiler('c')
 
-subproject('bas-c')
-subproject('bas-cpp')
-subproject('bas-ui')
-subproject('zash')
+if fs.is_dir('subprojects/bas-c')
+    subproject('bas-c')
+endif
+
+if fs.is_dir('subprojects/bas-cpp')
+    subproject('bas-cpp')
+endif
+
+if fs.is_dir('subprojects/bas-ui')
+    subproject('bas-ui')
+endif
+
+if fs.is_dir('subprojects/zash')
+    subproject('zash')
+endif
 
 bas_c_dep = dependency('bas-c', required: true)
 bas_cpp_dep = dependency('bas-cpp', required: true)
@@ -36,8 +47,18 @@ bas_c_static_dep = dependency('bas-c-static', required: true)
 bas_cpp_static_dep = dependency('bas-cpp-static', required: true)
 bas_ui_static_dep = dependency('bas-ui-static', required: true)
 
-boost_sub = subproject('boost')
-boost_json_dep = boost_sub.get_variable('boost_json_dep')
+if fs.is_dir('subprojects/boost')
+    boost_sub = subproject('boost')
+    boost_json_dep = boost_sub.get_variable('boost_json_dep')
+    boost_dep = declare_dependency(dependencies: [boost_json_dep])
+else
+    boost_dep = dependency(
+        'boost', #
+        modules: ['json'],
+        required: true,
+    )
+endif
+
 curl_dep = dependency('libcurl', required: true)
 date_dep = subproject('date_tz').get_variable('date_dep')
 openssl_dep = dependency('openssl', required: true)
@@ -220,7 +241,7 @@ exe_deps = [
     bas_c_dep,
     bas_cpp_dep,
     bas_ui_dep,
-    boost_json_dep,
+    boost_dep,
     date_dep,
     openssl_dep,
     curl_dep,
@@ -232,7 +253,7 @@ exe_static_deps = [
     bas_c_static_dep,
     bas_cpp_static_dep,
     bas_ui_static_dep,
-    boost_json_dep,
+    boost_dep,
     date_dep,
     openssl_dep,
     curl_dep,
@@ -316,7 +337,7 @@ pkgconfig.generate(
     description: 'omnishell',
     version: meson.project_version(),
     subdirs: 'omnishell',
-    requires: ['bas-c', 'bas-cpp', 'bas-ui', 'boost', 'openssl', 'libcurl'],
+    requires: ['bas-c', 'bas-cpp', 'bas-ui', 'openssl', 'libcurl'],
 )
 
 pkgconfig.generate(
@@ -325,7 +346,7 @@ pkgconfig.generate(
     description: 'omnishell',
     version: meson.project_version(),
     subdirs: 'omnishell',
-    requires: ['bas-c', 'bas-cpp', 'bas-ui', 'boost', 'openssl', 'libcurl'],
+    requires: ['bas-c', 'bas-cpp', 'bas-ui', 'openssl', 'libcurl'],
 )
 
 # ---- Headers for libbas-c package (includedir/bas-c) ----
