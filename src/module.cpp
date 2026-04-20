@@ -6,7 +6,7 @@ extern "C" {
 
 define_logger();
 
-define_zip_assets(_omni, omni_assets);
+define_zip_assets(omni, omni_assets);
 
 }
 
@@ -18,7 +18,7 @@ void ensureRegisteredImpl() {
     if (omni_assets_registered)
         return;
     omni_assets_registered = true;
-    AssetsRegistry::pushLayer(_omni_assets.get());
+    AssetsRegistry::pushLayer(omni_assets.get());
 }
 
 struct OmniAssetsRegistrar {
