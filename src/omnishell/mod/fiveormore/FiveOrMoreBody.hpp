@@ -14,7 +14,6 @@ class FiveOrMoreBody : public UIFragment {
     ~FiveOrMoreBody() override = default;
 
     void createFragmentView(CreateViewContext* ctx) override;
-    wxEvtHandler* getEventHandler() override;
 
     /** Balls spawned after each completed move (1=easy .. 3=hard). */
     int chosenSpawnPerMove() const { return m_chosenLevel; }

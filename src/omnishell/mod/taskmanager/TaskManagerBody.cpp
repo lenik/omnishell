@@ -70,10 +70,6 @@ void TaskManagerBody::createFragmentView(CreateViewContext* ctx) {
     refreshProcessList();
 }
 
-wxEvtHandler* TaskManagerBody::getEventHandler() {
-    return m_frame ? m_frame->GetEventHandler() : (m_panel ? m_panel->GetEventHandler() : nullptr);
-}
-
 void TaskManagerBody::OnRefresh(wxCommandEvent& event) {
     (void)event;
     refreshProcessList();

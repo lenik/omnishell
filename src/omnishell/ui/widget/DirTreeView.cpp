@@ -24,8 +24,7 @@ DirTreeView::DirTreeView(wxWindow* parent, const Location& location)
     populateTree();
 }
 
-DirTreeView::~DirTreeView() {
-}
+DirTreeView::~DirTreeView() {}
 
 void DirTreeView::setLocation(const Location& location) {
     if (m_location == location)
@@ -86,58 +85,60 @@ void DirTreeView::expandPath(const std::string& path) {
 void DirTreeView::populateTree() {
     // Add root item
     wxTreeItemId rootItem = AddRoot("Root", -1, -1, new TreeItemData("/", true));
-    
+
     // Populate root level
     populateNode(rootItem, "/");
-    
+
     // Expand root
     Expand(rootItem);
 }
 
 void DirTreeView::populateNode(const wxTreeItemId& parentItem, const std::string& path) {
-    if (!parentItem.IsOk()) return;
-    
+    if (!parentItem.IsOk())
+        return;
+
     if (m_location.volume == nullptr) {
         printf("m_location.volume nullptr !!\n");
     }
-    
+
     try {
-        auto entries = m_location.volume->readDir(path, false);
-        
-        for (const auto& entry : entries) {
-            if (entry && entry->isDirectory()) {
-                std::string fullPath = (path == "/") ? "/" + entry->name : path + "/" + entry->name;
-                
-                wxTreeItemId childItem = AppendItem(parentItem, entry->name, -1, -1,
-                                                   new TreeItemData(fullPath, true));
-                
+        auto dir = m_location.volume->readDir(path, false);
+
+        for (const auto& [name, child] : dir->children) {
+            if (child->isDirectory()) {
+                std::string fullPath = (path == "/") ? "/" + name : path + "/" + name;
+
+                wxTreeItemId childItem =
+                    AppendItem(parentItem, name, -1, -1, new TreeItemData(fullPath, true));
+
                 // Add a dummy child to make it expandable
                 AppendItem(childItem, "Loading...", -1, -1, nullptr);
             }
         }
     } catch (const std::exception& e) {
-        wxMessageBox("Error reading directory: " + std::string(e.what()), 
-                     "Error", wxOK | wxICON_ERROR);
+        wxMessageBox("Error reading directory: " + std::string(e.what()), "Error",
+                     wxOK | wxICON_ERROR);
     }
 }
 
 wxTreeItemId DirTreeView::findItemByPath(const std::string& path) {
     wxTreeItemId rootItem = GetRootItem();
-    if (!rootItem.IsOk()) return wxTreeItemId();
-    
+    if (!rootItem.IsOk())
+        return wxTreeItemId();
+
     if (path == "/") {
         return rootItem;
     }
-    
+
     // Split path into components
     std::vector<std::string> components;
     std::string currentPath = path;
-    
+
     // Remove leading slash
     if (currentPath.front() == '/') {
         currentPath = currentPath.substr(1);
     }
-    
+
     size_t pos = 0;
     while ((pos = currentPath.find('/')) != std::string::npos) {
         components.push_back(currentPath.substr(0, pos));
@@ -146,15 +147,15 @@ wxTreeItemId DirTreeView::findItemByPath(const std::string& path) {
     if (!currentPath.empty()) {
         components.push_back(currentPath);
     }
-    
+
     // Navigate through the tree
     wxTreeItemId currentItem = rootItem;
-    
+
     for (const std::string& component : components) {
         wxTreeItemIdValue cookie;
         wxTreeItemId childItem = GetFirstChild(currentItem, cookie);
         bool found = false;
-        
+
         while (childItem.IsOk()) {
             if (GetItemText(childItem) == component) {
                 currentItem = childItem;
@@ -163,12 +164,12 @@ wxTreeItemId DirTreeView::findItemByPath(const std::string& path) {
             }
             childItem = GetNextChild(currentItem, cookie);
         }
-        
+
         if (!found) {
             return wxTreeItemId(); // Path not found
         }
     }
-    
+
     return currentItem;
 }
 

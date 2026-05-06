@@ -480,7 +480,7 @@ void FileListView::sortByDate(bool ascending) {
             if (a.isDirectory() != b.isDirectory()) {
                 return a.isDirectory(); // Directories first
             }
-            return ascending ? (a.modifiedTime < b.modifiedTime) : (a.modifiedTime > b.modifiedTime);
+            return ascending ? (a.epochNano < b.epochNano) : (a.epochNano > b.epochNano);
         });
     
     refreshListFromEntries();
@@ -538,10 +538,10 @@ void FileListView::populateList() {
         
         // Convert FileStatus pointers to DirEntry objects
         m_entries.clear();
-        m_entries.reserve(fileStatuses.size());
-        for (const auto& fs : fileStatuses) {
-            if (fs) {
-                m_entries.push_back(*fs); // FileStatus extends DirEntry, so we can copy
+        m_entries.reserve(fileStatuses->children.size());
+        for (const auto& [name, child] : fileStatuses->children) {
+            if (child) {
+                m_entries.push_back(*child);
             }
         }
 
@@ -581,7 +581,7 @@ void FileListView::updateEntry(int index, const DirEntry& entry) {
             SetItem(itemIndex, 2, extension + " File");
         }
         
-        SetItem(itemIndex, 3, formatDateTime(entry.modifiedTime));
+        SetItem(itemIndex, 3, formatDateTime(static_cast<std::uint64_t>(entry.epochSeconds())));
         
     } else { // GRID_MODE: same m_entries, show icon + label
         long itemIndex = InsertItem(index, wxString::FromUTF8(entry.name.c_str()), iconIndex);

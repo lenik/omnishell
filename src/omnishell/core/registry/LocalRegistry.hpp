@@ -1,17 +1,20 @@
 #ifndef OMNISHELL_CORE_LOCAL_REGISTRY_HPP
 #define OMNISHELL_CORE_LOCAL_REGISTRY_HPP
 
-#include "IRegistry.hpp"
+#include "AbstractRegistry.hpp"
+#include "RegistryPath.hpp"
 
 #include <map>
 #include <string>
+#include <vector>
 
 namespace os {
 
 /**
- * Registry stored as ~/.config/<app>/registry/ tree: dirs = nodes, leaf = .json string value.
+ * Dual layout registry: '/' = directories and JSON filename stem under ~/.config/<app>/registry/;
+ * '.' = object path inside that .json file. Scalar files use a single JSON string body.
  */
-class LocalRegistry : public IRegistry {
+class LocalRegistry : public AbstractRegistry {
   public:
     static LocalRegistry& instance();
 
@@ -37,12 +40,13 @@ class LocalRegistry : public IRegistry {
     bool writeAllFiles();
     bool parseLegacyFlatJsonFile(const std::string& path);
 
+    void syncDualFileForGroup(const reg::DualPathResolution& sample);
+    void collectKeysForGroup(const reg::DualPathResolution& sample,
+                             std::map<std::vector<std::string>, std::string>& out) const;
+
     std::string getAppName() const;
     std::string getRegistryRootDir() const;
     std::string getLegacyRegistryJsonPath() const;
-
-    mutable bool m_loaded{false};
-    mutable std::map<std::string, std::string> m_data;
 };
 
 } // namespace os

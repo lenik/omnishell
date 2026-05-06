@@ -62,7 +62,8 @@ const IconTheme* App::getIconTheme() const {
         return &m_iconTheme;
 
     // Lazy-load from embedded assets.
-    // assets.zip stores files under the assets/ directory root, so json lives at themes/popular.json.
+    // assets.zip stores files under the assets/ directory root, so json lives at
+    // themes/popular.json.
     static constexpr const char* kPopularThemePath = "themes/popular.json";
     Volume* assets = AssetsRegistry::instance().get();
     try {
@@ -102,10 +103,10 @@ void App::parseOptions(int argc, char* argv[]) {
             Volume* vol = volumeManager->getDefaultVolume();
             if (vol) {
                 try {
-                    auto entries = vol->readDir("/", true);
-                    for (const auto& e : entries) {
-                        std::cout << (e->isDirectory() ? "d " : "f ") << e->name << " " << e->size
-                                  << std::endl;
+                    auto dir = vol->readDir("/", true);
+                    for (const auto& [name, child] : dir->children) {
+                        std::cout << (child->isDirectory() ? "d " : "f ") << name << " "
+                                  << child->size << std::endl;
                     }
                 } catch (const std::exception& ex) {
                     std::cerr << "dump error: " << ex.what() << std::endl;

@@ -103,23 +103,16 @@ static wxString displayNameFromPath(const std::string& path) {
 
 void NotepadBody::createFragmentView(CreateViewContext* ctx) {
     wxWindow* parent = ctx->getParent();
-    uiFrame* frame = dynamic_cast<uiFrame*>(parent);
-    if (!frame) {
-        wxMessageBox("Parent is not a uiFrame", "Error", wxOK | wxICON_ERROR);
-        return;
-    }
-    m_frame = frame;
 
     const wxPoint& pos = ctx->getPos();
     const wxSize& size = ctx->getSize();
     m_text = new wxTextCtrl(parent, wxID_ANY, "", pos, size, wxTE_MULTILINE | wxTE_WORDWRAP);
-
-    m_frame->Bind(wxEVT_CLOSE_WINDOW, &NotepadBody::onFrameClose, this);
     m_text->Bind(wxEVT_TEXT, &NotepadBody::onFrameText, this);
-}
+    
+    ctx->addContent(m_text);
 
-wxEvtHandler* NotepadBody::getEventHandler() {
-    return m_frame ? m_frame->GetEventHandler() : nullptr;
+    m_frame = ctx->findParentFrame();
+    m_frame->Bind(wxEVT_CLOSE_WINDOW, &NotepadBody::onFrameClose, this);
 }
 
 void NotepadBody::onFrameClose(wxCloseEvent& event) {

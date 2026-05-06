@@ -604,8 +604,4 @@ void SolitaireBody::createFragmentView(CreateViewContext* ctx) {
     panel->SetFocus();
 }
 
-wxEvtHandler* SolitaireBody::getEventHandler() {
-    return m_canvas ? m_canvas->GetEventHandler() : nullptr;
-}
-
 } // namespace os

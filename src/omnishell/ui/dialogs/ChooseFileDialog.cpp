@@ -2,8 +2,6 @@
 
 #include "../Location.hpp"
 
-#include <bas/volume/DirEntry.hpp>
-#include <bas/volume/FileStatus.hpp>
 #include <bas/volume/Volume.hpp>
 #include <bas/volume/VolumeFile.hpp>
 #include <bas/volume/VolumeManager.hpp>
@@ -11,29 +9,17 @@
 #include <wx/filename.h>
 #include <wx/log.h>
 
-#include <algorithm>
-#include <cstring>
 #include <optional>
 
 namespace os {
 
-ChooseFileDialog::ChooseFileDialog(
-    wxWindow* parent,
-    VolumeManager* volumeManager,
-    const wxString& title,
-    FileDialogMode mode,
-    const wxString& defaultPath,
-    const wxString& defaultFile
-)
-    : wxcDialog(parent, wxID_ANY, title,
-               wxDefaultPosition, wxSize(720, 520),
-               wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER)
-    , m_volumeManager(volumeManager)
-    , m_mode(mode)
-    , m_multiSelect(false)
-    , m_fileMustExist(mode != FileDialogMode::Save)
-    , m_selectedVolumeIndex(0)
-    , m_filterIndex(0) {
+ChooseFileDialog::ChooseFileDialog(wxWindow* parent, VolumeManager* volumeManager,
+                                   const wxString& title, FileDialogMode mode,
+                                   const wxString& defaultPath, const wxString& defaultFile)
+    : wxcDialog(parent, wxID_ANY, title, wxDefaultPosition, wxSize(720, 520),
+                wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER),
+      m_volumeManager(volumeManager), m_mode(mode), m_multiSelect(false),
+      m_fileMustExist(mode != FileDialogMode::Save), m_selectedVolumeIndex(0), m_filterIndex(0) {
     m_currentPath = defaultPath.ToStdString();
     if (m_currentPath.empty() || m_currentPath[0] != '/')
         m_currentPath = "/";
@@ -63,13 +49,9 @@ void ChooseFileDialog::addFilter(const wxString& description, const wxString& pa
     }
 }
 
-void ChooseFileDialog::setMultiSelect(bool enable) {
-    m_multiSelect = enable;
-}
+void ChooseFileDialog::setMultiSelect(bool enable) { m_multiSelect = enable; }
 
-void ChooseFileDialog::setFileMustExist(bool mustExist) {
-    m_fileMustExist = mustExist;
-}
+void ChooseFileDialog::setFileMustExist(bool mustExist) { m_fileMustExist = mustExist; }
 
 std::optional<VolumeFile> ChooseFileDialog::getVolumeFile() const {
     auto vfs = getVolumeFiles();
@@ -120,28 +102,23 @@ std::vector<VolumeFile> ChooseFileDialog::getVolumeFiles() const {
     return result;
 }
 
-int ChooseFileDialog::getFilterIndex() const {
-    return m_filterCombo->GetSelection();
-}
+int ChooseFileDialog::getFilterIndex() const { return m_filterCombo->GetSelection(); }
 
-wxString ChooseFileDialog::getFilename() const {
-    return m_filenameText->GetValue();
-}
+wxString ChooseFileDialog::getFilename() const { return m_filenameText->GetValue(); }
 
-wxString ChooseFileDialog::getDirectory() const {
-    return wxString(m_currentPath);
-}
+wxString ChooseFileDialog::getDirectory() const { return wxString(m_currentPath); }
 
 void ChooseFileDialog::CreateControls() {
     wxBoxSizer* main = new wxBoxSizer(wxVERTICAL);
 
     wxBoxSizer* row1 = new wxBoxSizer(wxHORIZONTAL);
     row1->Add(new wxStaticText(this, wxID_ANY, "Volume:"), 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
-    m_volumeCombo = new wxComboBox(this, wxID_ANY, wxString(), wxDefaultPosition, wxSize(200, -1), 0, nullptr, wxCB_READONLY);
+    m_volumeCombo = new wxComboBox(this, wxID_ANY, wxString(), wxDefaultPosition, wxSize(200, -1),
+                                   0, nullptr, wxCB_READONLY);
     if (m_volumeManager) {
         for (size_t i = 0; i < m_volumeManager->getVolumeCount(); i++) {
             Volume* v = m_volumeManager->getVolume(i);
-            m_volumeCombo->Append(wxString(v->getLabel().empty() ? v->getId() : v->getLabel()));
+            m_volumeCombo->Append(wxString(v->getLabel().empty() ? v->getUrl() : v->getLabel()));
         }
         if (m_volumeManager->getVolumeCount() > 0) {
             m_volumeCombo->SetSelection(0);
@@ -159,7 +136,8 @@ void ChooseFileDialog::CreateControls() {
     main->Add(row1, 0, wxEXPAND);
 
     m_filenameText = new wxTextCtrl(this, wxID_ANY, wxString());
-    m_filterCombo = new wxComboBox(this, wxID_ANY, wxString(), wxDefaultPosition, wxSize(150, -1), 0, nullptr, wxCB_READONLY);
+    m_filterCombo = new wxComboBox(this, wxID_ANY, wxString(), wxDefaultPosition, wxSize(150, -1),
+                                   0, nullptr, wxCB_READONLY);
     m_filterCombo->Bind(wxEVT_COMBOBOX, &ChooseFileDialog::OnFilterChanged, this);
 
     if (m_volumeManager && m_volumeManager->getVolumeCount() > 0) {
@@ -204,15 +182,18 @@ void ChooseFileDialog::CreateControls() {
     if (m_splitter)
         main->Add(m_splitter, 1, wxEXPAND | wxALL, 5);
     else
-        main->Add(new wxStaticText(this, wxID_ANY, "No volumes available."), 1, wxEXPAND | wxALL, 8);
+        main->Add(new wxStaticText(this, wxID_ANY, "No volumes available."), 1, wxEXPAND | wxALL,
+                  8);
 
     row1 = new wxBoxSizer(wxHORIZONTAL);
-    row1->Add(new wxStaticText(this, wxID_ANY, "File name:"), 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+    row1->Add(new wxStaticText(this, wxID_ANY, "File name:"), 0, wxALL | wxALIGN_CENTER_VERTICAL,
+              5);
     row1->Add(m_filenameText, 1, wxALL | wxEXPAND, 5);
     main->Add(row1, 0, wxEXPAND);
 
     row1 = new wxBoxSizer(wxHORIZONTAL);
-    row1->Add(new wxStaticText(this, wxID_ANY, "Files of type:"), 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
+    row1->Add(new wxStaticText(this, wxID_ANY, "Files of type:"), 0,
+              wxALL | wxALIGN_CENTER_VERTICAL, 5);
     row1->Add(m_filterCombo, 0, wxALL, 5);
     main->Add(row1, 0, wxEXPAND);
 
@@ -232,7 +213,8 @@ void ChooseFileDialog::CreateControls() {
 void ChooseFileDialog::syncListFilter() {
     if (!m_list)
         return;
-    m_list->setEntryFilter([this](const DirEntry& e) { return e.isDirectory() || matchesFilter(e.name); });
+    m_list->setEntryFilter(
+        [this](const DirEntry& e) { return e.isDirectory() || matchesFilter(e.name); });
 }
 
 void ChooseFileDialog::syncViews() {
@@ -316,16 +298,15 @@ void ChooseFileDialog::OnOK(wxCommandEvent& event) {
         return;
     }
     if (m_mode == FileDialogMode::Save && vol->exists(path) && vol->isFile(path)) {
-        if (wxMessageBox("File exists. Overwrite?", "Confirm", wxYES_NO | wxICON_QUESTION) != wxYES) {
+        if (wxMessageBox("File exists. Overwrite?", "Confirm", wxYES_NO | wxICON_QUESTION) !=
+            wxYES) {
             return;
         }
     }
     EndModal(wxID_OK);
 }
 
-void ChooseFileDialog::OnCancel(wxCommandEvent& event) {
-    EndModal(wxID_CANCEL);
-}
+void ChooseFileDialog::OnCancel(wxCommandEvent& event) { EndModal(wxID_CANCEL); }
 
 void ChooseFileDialog::OnVolumeSelected(wxCommandEvent& event) {
     m_selectedVolumeIndex = m_volumeCombo->GetSelection();

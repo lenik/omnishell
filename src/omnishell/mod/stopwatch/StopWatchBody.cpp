@@ -87,10 +87,6 @@ void StopWatchBody::createFragmentView(CreateViewContext* ctx) {
     root->SetSizer(sizer);
 }
 
-wxEvtHandler* StopWatchBody::getEventHandler() {
-    return m_frame ? m_frame->GetEventHandler() : nullptr;
-}
-
 void StopWatchBody::onStart(PerformContext*) {
     if (!m_timer.IsRunning()) {
         m_timer.Start(100);

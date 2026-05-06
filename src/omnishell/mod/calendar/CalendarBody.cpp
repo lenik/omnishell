@@ -43,10 +43,6 @@ void CalendarBody::createFragmentView(CreateViewContext* ctx) {
     m_cal = new wxCalendarCtrl(parent, wxID_ANY, wxDefaultDateTime, ctx->getPos(), ctx->getSize());
 }
 
-wxEvtHandler* CalendarBody::getEventHandler() {
-    return m_cal ? m_cal->GetEventHandler() : nullptr;
-}
-
 void CalendarBody::onToday(PerformContext*) {
     if (m_cal)
         m_cal->SetDate(wxDateTime::Today());

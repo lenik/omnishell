@@ -530,8 +530,4 @@ void FiveOrMoreBody::createFragmentView(CreateViewContext* ctx) {
     panel->SetFocus();
 }
 
-wxEvtHandler* FiveOrMoreBody::getEventHandler() {
-    return m_canvas ? m_canvas->GetEventHandler() : nullptr;
-}
-
 } // namespace os

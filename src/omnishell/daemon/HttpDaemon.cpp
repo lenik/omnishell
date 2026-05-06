@@ -8,7 +8,6 @@
 #include "FileController.hpp"
 #include "VolumeIndex.hpp"
 
-#include <bas/log/uselog.h>
 #include <bas/proc/AssetsRegistry.hpp>
 #include <bas/volume/VolumeManager.hpp>
 
@@ -17,6 +16,8 @@
 #include <iostream>
 #include <sstream>
 #include <string_view>
+
+#include <bas/log/uselog.h>
 
 #include <netinet/in.h>
 

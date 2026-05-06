@@ -32,7 +32,6 @@ public:
     ~PaintBody() override = default;
 
     void createFragmentView(CreateViewContext* ctx) override;
-    wxEvtHandler* getEventHandler() override;
 
     /** Load an image into the canvas (used by Explorer). */
     void loadImage(const wxImage& img);

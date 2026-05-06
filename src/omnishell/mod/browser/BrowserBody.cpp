@@ -208,10 +208,6 @@ void BrowserBody::createFragmentView(CreateViewContext* ctx) {
     updateNavButtons();
 }
 
-wxEvtHandler* BrowserBody::getEventHandler() {
-    return m_web ? m_web->GetEventHandler() : (m_urlCombo ? m_urlCombo->GetEventHandler() : nullptr);
-}
-
 wxString BrowserBody::mapVirtualToHttp(const wxString& url) const {
     if (m_httpBase.empty())
         return url;

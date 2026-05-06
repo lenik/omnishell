@@ -6,7 +6,6 @@
 #include "../../ui/widget/BreadcrumbNav.hpp"
 #include "../../ui/widget/DirTreeView.hpp"
 #include "../../ui/widget/FileListView.hpp"
-#include "../../wx/artprovs.hpp"
 
 #include <bas/volume/Volume.hpp>
 #include <bas/volume/VolumeFile.hpp>
@@ -82,10 +81,6 @@ void ExplorerBody::createFragmentView(CreateViewContext* ctx) {
     setupCallbacks();
 }
 
-wxEvtHandler* ExplorerBody::getEventHandler() {
-    return m_panel ? m_panel->GetEventHandler() : nullptr;
-}
-
 void ExplorerBody::createActions() {
     const os::IconTheme* theme = os::app.getIconTheme();
     group(ID_GROUP_FILE, "", "file")
@@ -121,28 +116,28 @@ void ExplorerBody::createActions() {
         .label("Back")
         .description("Go back")
         .icon(theme->icon("explorer", "nav.back"))
-        .addShortcut("Alt+Left")
+        .shortcut("Alt+Left")
         .performFn([this](PerformContext* c) { doGoBack(c); })
         .install();
     action(wxID_FORWARD, "view", "forward")
         .label("Forward")
         .description("Go forward")
         .icon(theme->icon("explorer", "nav.forward"))
-        .addShortcut("Alt+Right")
+        .shortcut("Alt+Right")
         .performFn([this](PerformContext* c) { doGoForward(c); })
         .install();
     action(wxID_UP, "view", "up")
         .label("Up")
         .description("Go up one level")
         .icon(theme->icon("explorer", "nav.up"))
-        .addShortcut("Alt+Up")
+        .shortcut("Alt+Up")
         .performFn([this](PerformContext* c) { doGoUp(c); })
         .install();
     action(wxID_HOME, "view", "home")
         .label("Home")
         .description("Go to home directory")
         .icon(theme->icon("explorer", "nav.home"))
-        .addShortcut("Alt+Home")
+        .shortcut("Alt+Home")
         .performFn([this](PerformContext* c) { doGoHome(c); })
         .install();
     action(wxID_VIEW_DETAILS, "view", "list")
@@ -155,14 +150,14 @@ void ExplorerBody::createActions() {
         .label("Grid View")
         .description("Show grid")
         .icon(theme->icon("explorer", "view.grid"))
-        .addShortcut("Ctrl+2")
+        .shortcut("Ctrl+2")
         .performFn([this](PerformContext* c) { doSetGridViewMode(c); })
         .install();
     action(wxID_REFRESH, "view", "refresh")
         .label("Refresh")
         .description("Refresh view")
         .icon(theme->icon("explorer", "view.refresh"))
-        .addShortcut("F5")
+        .shortcut("F5")
         .performFn([this](PerformContext* c) { doRefresh(c); })
         .install();
 
@@ -170,28 +165,28 @@ void ExplorerBody::createActions() {
         .label("Copy")
         .description("Copy selected")
         .icon(theme->icon("explorer", "edit.copy"))
-        .addShortcut("Ctrl+C")
+        .shortcut("Ctrl+C")
         .performFn([this](PerformContext* c) { doCopy(c); })
         .install();
     action(wxID_CUT, "edit", "cut")
         .label("Cut")
         .description("Cut selected")
         .icon(theme->icon("explorer", "edit.cut"))
-        .addShortcut("Ctrl+X")
+        .shortcut("Ctrl+X")
         .performFn([this](PerformContext* c) { doCut(c); })
         .install();
     action(wxID_PASTE, "edit", "paste")
         .label("Paste")
         .description("Paste")
         .icon(theme->icon("explorer", "edit.paste"))
-        .addShortcut("Ctrl+V")
+        .shortcut("Ctrl+V")
         .performFn([this](PerformContext* c) { doPaste(c); })
         .install();
     action(wxID_DELETE, "edit", "delete")
         .label("Delete")
         .description("Delete selected")
         .icon(theme->icon("explorer", "edit.delete"))
-        .addShortcut("Del")
+        .shortcut("Del")
         .performFn([this](PerformContext* c) { doDelete(c); })
         .install();
 }

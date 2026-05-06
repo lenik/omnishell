@@ -20,7 +20,6 @@ class ControlPanelBody : public UIFragment {
     ~ControlPanelBody() override = default;
 
     void createFragmentView(CreateViewContext* ctx) override;
-    wxEvtHandler* getEventHandler() override;
 
   private:
     void OnCategorySelected(wxCommandEvent& event);
@@ -37,7 +36,17 @@ class ControlPanelBody : public UIFragment {
     wxListView* m_categoryList{nullptr};
     wxPanel* m_contentPanel{nullptr};
 
+    enum class PanelCategory {
+        ModuleManager,
+        SystemSettings,
+        UserConfiguration,
+        Desktop,
+        Display,
+        About,
+    };
+
     struct Category {
+        PanelCategory id;
         wxString name;
         wxString description;
         int imageIndex;

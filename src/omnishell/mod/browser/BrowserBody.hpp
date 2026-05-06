@@ -23,7 +23,6 @@ class BrowserBody : public UIFragment {
     ~BrowserBody() override = default;
 
     void createFragmentView(CreateViewContext* ctx) override;
-    wxEvtHandler* getEventHandler() override;
 
     void navigateTo(const wxString& url);
 

@@ -28,7 +28,6 @@ class MediaPlayerBody : public UIFragment {
     ~MediaPlayerBody() override;
 
     void createFragmentView(CreateViewContext* ctx) override;
-    wxEvtHandler* getEventHandler() override;
 
     /** Load file from explorer / app open (autoplay). */
     void openVolumePath(size_t volumeIndex, const std::string& pathOnVolume);

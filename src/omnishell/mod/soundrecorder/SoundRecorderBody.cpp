@@ -251,10 +251,6 @@ void SoundRecorderBody::createFragmentView(CreateViewContext* ctx) {
     updateTimerLabel();
 }
 
-wxEvtHandler* SoundRecorderBody::getEventHandler() {
-    return m_frame ? m_frame->GetEventHandler() : (m_panel ? m_panel->GetEventHandler() : nullptr);
-}
-
 void SoundRecorderBody::ensureMicOpen() {
 #if defined(OMNISHELL_HAVE_ALSA)
     if (m_alsaPcm)

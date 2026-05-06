@@ -204,7 +204,7 @@ void DesktopWindow::CreateVolumeIconControls(VolumeDesktopIcon& icon) {
 
     std::string labelStr = icon.volume->getLabel();
     if (labelStr.empty())
-        labelStr = icon.volume->getId();
+        labelStr = icon.volume->getUrl();
     icon.widget = new LabeledIcon(this, wxID_ANY, bitmap, labelStr, icon.position, m_iconSize);
     wireIconKeyboard(icon.widget);
 
@@ -245,14 +245,14 @@ void DesktopWindow::loadBackgroundSettings() {
 
     if (mode == "image") {
         std::string path = RegistryDb::getInstance().getString("Desktop.Background.ImagePath", "");
-        std::string volumeId =
-            RegistryDb::getInstance().getString("Desktop.Background.ImageVolumeId", "");
+        std::string volumeUrl =
+            RegistryDb::getInstance().getString("Desktop.Background.ImageVolumeUrl", "");
         if (!path.empty() && m_volumeManager) {
             Volume* vol = nullptr;
-            if (!volumeId.empty()) {
+            if (!volumeUrl.empty()) {
                 for (size_t i = 0; i < m_volumeManager->getVolumeCount(); ++i) {
                     Volume* v = m_volumeManager->getVolume(i);
-                    if (v && v->getId() == volumeId) {
+                    if (v && v->getUrl() == volumeUrl) {
                         vol = v;
                         break;
                     }
@@ -371,7 +371,7 @@ void DesktopWindow::saveLayout() const {
         const auto& icon = m_volumeIcons[i];
         if (!icon.volume)
             continue;
-        out << "    {\"id\": \"" << escapeJson(icon.volume->getId()) << "\", "
+        out << "    {\"url\": \"" << escapeJson(icon.volume->getUrl()) << "\", "
             << "\"x\": " << icon.position.x << ", "
             << "\"y\": " << icon.position.y << "}";
         if (i + 1 < m_volumeIcons.size())
@@ -455,9 +455,10 @@ void DesktopWindow::loadLayout() {
     });
 
     // Apply to volumes
-    parseEntries("volumes", "id", [this](const std::string& id, const wxPoint& pt) {
+    parseEntries("volumes", "url", 
+        [this](const std::string& url, const wxPoint& pt) {
         for (auto& icon : m_volumeIcons) {
-            if (icon.volume && icon.volume->getId() == id) {
+            if (icon.volume && icon.volume->getUrl() == url) {
                 icon.position = pt;
                 if (icon.widget) {
                     icon.widget->SetPosition(pt);

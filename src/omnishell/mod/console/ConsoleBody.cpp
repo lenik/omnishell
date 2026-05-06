@@ -6,13 +6,13 @@
 #include "../../wx/artprovs.hpp"
 #include "../../wx/wxConsole.hpp"
 
+#include <zash/zash_interpreter.hpp>
+
 #include <wx/panel.h>
 #include <wx/sizer.h>
 
 #include <algorithm>
 #include <sstream>
-
-#include <zash/zash_interpreter.hpp>
 
 using namespace ThemeStyles;
 
@@ -182,15 +182,6 @@ ConsoleBody::ConsoleBody(App* app) : m_app(app) {
 }
 
 ConsoleBody::~ConsoleBody() = default;
-
-wxEvtHandler* ConsoleBody::getEventHandler() {
-    if (m_console) {
-        if (wxTerminal* t = m_console->GetTerminal())
-            return t->GetEventHandler();
-        return m_console->GetEventHandler();
-    }
-    return m_frame ? m_frame->GetEventHandler() : nullptr;
-}
 
 void ConsoleBody::createFragmentView(CreateViewContext* ctx) {
     wxWindow* parent = ctx->getParent();

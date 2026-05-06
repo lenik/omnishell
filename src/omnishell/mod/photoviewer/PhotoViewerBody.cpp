@@ -64,21 +64,17 @@ PhotoViewerBody::PhotoViewerBody() {
 
     int seq = 0;
     action(ID_PHOTO_PREV, "file", "prev", seq++, "&Previous", "Previous image")
-        .addShortcut("Left")
-        .addShortcut("Up")
-        .addShortcut("PageUp")
+        .shortcuts({"Left", "Up", "PageUp"})
         .performFn([this](PerformContext* ctx) { onPrev(ctx); })
         .install();
 
     action(ID_PHOTO_NEXT, "file", "next", seq++, "&Next", "Next image")
-        .addShortcut("Right")
-        .addShortcut("Down")
-        .addShortcut("PageDown")
+        .shortcuts({"Right", "Down", "PageDown"})
         .performFn([this](PerformContext* ctx) { onNext(ctx); })
         .install();
 
     action(ID_PHOTO_DELETE, "file", "delete", seq++, "&Delete", "Delete current image")
-        .addShortcut("Del")
+        .shortcut("Del")
         .performFn([this](PerformContext* ctx) { onDelete(ctx); })
         .install();
 }
@@ -98,8 +94,6 @@ void PhotoViewerBody::createFragmentView(CreateViewContext* ctx) {
     m_root->Bind(wxEVT_SIZE, [this](wxSizeEvent&) { updateShownBitmap(); });
     updateShownBitmap();
 }
-
-wxEvtHandler* PhotoViewerBody::getEventHandler() { return m_root ? m_root->GetEventHandler() : nullptr; }
 
 void PhotoViewerBody::loadVolumeFile(const VolumeFile& file) {
     // VolumeFile is already an abstraction over the underlying volume.
@@ -140,29 +134,30 @@ void PhotoViewerBody::refreshDirImageList() {
 
     // List same directory entries
     VolumeFile dirFile(vol, m_dirPath.empty() ? "/" : m_dirPath);
-    std::vector<std::unique_ptr<FileStatus>> entries;
+    auto dir = dirFile.readDir(false);
     try {
-        dirFile.readDir(entries, false);
+        dir = dirFile.readDir(false);
     } catch (...) {
         return;
     }
 
     struct Item {
         std::string path;
-        time_t mtime;
+        std::chrono::system_clock::time_point mtime;
         std::string name;
     };
     std::vector<Item> items;
-    items.reserve(entries.size());
+    items.reserve(dir->children.size());
 
-    for (const auto& e : entries) {
-        if (!e || !e->isRegularFile())
+    for (const auto& [name, child] : dir->children) {
+        if (!child->isRegularFile())
             continue;
-        if (!hasImageExt(e->name))
+        if (!hasImageExt(name))
             continue;
         std::string full =
-            (m_dirPath.empty() || m_dirPath == "/") ? ("/" + e->name) : (m_dirPath + "/" + e->name);
-        items.push_back({full, e->modifiedTime, e->name});
+            (m_dirPath.empty() || m_dirPath == "/") ? ("/" + name) : (m_dirPath + "/" + name);
+        auto mtime = child->modifiedTime();
+        items.push_back({full, mtime, name});
     }
 
     std::sort(items.begin(), items.end(), [](const Item& a, const Item& b) {

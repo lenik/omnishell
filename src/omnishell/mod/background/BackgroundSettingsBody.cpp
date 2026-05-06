@@ -98,10 +98,6 @@ void BackgroundSettingsBody::createFragmentView(CreateViewContext* ctx) {
     m_root->SetSizer(sizer);
 }
 
-wxEvtHandler* BackgroundSettingsBody::getEventHandler() {
-    return m_root ? m_root->GetEventHandler() : nullptr;
-}
-
 void BackgroundSettingsBody::onChooseImage(PerformContext*) {
     auto shell = ShellApp::getInstance();
     if (!shell || !shell->getVolumeManager() || !m_frame)
@@ -117,7 +113,7 @@ void BackgroundSettingsBody::onChooseImage(PerformContext*) {
         return;
     m_selectedImagePath = vf->getPath();
     if (vf->getVolume())
-        m_selectedImageVolumeId = vf->getVolume()->getId();
+        m_selectedImageVolumeId = vf->getVolume()->getUUID();
     else
         m_selectedImageVolumeId.clear();
 }
@@ -148,7 +144,7 @@ void BackgroundSettingsBody::onApplyImage(PerformContext*) {
     if (!m_selectedImageVolumeId.empty()) {
         for (size_t i = 0; i < shell->getVolumeManager()->getVolumeCount(); ++i) {
             Volume* v = shell->getVolumeManager()->getVolume(i);
-            if (v && v->getId() == m_selectedImageVolumeId) {
+            if (v && v->getUUID() == m_selectedImageVolumeId) {
                 vol = v;
                 break;
             }
@@ -171,7 +167,7 @@ void BackgroundSettingsBody::onApplyImage(PerformContext*) {
 
         RegistryDb::getInstance().set("Desktop.Background.Mode", "image");
         RegistryDb::getInstance().set("Desktop.Background.ImagePath", m_selectedImagePath);
-        RegistryDb::getInstance().set("Desktop.Background.ImageVolumeId", vol->getId());
+        RegistryDb::getInstance().set("Desktop.Background.ImageVolumeId", vol->getUUID());
         RegistryDb::getInstance().save();
         shell->getDesktopWindow()->setBackgroundImage(wxBitmap(img));
     } catch (...) {

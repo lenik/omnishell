@@ -48,7 +48,7 @@ std::unique_ptr<VolumeFile> Location::join(std::string_view path) const {
 }
 
 std::string Location::toString() const {
-    return volume->getClassId() + ":" + path;
+    return volume->getClass() + ":" + path;
 }
 
 bool Location::operator ==(const Location& other) const {
@@ -61,28 +61,28 @@ bool Location::operator !=(const Location& other) const {
 
 bool Location::operator <(const Location& other) const {
     if (volume != other.volume) {
-        return volume->getClassId() < other.volume->getClassId();
+        return volume->getClass() < other.volume->getClass();
     }
     return path < other.path;
 }
 
 bool Location::operator >(const Location& other) const {
     if (volume != other.volume) {
-        return volume->getClassId() > other.volume->getClassId();
+        return volume->getClass() > other.volume->getClass();
     }
     return path > other.path;
 }
 
 bool Location::operator <=(const Location& other) const {
     if (volume != other.volume) {
-        return volume->getClassId() <= other.volume->getClassId();
+        return volume->getClass() <= other.volume->getClass();
     }
     return path <= other.path;
 }
 
 bool Location::operator >=(const Location& other) const {
     if (volume != other.volume) {
-        return volume->getClassId() >= other.volume->getClassId();
+        return volume->getClass() >= other.volume->getClass();
     }
     return path >= other.path;
 }

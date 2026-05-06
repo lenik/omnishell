@@ -1,6 +1,7 @@
 #include "Shell.hpp"
 
 #include "../core/App.hpp"
+#include "../core/LocaleSetup.hpp"
 #include "../core/ModuleRegistry.hpp"
 #include "../core/ServiceManager.hpp"
 #include "../core/VolUrl.hpp"
@@ -42,6 +43,8 @@ ShellApp::~ShellApp() {
 }
 
 bool ShellApp::OnUserInit() {
+    (void)setupOmniShellLocale(m_locale);
+
     m_volumeManager = app.volumeManager.get();
     if (!m_volumeManager) {
         wxLogError("VolumeManager not initialized");
@@ -91,7 +94,7 @@ void ShellApp::launchModule(ModulePtr module, std::vector<std::string> args) {
 
     if (!module->isEnabled()) {
         wxLogWarning("Module %s is not enabled", module->getFullUri());
-        wxMessageBox("Module is not enabled", "Error", wxOK | wxICON_WARNING);
+        wxMessageBox(_("Module is not enabled"), _("Error"), wxOK | wxICON_WARNING);
         return;
     }
 
@@ -107,8 +110,8 @@ void ShellApp::launchModule(ModulePtr module, std::vector<std::string> args) {
         }
     } catch (const std::exception& e) {
         wxLogError("Failed to launch module %s: %s", module->getFullUri(), e.what());
-        wxMessageBox("Failed to launch " + module->label + ": " + e.what(), "Error",
-                     wxOK | wxICON_ERROR);
+        wxMessageBox(wxString::Format(_("Failed to launch %s: %s"), module->label, wxString(e.what())),
+                     _("Error"), wxOK | wxICON_ERROR);
     }
 }
 

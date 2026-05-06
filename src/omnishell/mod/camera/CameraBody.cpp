@@ -360,8 +360,6 @@ void CameraBody::createFragmentView(CreateViewContext* ctx) {
 #endif
 }
 
-wxEvtHandler* CameraBody::getEventHandler() { return m_root ? m_root->GetEventHandler() : nullptr; }
-
 void CameraBody::onModeChanged(wxCommandEvent& e) {
     (void)e;
     const CameraMode newMode =
@@ -452,7 +450,7 @@ int CameraBody::nextDcfCounterForPrefix(const std::string& prefix) const {
     if (!m_destDir)
         return 1;
 
-    std::vector<std::unique_ptr<FileStatus>> entries;
+    std::unique_ptr<DirNode> entries;
     try {
         entries = m_destDir->getVolume()->readDir(m_destDir->getPath(), false);
     } catch (...) {
@@ -461,10 +459,10 @@ int CameraBody::nextDcfCounterForPrefix(const std::string& prefix) const {
     std::unordered_set<int> used;
     int maxSeen = 0;
 
-    for (const auto& fs : entries) {
-        if (!fs)
+    for (const auto& [name, child] : entries->children) {
+        if (!child)
             continue;
-        const DirEntry& de = *fs;
+        const DirEntry& de = *child;
         if (!de.isRegularFile())
             continue;
 
@@ -744,10 +742,10 @@ void CameraBody::scanRecent() {
     std::vector<DirEntry> photos;
     std::vector<DirEntry> videos;
 
-    for (const auto& fs : entries) {
-        if (!fs)
+    for (const auto& [name, child] : entries->children) {
+        if (!child)
             continue;
-        const DirEntry& de = *fs;
+        const DirEntry& de = *child;
         if (!de.isRegularFile())
             continue;
 
@@ -760,7 +758,7 @@ void CameraBody::scanRecent() {
     }
 
     // Keep full ordering (oldest -> newest) so gallery "new captured appended to the right".
-    auto sortAsc = [](const DirEntry& a, const DirEntry& b) { return a.modifiedTime < b.modifiedTime; };
+    auto sortAsc = [](const DirEntry& a, const DirEntry& b) { return a.epochNano < b.epochNano; };
     std::sort(photos.begin(), photos.end(), sortAsc);
     std::sort(videos.begin(), videos.end(), sortAsc);
 

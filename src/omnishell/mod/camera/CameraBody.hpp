@@ -34,7 +34,6 @@ public:
     ~CameraBody() override;
 
     void createFragmentView(CreateViewContext* ctx) override;
-    wxEvtHandler* getEventHandler() override;
 
 private:
     void onModeChanged(wxCommandEvent& e);

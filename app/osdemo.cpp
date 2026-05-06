@@ -33,8 +33,8 @@ int main(int argc, char** argv) {
     omnishell_ensure_omni_assets_registered();
     OverlayVolume* overlay = AssetsRegistry::instance().get();
     for (const auto& layer : overlay->layers()) {
-        std::cout << "Layer " << layer->getId() << ": " << layer->getSource() //
-                  << " [ " << layer->readDir("/").size() << " ]"               //
+        std::cout << "Layer " << layer->getUrl() << ": " << layer->getDeviceUrl() //
+                  << " [ " << layer->readDir("/")->children.size() << " ]"    //
                   << std::endl;
     }
 
@@ -80,7 +80,9 @@ int main(int argc, char** argv) {
         if (vol) {
             try {
                 auto entries = vol->readDir("/", true);
-                for (const auto& e : entries) {
+                for (const auto& [name, e] : entries->children) {
+                    if (!e)
+                        continue;
                     std::cout << (e->isDirectory() ? "d " : "f ") << e->name //
                               << " " << e->size << std::endl;
                 }

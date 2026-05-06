@@ -64,7 +64,7 @@ std::string AssetController::serveFile(const std::string& assetPath) {
 }
 
 std::string AssetController::generateDirectoryListing(const std::string& assetPath, const std::string& urlPath) {
-    auto entries = m_assetVolume->readDir(assetPath);
+    auto dir = m_assetVolume->readDir(assetPath);
     
     std::string displayPath = urlPath.empty() ? "/asset/" : "/asset/" + urlPath;
     if (displayPath.back() != '/') {
@@ -157,9 +157,9 @@ std::string AssetController::generateDirectoryListing(const std::string& assetPa
              << "</tr>\n";
     }
     
-    for (const auto& entry : entries) {
+    for (const auto& [name, child] : dir->children) {
         // Skip . and ..
-        if (entry->name == "." || entry->name == "..") {
+        if (name == "." || name == "..") {
             continue;
         }
         
@@ -167,14 +167,14 @@ std::string AssetController::generateDirectoryListing(const std::string& assetPa
         if (entryUrl.back() != '/') {
             entryUrl += "/";
         }
-        entryUrl += entry->name;
+        entryUrl += child->name;
         
         // Format size with human-readable units
         std::string sizeStr;
-        if (entry->isDirectory()) {
+        if (child->isDirectory()) {
             sizeStr = "-";
         } else {
-            size_t size = entry->size;
+            size_t size = child->size;
             if (size < 1024) {
                 sizeStr = std::to_string(size);
             } else if (size < 1024 * 1024) {
@@ -188,26 +188,23 @@ std::string AssetController::generateDirectoryListing(const std::string& assetPa
         
         // Format time (Apache style: DD-MMM-YYYY HH:MM)
         std::string timeStr = "-";
-        if (entry->modifiedTime > 0) {
-            std::time_t time = entry->modifiedTime;
-            std::tm* tm = std::localtime(&time);
-            char timeBuf[64];
-            std::strftime(timeBuf, sizeof(timeBuf), "%d-%b-%Y %H:%M", tm);
-            timeStr = timeBuf;
+        if (child->epochNano > 0) {
+            auto time = child->modifiedTime();
+            timeStr = std::to_string(child->epochSeconds());
         }
         
-        std::string displayName = entry->name;
-        if (entry->isDirectory()) {
+        std::string displayName = child->name;
+        if (child->isDirectory()) {
             displayName += "/";
         }
         
         // Get icon path
-        std::string iconPath = m_fileTypeDetector.getColorIcon(entry->name);
-        if (entry->isDirectory()) {
+        std::string iconPath = m_fileTypeDetector.getColorIcon(child->name);
+        if (child->isDirectory()) {
             iconPath = m_fileTypeDetector.getFolderColorIcon();
         } else {
             // For small image files (<4K), use the image itself as icon
-            if (FileTypeDetector::isImageFile(entry->name) && entry->size > 0 && entry->size < PREVIEW_IMAGE_SIZE) {
+            if (FileTypeDetector::isImageFile(child->name) && child->size > 0 && child->size < PREVIEW_IMAGE_SIZE) {
                 iconPath = entryUrl;
             }
         }

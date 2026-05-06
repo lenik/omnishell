@@ -516,10 +516,6 @@ void PaintBody::createFragmentView(CreateViewContext* ctx) {
     });
 }
 
-wxEvtHandler* PaintBody::getEventHandler() {
-    return m_root ? m_root->GetEventHandler() : nullptr;
-}
-
 void PaintBody::onSavePng(PerformContext*) {
     if (!m_frame || !m_canvas)
         return;

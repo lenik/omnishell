@@ -11,6 +11,7 @@
 
 #include <bas/wx/app.hpp>
 
+#include <wx/intl.h>
 #include <wx/wx.h>
 
 #include <string>
@@ -69,6 +70,7 @@ class ShellApp : public uiApp {
     DesktopWindow* m_desktop;
     Taskbar* m_taskbar;
     StartMenu* m_startMenu;
+    wxLocale m_locale;
 
     static ShellApp* m_instance;
 };

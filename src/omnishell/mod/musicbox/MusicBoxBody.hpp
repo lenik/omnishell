@@ -32,7 +32,6 @@ public:
     ~MusicBoxBody() override;
 
     void createFragmentView(CreateViewContext* ctx) override;
-    wxEvtHandler* getEventHandler() override;
 
 private:
     void refreshLibrary();

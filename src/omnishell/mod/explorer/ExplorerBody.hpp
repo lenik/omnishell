@@ -33,7 +33,6 @@ public:
     void setOpenTarget(Volume* volume, const std::string& dir);
 
     void createFragmentView(CreateViewContext* ctx) override;
-    wxEvtHandler* getEventHandler() override;
 
 private:
     void createActions();

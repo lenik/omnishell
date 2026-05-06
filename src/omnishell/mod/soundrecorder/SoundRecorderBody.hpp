@@ -28,7 +28,6 @@ public:
     ~SoundRecorderBody() override;
 
     void createFragmentView(CreateViewContext* ctx) override;
-    wxEvtHandler* getEventHandler() override;
 
 private:
     void OnStart(wxCommandEvent& event);

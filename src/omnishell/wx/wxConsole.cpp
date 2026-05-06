@@ -1,10 +1,9 @@
 #include "wxConsole.hpp"
 
-#include <wx/utils.h>
-
-#include <zash/zash_ast.h>
 #include <zash/zash_driver.hpp>
 #include <zash/zash_interpreter.hpp>
+
+#include <wx/utils.h>
 
 #include <algorithm>
 #include <cstdlib>
@@ -15,6 +14,8 @@
 #include <string_view>
 #include <thread>
 #include <vector>
+
+#include <zash/zash_ast.h>
 
 #if defined(__unix__) || defined(__APPLE__)
 #include <unistd.h>

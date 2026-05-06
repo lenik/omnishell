@@ -31,23 +31,28 @@ std::string ApiDirIndex::handleList(size_t volumeIndex, const std::string& volum
             return "{\"error\":\"Path is not a directory\"}";
         }
         
-        auto entries = volume->readDir(volumePath);
+        auto dir = volume->readDir(volumePath);
         std::ostringstream json;
         json << "{\"volumeIndex\":" << volumeIndex << ","
              << "\"path\":\"" << volumePath << "\","
              << "\"entries\":[";
         
-        for (size_t i = 0; i < entries.size(); ++i) {
+        size_t i = 0;
+        for (const auto& [name, child] : dir->children) {
             if (i > 0) json << ",";
-            const auto& st = entries[i];
             // Skip . and ..
-            if (st->name == "." || st->name == "..") {
+            if (name == "." || name == "..") {
                 continue;
             }
-            json << "{\"name\":\"" << st->name << "\","
-                 << "\"isDirectory\":" << (st->isDirectory() ? "true" : "false") << ","
-                 << "\"size\":" << st->size << ","
-                 << "\"modifiedTime\":" << st->modifiedTime << "}";
+            std::string timeStr = "-";
+            if (child->epochNano > 0) {
+                auto time = child->modifiedTime();
+                timeStr = std::to_string(child->epochSeconds());
+            }
+            json << "{\"name\":\"" << name << "\","
+                 << "\"isDirectory\":" << (child->isDirectory() ? "true" : "false") << ","
+                 << "\"size\":" << child->size << ","
+                 << "\"modifiedTime\":" << timeStr << "}";
         }
         
         json << "]}";

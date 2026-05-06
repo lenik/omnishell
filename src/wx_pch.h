@@ -8,6 +8,7 @@
 #ifndef WX_PRECOMP
     #include <wx/wx.h>
 #else
+    #include "bulk_1.h"
     #include "bulk.h"
 #endif
 

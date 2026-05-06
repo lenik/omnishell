@@ -2,6 +2,7 @@ project(
     'omnishell',
     'cpp',
     version: '1.0.2',
+    meson_version: '>= 0.58.0',
     default_options: ['warning_level=0', 'cpp_std=c++17'],
 )
 
@@ -11,6 +12,14 @@ add_languages('c', native: false)
 conf = configuration_data()
 conf.set('PROJECT_VERSION', meson.project_version())
 conf.set('OMNISHELL_VERSION', meson.project_version())
+conf.set(
+    'OMNISHELL_LOCALEDIR',
+    join_paths(get_option('prefix'), get_option('datadir'), 'locale'),
+)
+conf.set(
+    'OMNISHELL_BUILDTREE_LOCALEDIR',
+    join_paths(meson.global_build_root(), 'po'),
+)
 configure_file(
     input: 'config.h.in',
     output: 'config.h',
@@ -61,6 +70,7 @@ endif
 
 curl_dep = dependency('libcurl', required: true)
 date_dep = subproject('date_tz').get_variable('date_dep')
+unconst_dep = dependency('unconst', required: true)
 openssl_dep = dependency('openssl', required: true)
 wx_sub = subproject('wx_logic')
 wx_dep = wx_sub.get_variable('wx_dep')
@@ -75,17 +85,21 @@ cpp_pch = 'src/wx_pch.h'
 cpp_sources = files(
     'src/omnishell/core/App.cpp',
     'src/omnishell/core/Category.cpp',
+    'src/omnishell/core/LocaleSetup.cpp',
     'src/omnishell/core/Module.cpp',
     'src/omnishell/core/ModuleRegistry.cpp',
     'src/omnishell/core/Process.cpp',
     'src/omnishell/core/ServiceManager.cpp',
     'src/omnishell/core/TrayIcon.cpp',
     'src/omnishell/core/VolUrl.cpp',
+    'src/omnishell/core/registry/AbstractRegistry.cpp',
     'src/omnishell/core/registry/FileAssociations.cpp',
     'src/omnishell/core/registry/IRegistry.cpp',
     'src/omnishell/core/registry/JsonRegistry.cpp',
     'src/omnishell/core/registry/LocalRegistry.cpp',
+    'src/omnishell/core/registry/RegistryDocument.cpp',
     'src/omnishell/core/registry/RegistryKeyUtil.cpp',
+    'src/omnishell/core/registry/RegistryPath.cpp',
     'src/omnishell/core/registry/RegistryService.cpp',
     'src/omnishell/core/registry/RegistryValueIo.cpp',
     'src/omnishell/core/registry/VolumeRegistry.cpp',
@@ -243,8 +257,9 @@ exe_deps = [
     bas_ui_dep,
     boost_dep,
     date_dep,
-    openssl_dep,
     curl_dep,
+    openssl_dep,
+    unconst_dep,
     wx_dep,
     zash_dep,
 ]
@@ -254,9 +269,10 @@ exe_static_deps = [
     bas_cpp_static_dep,
     bas_ui_static_dep,
     boost_dep,
+    curl_dep,
     date_dep,
     openssl_dep,
-    curl_dep,
+    unconst_dep,
     wx_dep,
     zash_static_dep,
 ]
@@ -282,7 +298,7 @@ if gst_dep.found() and gst_app_dep.found()
     exe_static_deps += [gst_dep, gst_app_dep]
 endif
 
-override_options = ['b_lundef=false']  # Allows undefined symbols at link time
+override_options = ['b_lundef=false'] # Allows undefined symbols at link time
 
 lib_omnishell = library(
     'omnishell',
@@ -489,4 +505,9 @@ if find_bash.returncode() == 0
             install_mode: 'rw-r--r--',
         )
     endforeach
+endif
+
+msgfmt = find_program('msgfmt', required: false)
+if msgfmt.found()
+    subdir('po')
 endif

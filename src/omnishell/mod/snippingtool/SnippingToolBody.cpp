@@ -70,10 +70,6 @@ void SnippingToolBody::createFragmentView(CreateViewContext* ctx) {
     m_panel->Bind(wxEVT_CHOICE, &SnippingToolBody::OnMode, this, ID_MODE);
 }
 
-wxEvtHandler* SnippingToolBody::getEventHandler() {
-    return m_frame ? m_frame->GetEventHandler() : (m_panel ? m_panel->GetEventHandler() : nullptr);
-}
-
 void SnippingToolBody::OnNewSnip(wxCommandEvent& event) {
     (void)event;
 

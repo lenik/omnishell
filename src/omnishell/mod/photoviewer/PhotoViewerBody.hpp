@@ -19,7 +19,6 @@ public:
     ~PhotoViewerBody() override = default;
 
     void createFragmentView(CreateViewContext* ctx) override;
-    wxEvtHandler* getEventHandler() override;
 
     void loadVolumeFile(const VolumeFile& file);
 

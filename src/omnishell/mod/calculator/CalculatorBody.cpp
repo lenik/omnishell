@@ -81,12 +81,6 @@ void CalculatorBody::createFragmentView(CreateViewContext* ctx) {
         m_frame->Bind(wxEVT_KEY_DOWN, &CalculatorBody::OnKeyPress, this);
 }
 
-wxEvtHandler* CalculatorBody::getEventHandler() {
-    if (m_frame)
-        return m_frame->GetEventHandler();
-    return m_panel ? m_panel->GetEventHandler() : nullptr;
-}
-
 void CalculatorBody::OnButton(wxCommandEvent& event) {
     wxObject* obj = event.GetEventObject();
     wxButton* btn = wxDynamicCast(obj, wxButton);

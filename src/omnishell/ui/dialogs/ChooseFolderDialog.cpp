@@ -2,8 +2,6 @@
 
 #include "../Location.hpp"
 
-#include <bas/volume/DirEntry.hpp>
-#include <bas/volume/FileStatus.hpp>
 #include <bas/volume/Volume.hpp>
 #include <bas/volume/VolumeFile.hpp>
 #include <bas/volume/VolumeManager.hpp>
@@ -16,20 +14,13 @@
 
 namespace os {
 
-ChooseFolderDialog::ChooseFolderDialog(
-    wxWindow* parent,
-    VolumeManager* volumeManager,
-    const wxString& title,
-    const wxString& message,
-    const wxString& defaultPath
-)
-    : wxcDialog(parent, wxID_ANY, title,
-               wxDefaultPosition, wxSize(520, 480),
-               wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER)
-    , m_volumeManager(volumeManager)
-    , m_selectedVolumeIndex(0)
-    , m_showNewFolder(true)
-    , m_mustExist(true) {
+ChooseFolderDialog::ChooseFolderDialog(wxWindow* parent, VolumeManager* volumeManager,
+                                       const wxString& title, const wxString& message,
+                                       const wxString& defaultPath)
+    : wxcDialog(parent, wxID_ANY, title, wxDefaultPosition, wxSize(520, 480),
+                wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER),
+      m_volumeManager(volumeManager), m_selectedVolumeIndex(0), m_showNewFolder(true),
+      m_mustExist(true) {
     m_currentPath = defaultPath.ToStdString();
     if (m_currentPath.empty() || m_currentPath[0] != '/')
         m_currentPath = "/";
@@ -63,17 +54,11 @@ std::optional<VolumeFile> ChooseFolderDialog::getVolumeFile() const {
     }
 }
 
-wxString ChooseFolderDialog::getPath() const {
-    return wxString(m_currentPath);
-}
+wxString ChooseFolderDialog::getPath() const { return wxString(m_currentPath); }
 
-void ChooseFolderDialog::setShowNewFolderButton(bool show) {
-    m_showNewFolder = show;
-}
+void ChooseFolderDialog::setShowNewFolderButton(bool show) { m_showNewFolder = show; }
 
-void ChooseFolderDialog::setMustExist(bool mustExist) {
-    m_mustExist = mustExist;
-}
+void ChooseFolderDialog::setMustExist(bool mustExist) { m_mustExist = mustExist; }
 
 void ChooseFolderDialog::CreateControls() {
     wxBoxSizer* main = new wxBoxSizer(wxVERTICAL);
@@ -83,11 +68,12 @@ void ChooseFolderDialog::CreateControls() {
 
     wxBoxSizer* row = new wxBoxSizer(wxHORIZONTAL);
     row->Add(new wxStaticText(this, wxID_ANY, "Volume:"), 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
-    m_volumeCombo = new wxComboBox(this, wxID_ANY, wxString(), wxDefaultPosition, wxSize(200, -1), 0, nullptr, wxCB_READONLY);
+    m_volumeCombo = new wxComboBox(this, wxID_ANY, wxString(), wxDefaultPosition, wxSize(200, -1),
+                                   0, nullptr, wxCB_READONLY);
     if (m_volumeManager) {
         for (size_t i = 0; i < m_volumeManager->getVolumeCount(); i++) {
             Volume* v = m_volumeManager->getVolume(i);
-            m_volumeCombo->Append(wxString(v->getLabel().empty() ? v->getId() : v->getLabel()));
+            m_volumeCombo->Append(wxString(v->getLabel().empty() ? v->getUrl() : v->getLabel()));
         }
         if (m_volumeManager->getVolumeCount() > 0)
             m_volumeCombo->SetSelection(0);
@@ -113,7 +99,8 @@ void ChooseFolderDialog::CreateControls() {
         }
     }
     if (!m_tree)
-        main->Add(new wxStaticText(this, wxID_ANY, "No volumes available."), 1, wxEXPAND | wxALL, 8);
+        main->Add(new wxStaticText(this, wxID_ANY, "No volumes available."), 1, wxEXPAND | wxALL,
+                  8);
 
     row = new wxBoxSizer(wxHORIZONTAL);
     wxButton* okBtn = new wxButton(this, wxID_OK, "OK");
@@ -188,9 +175,7 @@ void ChooseFolderDialog::OnOK(wxCommandEvent& event) {
     EndModal(wxID_OK);
 }
 
-void ChooseFolderDialog::OnCancel(wxCommandEvent& event) {
-    EndModal(wxID_CANCEL);
-}
+void ChooseFolderDialog::OnCancel(wxCommandEvent& event) { EndModal(wxID_CANCEL); }
 
 void ChooseFolderDialog::OnNewFolder(wxCommandEvent& event) {
     wxTextEntryDialog dlg(this, "Enter folder name:", "New Folder", "New Folder");
@@ -215,7 +200,8 @@ void ChooseFolderDialog::OnNewFolder(wxCommandEvent& event) {
         SetCurrentPath(parent);
         syncTree();
     } catch (const std::exception& ex) {
-        wxMessageBox(wxString("Failed to create folder: ") + ex.what(), "Error", wxOK | wxICON_ERROR);
+        wxMessageBox(wxString("Failed to create folder: ") + ex.what(), "Error",
+                     wxOK | wxICON_ERROR);
     }
 }
 

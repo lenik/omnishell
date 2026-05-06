@@ -203,10 +203,6 @@ MusicBoxBody::~MusicBoxBody() {
         m_progressTimer->Stop();
 }
 
-wxEvtHandler* MusicBoxBody::getEventHandler() {
-    return m_root ? m_root->GetEventHandler() : nullptr;
-}
-
 void MusicBoxBody::createFragmentView(CreateViewContext* ctx) {
     wxWindow* parent = ctx->getParent();
     m_frame = dynamic_cast<uiFrame*>(parent);
@@ -593,7 +589,7 @@ Volume* MusicBoxBody::findVolumeById(const std::string& id) const {
         return nullptr;
     for (size_t i = 0; i < m_vm->getVolumeCount(); ++i) {
         Volume* v = m_vm->getVolume(i);
-        if (v && v->getId() == id)
+        if (v && v->getUUID() == id)
             return v;
     }
     return nullptr;
@@ -651,7 +647,7 @@ void MusicBoxBody::savePlaylist() {
             continue;
         if (oss.tellp() > 0)
             oss << "\n";
-        oss << v->getId() << "|" << m_queue[i].getPath();
+        oss << v->getUUID() << "|" << m_queue[i].getPath();
     }
     r.set(kPlaylistKey, oss.str());
     r.set(kPlaylistIndexKey, static_cast<long>(m_hasCurrent ? m_currentIndex : 0));
@@ -717,7 +713,7 @@ void MusicBoxBody::importDirectoryRecursive(Volume* vol, const std::string& dirP
         if (!vol->isDirectory(dirPath))
             return;
         auto entries = vol->readDir(dirPath);
-        for (const auto& st : entries) {
+        for (const auto& [name, st] : entries->children) {
             if (!st)
                 continue;
             if (st->name == "." || st->name == "..")

@@ -8,6 +8,8 @@
 #include <wx/sizer.h>
 #include <wx/treectrl.h>
 
+#include <vector>
+
 namespace os {
 
 class RegistryTreePathData : public wxTreeItemData {
@@ -22,13 +24,13 @@ public:
     ~RegistryBody() override = default;
 
     void createFragmentView(CreateViewContext* ctx) override;
-    wxEvtHandler* getEventHandler() override;
 
 private:
     uiFrame* m_frame{nullptr};
     wxTreeCtrl* m_tree{nullptr};
     wxListCtrl* m_list{nullptr};
     std::string m_selectedPath;
+    std::vector<std::string> m_propertyRowFullPaths;
 
     void buildTree();
     void populateProperties(const std::string& nodePath);

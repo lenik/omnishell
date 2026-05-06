@@ -325,10 +325,6 @@ void MediaPlayerBody::createFragmentView(CreateViewContext* ctx) {
     updateFrameTitle();
 }
 
-wxEvtHandler* MediaPlayerBody::getEventHandler() {
-    return m_root ? m_root->GetEventHandler() : nullptr;
-}
-
 wxLongLong MediaPlayerBody::playbackTellMs() const {
 #if HAVE_WX_MEDIA
     if (m_media)
