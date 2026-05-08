@@ -16,7 +16,7 @@ class RegistryFrame : public uiFrame {
     RegistryFrame(App* app, std::string title);
     ~RegistryFrame() override = default;
 
-    void createFragmentView(CreateViewContext* ctx) override;
+    wxWindow* createFragmentView(CreateViewContext* ctx) override;
 
   private:
     RegistryBody m_body;

@@ -24,7 +24,7 @@ class NotepadBody : public UIFragment, public IFileForm {
     NotepadBody(App* app);
     virtual ~NotepadBody() {}
 
-    void createFragmentView(CreateViewContext* ctx) override;
+    wxWindow* createFragmentView(CreateViewContext* ctx) override;
 
     /** Open a file into the editor (VFS). Safe to call after uiFrame construction. */
     bool openFile(VolumeFile file) { return uiRestoreObject(file); }

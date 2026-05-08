@@ -10,8 +10,8 @@ CalculatorFrame::CalculatorFrame(App* app, std::string title)
     createView();
 }
 
-void CalculatorFrame::createFragmentView(CreateViewContext* ctx) {
-    uiFrame::createFragmentView(ctx);
+wxWindow* CalculatorFrame::createFragmentView(CreateViewContext* ctx) {
+    return uiFrame::createFragmentView(ctx);
 }
 
 } // namespace os

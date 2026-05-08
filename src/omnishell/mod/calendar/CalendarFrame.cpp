@@ -10,8 +10,8 @@ CalendarFrame::CalendarFrame(App* app, std::string title)
     createView();
 }
 
-void CalendarFrame::createFragmentView(CreateViewContext* ctx) {
-    uiFrame::createFragmentView(ctx);
+wxWindow* CalendarFrame::createFragmentView(CreateViewContext* ctx) {
+    return uiFrame::createFragmentView(ctx);
 }
 
 } // namespace os

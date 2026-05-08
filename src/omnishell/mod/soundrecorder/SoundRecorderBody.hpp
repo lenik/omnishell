@@ -4,18 +4,14 @@
 #include <bas/ui/arch/UIFragment.hpp>
 #include <bas/wx/uiframe.hpp>
 
+#include <wx/mediactrl.h>
 #include <wx/timer.h>
+#include <wx/button.h>
+#include <wx/panel.h>
+#include <wx/stattext.h>
 
 #include <cstdint>
 #include <vector>
-
-#if HAVE_WX_MEDIA
-#include <wx/mediactrl.h>
-#endif
-
-class wxButton;
-class wxPanel;
-class wxStaticText;
 
 namespace os {
 
@@ -27,7 +23,7 @@ public:
     SoundRecorderBody() = default;
     ~SoundRecorderBody() override;
 
-    void createFragmentView(CreateViewContext* ctx) override;
+    wxWindow* createFragmentView(CreateViewContext* ctx) override;
 
 private:
     void OnStart(wxCommandEvent& event);
@@ -36,9 +32,7 @@ private:
     void OnReplay(wxCommandEvent& event);
     void OnSave(wxCommandEvent& event);
     void OnTick(wxTimerEvent& event);
-#if HAVE_WX_MEDIA
     void OnMediaFinished(wxMediaEvent& event);
-#endif
 
     void updateButtonStates();
     void updateTimerLabel();
@@ -55,9 +49,7 @@ private:
     wxButton* m_stopBtn{nullptr};
     wxButton* m_replayBtn{nullptr};
     wxButton* m_saveBtn{nullptr};
-#if HAVE_WX_MEDIA
     wxMediaCtrl* m_media{nullptr};
-#endif
 
     wxTimer m_tickTimer;
     SoundRecState m_state{SoundRecState::Idle};
@@ -65,9 +57,7 @@ private:
     int m_sampleRate{44100};
     double m_recordSeconds{0};
     double m_synthPhase{0};
-#if defined(OMNISHELL_HAVE_ALSA)
     void* m_alsaPcm{nullptr};
-#endif
 };
 
 } // namespace os

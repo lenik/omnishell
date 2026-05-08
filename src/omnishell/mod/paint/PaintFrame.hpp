@@ -16,7 +16,7 @@ class PaintFrame : public uiFrame {
     PaintFrame(App* app, std::string title);
     ~PaintFrame() override = default;
 
-    void createFragmentView(CreateViewContext* ctx) override;
+    wxWindow* createFragmentView(CreateViewContext* ctx) override;
 
     PaintBody& body() { return m_body; }
 

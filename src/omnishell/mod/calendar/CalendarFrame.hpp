@@ -16,7 +16,7 @@ class CalendarFrame : public uiFrame {
     CalendarFrame(App* app, std::string title);
     ~CalendarFrame() override = default;
 
-    void createFragmentView(CreateViewContext* ctx) override;
+    wxWindow* createFragmentView(CreateViewContext* ctx) override;
 
   private:
     CalendarBody m_body;

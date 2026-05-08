@@ -16,7 +16,7 @@ class SudokuFrame : public uiFrame {
     SudokuFrame(App* app, std::string title);
     ~SudokuFrame() override = default;
 
-    void createFragmentView(CreateViewContext* ctx) override;
+    wxWindow* createFragmentView(CreateViewContext* ctx) override;
 
   private:
     SudokuBody m_body;

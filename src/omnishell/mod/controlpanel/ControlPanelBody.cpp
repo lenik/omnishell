@@ -10,62 +10,58 @@
 
 namespace os {
 
-ControlPanelBody::ControlPanelBody(App* app) {
-    (void)app;
-}
+ControlPanelBody::ControlPanelBody(App* app) { (void)app; }
 
-void ControlPanelBody::createFragmentView(CreateViewContext* ctx) {
+wxWindow* ControlPanelBody::createFragmentView(CreateViewContext* ctx) {
+    m_frame = ctx->findParentFrame();
+    
     wxWindow* parent = ctx->getParent();
-    uiFrame* frame = dynamic_cast<uiFrame*>(parent);
-    if (!frame)
-        return;
-    m_frame = frame;
-
-    wxBoxSizer* mainSizer = new wxBoxSizer(wxHORIZONTAL);
 
     wxPanel* leftPanel = new wxPanel(parent, wxID_ANY);
-    wxBoxSizer* leftSizer = new wxBoxSizer(wxVERTICAL);
-
     wxStaticText* label = new wxStaticText(leftPanel, wxID_ANY, _("Categories:"));
-    leftSizer->Add(label, 0, wxALL, 5);
 
     m_categoryList = new wxListView(leftPanel, wxID_ANY, wxDefaultPosition, wxSize(200, 400),
                                     wxLC_LIST | wxLC_SINGLE_SEL);
 
-    m_categories = {{PanelCategory::ModuleManager, _("Module Manager"), _("Manage installed modules"), 0},
-                    {PanelCategory::SystemSettings, _("System Settings"), _("Configure system options"), 1},
-                    {PanelCategory::UserConfiguration, _("User Configuration"), _("User preferences"), 2},
-                    {PanelCategory::Desktop, _("Desktop"), _("Desktop appearance"), 3},
-                    {PanelCategory::Display, _("Display"), _("Screen settings"), 4},
-                    {PanelCategory::About, _("About"), _("System information"), 5}};
+    m_categories = {
+        {PanelCategory::ModuleManager, _("Module Manager"), _("Manage installed modules"), 0},
+        {PanelCategory::SystemSettings, _("System Settings"), _("Configure system options"), 1},
+        {PanelCategory::UserConfiguration, _("User Configuration"), _("User preferences"), 2},
+        {PanelCategory::Desktop, _("Desktop"), _("Desktop appearance"), 3},
+        {PanelCategory::Display, _("Display"), _("Screen settings"), 4},
+        {PanelCategory::About, _("About"), _("System information"), 5}};
 
     for (size_t i = 0; i < m_categories.size(); i++) {
         m_categoryList->InsertItem(i, m_categories[i].name);
     }
 
-    wxcBind(*m_categoryList, wxEVT_LIST_ITEM_SELECTED,
-            &ControlPanelBody::OnCategorySelected, this);
-    wxcBind(*m_categoryList, wxEVT_LIST_ITEM_ACTIVATED,
-            &ControlPanelBody::OnModuleDoubleClicked, this);
-
-    leftSizer->Add(m_categoryList, 1, wxEXPAND | wxALL, 5);
-    leftPanel->SetSizer(leftSizer);
+    wxcBind(*m_categoryList, wxEVT_LIST_ITEM_SELECTED, &ControlPanelBody::OnCategorySelected, this);
+    wxcBind(*m_categoryList, wxEVT_LIST_ITEM_ACTIVATED, &ControlPanelBody::OnModuleDoubleClicked,
+            this);
 
     m_contentPanel = new wxPanel(parent, wxID_ANY);
-    wxBoxSizer* contentSizer = new wxBoxSizer(wxVERTICAL);
 
     wxStaticText* contentLabel =
         new wxStaticText(m_contentPanel, wxID_ANY, _("Select a category to view options"));
     contentLabel->SetFont(wxFont(12, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD));
     contentLabel->Wrap(560);
-    contentSizer->Add(contentLabel, 0, wxALL | wxEXPAND, 20);
 
+    wxBoxSizer* mainSizer = new wxBoxSizer(wxHORIZONTAL);
+    wxBoxSizer* leftSizer = new wxBoxSizer(wxVERTICAL);
+
+    leftSizer->Add(label, 0, wxALL, 5);
+    leftSizer->Add(m_categoryList, 1, wxEXPAND | wxALL, 5);
+    leftPanel->SetSizer(leftSizer);
+
+    wxBoxSizer* contentSizer = new wxBoxSizer(wxVERTICAL);
+    contentSizer->Add(contentLabel, 0, wxALL | wxEXPAND, 20);
     m_contentPanel->SetSizer(contentSizer);
 
     mainSizer->Add(leftPanel, 0, wxEXPAND);
     mainSizer->Add(m_contentPanel, 1, wxEXPAND);
-
     parent->SetSizer(mainSizer);
+    
+    return m_contentPanel;
 }
 
 void ControlPanelBody::OnCategorySelected(wxCommandEvent& event) {
@@ -155,33 +151,31 @@ void ControlPanelBody::showModuleManager() {
         }
     };
 
-    wxcBind(*enableBtn, wxEVT_BUTTON,
-            [moduleList, modules, refreshStatus](wxCommandEvent&) {
-                long item = -1;
-                item = moduleList->GetNextItem(item, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED);
-                if (item == -1 || item >= (long)modules.size())
-                    return;
-                auto m = modules[(size_t)item];
-                if (!m)
-                    return;
-                RegistryDb::getInstance().set("Module.Disabled." + m->getFullUri(), "0");
-                RegistryDb::getInstance().save();
-                refreshStatus();
-            });
+    wxcBind(*enableBtn, wxEVT_BUTTON, [moduleList, modules, refreshStatus](wxCommandEvent&) {
+        long item = -1;
+        item = moduleList->GetNextItem(item, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED);
+        if (item == -1 || item >= (long)modules.size())
+            return;
+        auto m = modules[(size_t)item];
+        if (!m)
+            return;
+        RegistryDb::getInstance().set("Module.Disabled." + m->getFullUri(), "0");
+        RegistryDb::getInstance().save();
+        refreshStatus();
+    });
 
-    wxcBind(*disableBtn, wxEVT_BUTTON,
-            [moduleList, modules, refreshStatus](wxCommandEvent&) {
-                long item = -1;
-                item = moduleList->GetNextItem(item, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED);
-                if (item == -1 || item >= (long)modules.size())
-                    return;
-                auto m = modules[(size_t)item];
-                if (!m)
-                    return;
-                RegistryDb::getInstance().set("Module.Disabled." + m->getFullUri(), "1");
-                RegistryDb::getInstance().save();
-                refreshStatus();
-            });
+    wxcBind(*disableBtn, wxEVT_BUTTON, [moduleList, modules, refreshStatus](wxCommandEvent&) {
+        long item = -1;
+        item = moduleList->GetNextItem(item, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED);
+        if (item == -1 || item >= (long)modules.size())
+            return;
+        auto m = modules[(size_t)item];
+        if (!m)
+            return;
+        RegistryDb::getInstance().set("Module.Disabled." + m->getFullUri(), "1");
+        RegistryDb::getInstance().save();
+        refreshStatus();
+    });
 
     wxcBind(*closeBtn, wxEVT_BUTTON, [this](wxCommandEvent&) {
         if (m_frame)
@@ -212,10 +206,12 @@ void ControlPanelBody::showSystemSettings() {
     title->Wrap(560);
     sizer->Add(title, 0, wxALL | wxEXPAND, 10);
 
-    sizer->Add(new wxStaticText(m_contentPanel, wxID_ANY, wxString::Format(_("OS Name: %s"), osName)),
-               0, wxLEFT | wxRIGHT | wxBOTTOM, 10);
-    sizer->Add(new wxStaticText(m_contentPanel, wxID_ANY, wxString::Format(_("OS Version: %s"), osVer)),
-               0, wxLEFT | wxRIGHT | wxBOTTOM, 10);
+    sizer->Add(
+        new wxStaticText(m_contentPanel, wxID_ANY, wxString::Format(_("OS Name: %s"), osName)), 0,
+        wxLEFT | wxRIGHT | wxBOTTOM, 10);
+    sizer->Add(
+        new wxStaticText(m_contentPanel, wxID_ANY, wxString::Format(_("OS Version: %s"), osVer)), 0,
+        wxLEFT | wxRIGHT | wxBOTTOM, 10);
 
     m_contentPanel->GetSizer()->Clear(true);
     m_contentPanel->SetSizer(sizer);
@@ -234,10 +230,12 @@ void ControlPanelBody::showUserConfiguration() {
     title->Wrap(560);
     sizer->Add(title, 0, wxALL | wxEXPAND, 10);
 
-    sizer->Add(new wxStaticText(m_contentPanel, wxID_ANY, wxString::Format(_("Name: %s"), userName)),
-               0, wxLEFT | wxRIGHT | wxBOTTOM, 10);
-    sizer->Add(new wxStaticText(m_contentPanel, wxID_ANY, wxString::Format(_("Role: %s"), userRole)),
-               0, wxLEFT | wxRIGHT | wxBOTTOM, 10);
+    sizer->Add(
+        new wxStaticText(m_contentPanel, wxID_ANY, wxString::Format(_("Name: %s"), userName)), 0,
+        wxLEFT | wxRIGHT | wxBOTTOM, 10);
+    sizer->Add(
+        new wxStaticText(m_contentPanel, wxID_ANY, wxString::Format(_("Role: %s"), userRole)), 0,
+        wxLEFT | wxRIGHT | wxBOTTOM, 10);
 
     m_contentPanel->GetSizer()->Clear(true);
     m_contentPanel->SetSizer(sizer);
@@ -287,9 +285,10 @@ void ControlPanelBody::showDisplaySettings() {
     sizer->Add(title, 0, wxALL | wxEXPAND, 10);
 
     wxSize sz = wxGetDisplaySize();
-    sizer->Add(new wxStaticText(m_contentPanel, wxID_ANY,
-                                wxString::Format(_("Resolution: %d x %d"), sz.GetWidth(), sz.GetHeight())),
-               0, wxLEFT | wxRIGHT | wxBOTTOM, 10);
+    sizer->Add(
+        new wxStaticText(m_contentPanel, wxID_ANY,
+                         wxString::Format(_("Resolution: %d x %d"), sz.GetWidth(), sz.GetHeight())),
+        0, wxLEFT | wxRIGHT | wxBOTTOM, 10);
 
     m_contentPanel->GetSizer()->Clear(true);
     m_contentPanel->SetSizer(sizer);
@@ -302,9 +301,10 @@ void ControlPanelBody::showAbout() {
     title->Wrap(560);
     sizer->Add(title, 0, wxALL | wxEXPAND, 10);
 
-    sizer->Add(new wxStaticText(m_contentPanel, wxID_ANY, _("OmniShell Desktop Environment")),
-               0, wxLEFT | wxRIGHT | wxBOTTOM, 10);
-    sizer->Add(new wxStaticText(m_contentPanel, wxID_ANY, _("Version: 1.1.1")), 0, wxLEFT | wxRIGHT | wxBOTTOM, 10);
+    sizer->Add(new wxStaticText(m_contentPanel, wxID_ANY, _("OmniShell Desktop Environment")), 0,
+               wxLEFT | wxRIGHT | wxBOTTOM, 10);
+    sizer->Add(new wxStaticText(m_contentPanel, wxID_ANY, _("Version: 1.1.1")), 0,
+               wxLEFT | wxRIGHT | wxBOTTOM, 10);
 
     m_contentPanel->GetSizer()->Clear(true);
     m_contentPanel->SetSizer(sizer);

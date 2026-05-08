@@ -30,23 +30,18 @@ enum {
 };
 }
 
-void CalculatorBody::createFragmentView(CreateViewContext* ctx) {
-    wxWindow* parent = ctx->getParent();
-    uiFrame* frame = dynamic_cast<uiFrame*>(parent);
-    if (!frame)
-        return;
-    m_frame = frame;
+wxWindow* CalculatorBody::createFragmentView(CreateViewContext* ctx) {
+    m_frame = ctx->findParentFrame();
 
+    wxWindow* parent = ctx->getParent();
     m_panel = new wxPanel(parent, wxID_ANY, ctx->getPos(), ctx->getSize());
     m_panel->SetMinSize(wxSize(280, 380));
 
-    auto* mainsizer = new wxBoxSizer(wxVERTICAL);
-
+    
     m_display = new wxTextCtrl(m_panel, wxID_ANY, wxS("0"), wxDefaultPosition, wxDefaultSize,
-                               wxTE_RIGHT | wxTE_READONLY);
+    wxTE_RIGHT | wxTE_READONLY);
     m_display->SetFont(wxFont(24, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD));
-    mainsizer->Add(m_display, 0, wxEXPAND | wxALL, 10);
-
+    
     auto* btnsizer = new wxGridSizer(5, 4, 5, 5);
 
     btnsizer->Add(new wxButton(m_panel, ID_BTN_CLR, wxS("C")), 0, wxEXPAND);
@@ -73,12 +68,17 @@ void CalculatorBody::createFragmentView(CreateViewContext* ctx) {
     btnsizer->Add(new wxButton(m_panel, wxID_ANY, wxS("00")), 0, wxEXPAND);
     btnsizer->Add(new wxButton(m_panel, ID_BTN_DOT, wxS(".")), 0, wxEXPAND);
 
+    auto* mainsizer = new wxBoxSizer(wxVERTICAL);
+    mainsizer->Add(m_display, 0, wxEXPAND | wxALL, 10);
     mainsizer->Add(btnsizer, 1, wxEXPAND | wxALL, 10);
+    
     m_panel->SetSizer(mainsizer);
 
     m_panel->Bind(wxEVT_BUTTON, &CalculatorBody::OnButton, this);
     if (m_frame)
         m_frame->Bind(wxEVT_KEY_DOWN, &CalculatorBody::OnKeyPress, this);
+
+    return m_panel;
 }
 
 void CalculatorBody::OnButton(wxCommandEvent& event) {

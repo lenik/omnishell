@@ -101,7 +101,7 @@ static wxString displayNameFromPath(const std::string& path) {
     return wxString(path.substr(last + 1));
 }
 
-void NotepadBody::createFragmentView(CreateViewContext* ctx) {
+wxWindow* NotepadBody::createFragmentView(CreateViewContext* ctx) {
     wxWindow* parent = ctx->getParent();
 
     const wxPoint& pos = ctx->getPos();
@@ -109,10 +109,10 @@ void NotepadBody::createFragmentView(CreateViewContext* ctx) {
     m_text = new wxTextCtrl(parent, wxID_ANY, "", pos, size, wxTE_MULTILINE | wxTE_WORDWRAP);
     m_text->Bind(wxEVT_TEXT, &NotepadBody::onFrameText, this);
     
-    ctx->addContent(m_text);
-
     m_frame = ctx->findParentFrame();
     m_frame->Bind(wxEVT_CLOSE_WINDOW, &NotepadBody::onFrameClose, this);
+
+    return m_text;
 }
 
 void NotepadBody::onFrameClose(wxCloseEvent& event) {

@@ -4,6 +4,9 @@
 #include "../../core/registry/RegistryKeyUtil.hpp"
 #include "../../core/registry/RegistryPath.hpp"
 
+#include "../../core/App.hpp"
+#include "../../ui/ThemeStyles.hpp"
+
 #include <wx/listctrl.h>
 #include <wx/splitter.h>
 #include <wx/textdlg.h>
@@ -99,23 +102,21 @@ enum {
 } // namespace
 
 RegistryBody::RegistryBody() {
-    std::string dir = "heroicons/normal";
+    auto theme = os::app.getIconTheme();
 
     group(ID_GROUP_REG, "file", "registry", 1000, "&Registry", "Registry actions").install();
     action(ID_RELOAD, "file/registry", "reload", 0, "&Reload", "Reload registry")
-        .icon(wxART_REDO, dir, "arrow-path.svg")
+        .icon(theme->icon("registry", "reload"))
         .performFn([this](PerformContext* ctx) { onReload(ctx); })
         .install();
 }
 
-void RegistryBody::createFragmentView(CreateViewContext* ctx) {
-    wxWindow* parent = ctx->getParent();
-    uiFrame* frame = dynamic_cast<uiFrame*>(parent);
-    if (!frame)
-        return;
-    m_frame = frame;
-
+wxWindow* RegistryBody::createFragmentView(CreateViewContext* ctx) {
     RegistryDb::getInstance().load();
+
+    m_frame = ctx->findParentFrame();
+    
+    wxWindow* parent = ctx->getParent();
 
     wxSplitterWindow* split = new wxSplitterWindow(parent, wxID_ANY, ctx->getPos(), ctx->getSize());
     split->SetSashGravity(0.30);
@@ -151,6 +152,8 @@ void RegistryBody::createFragmentView(CreateViewContext* ctx) {
     buildTree();
     m_selectedPath.clear();
     populateProperties(m_selectedPath);
+
+    return split;
 }
 
 void RegistryBody::onReload(PerformContext*) {

@@ -18,7 +18,7 @@ public:
     MusicBoxFrame(App* app, VolumeManager* vm, std::string title);
     ~MusicBoxFrame() override = default;
 
-    void createFragmentView(CreateViewContext* ctx) override;
+    wxWindow* createFragmentView(CreateViewContext* ctx) override;
 
     MusicBoxBody& body() { return m_body; }
 

@@ -589,19 +589,13 @@ SolitaireBody::SolitaireBody(App* app) {
         .install();
 }
 
-void SolitaireBody::createFragmentView(CreateViewContext* ctx) {
+wxWindow* SolitaireBody::createFragmentView(CreateViewContext* ctx) {
+    m_frame = ctx->findParentFrame();
+    
     wxWindow* parent = ctx->getParent();
-    uiFrame* frame = dynamic_cast<uiFrame*>(parent);
-    if (!frame)
-        return;
-    m_frame = frame;
-
-    auto* panel = new SolitaireCanvas(parent);
-    m_canvas = panel;
-    wxBoxSizer* s = new wxBoxSizer(wxVERTICAL);
-    s->Add(panel, 1, wxEXPAND);
-    parent->SetSizer(s);
-    panel->SetFocus();
+    m_canvas = new SolitaireCanvas(parent);
+    m_canvas->SetFocus();
+    return m_canvas;
 }
 
 } // namespace os

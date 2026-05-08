@@ -1,5 +1,7 @@
 #include "PhotoViewerBody.hpp"
 
+#include "../../core/App.hpp"
+
 #include <bas/volume/VolumeFile.hpp>
 
 #include <wx/dcbuffer.h>
@@ -17,10 +19,10 @@ namespace os {
 namespace {
 
 enum {
-    ID_PHOTO_PREV = 140001,
-    ID_PHOTO_NEXT = 140002,
-    ID_PHOTO_DELETE = 140003,
-    ID_GROUP_FILE = 140010,
+    ID_PHOTO_PREV = wxID_HIGHEST + 1,
+    ID_PHOTO_NEXT,
+    ID_PHOTO_DELETE,
+    ID_GROUP_FILE,
 };
 
 static std::string lowerAscii(std::string s) {
@@ -56,43 +58,50 @@ static bool hasImageExt(const std::string& name) {
 } // namespace
 
 PhotoViewerBody::PhotoViewerBody() {
+    auto theme = os::app.getIconTheme();
+
     // File group (optional menu/tool integration)
-    group(ID_GROUP_FILE, "", "file", 1000)
-        .label("&File")
-        .description("File operations")
-        .install();
+    group(ID_GROUP_FILE, "", "file", 1000).label("&File").description("File operations").install();
 
     int seq = 0;
     action(ID_PHOTO_PREV, "file", "prev", seq++, "&Previous", "Previous image")
         .shortcuts({"Left", "Up", "PageUp"})
+        .icon(theme->icon("photoviewer", "nav.back"))
         .performFn([this](PerformContext* ctx) { onPrev(ctx); })
         .install();
 
     action(ID_PHOTO_NEXT, "file", "next", seq++, "&Next", "Next image")
         .shortcuts({"Right", "Down", "PageDown"})
+        .icon(theme->icon("photoviewer", "nav.forward"))
         .performFn([this](PerformContext* ctx) { onNext(ctx); })
         .install();
 
     action(ID_PHOTO_DELETE, "file", "delete", seq++, "&Delete", "Delete current image")
         .shortcut("Del")
+        .icon(theme->icon("photoviewer", "edit.delete"))
         .performFn([this](PerformContext* ctx) { onDelete(ctx); })
         .install();
 }
 
-void PhotoViewerBody::createFragmentView(CreateViewContext* ctx) {
+wxWindow* PhotoViewerBody::createFragmentView(CreateViewContext* ctx) {
+    // m_frame = ctx->findParentFrame();
+
     wxWindow* parent = ctx->getParent();
     m_root = new wxPanel(parent, wxID_ANY, ctx->getPos(), ctx->getSize());
     m_root->SetBackgroundColour(*wxBLACK);
 
     auto* sizer = new wxBoxSizer(wxVERTICAL);
-    m_view = new wxStaticBitmap(m_root, wxID_ANY, wxNullBitmap, wxDefaultPosition,
-                                wxDefaultSize, wxBORDER_NONE);
+    m_view = new wxStaticBitmap(m_root, wxID_ANY, wxNullBitmap, wxDefaultPosition, wxDefaultSize,
+                                wxBORDER_NONE);
     m_view->SetBackgroundColour(*wxBLACK);
     sizer->Add(m_view, 1, wxEXPAND | wxALL, 0);
     m_root->SetSizer(sizer);
 
     m_root->Bind(wxEVT_SIZE, [this](wxSizeEvent&) { updateShownBitmap(); });
+    
     updateShownBitmap();
+
+    return m_root;
 }
 
 void PhotoViewerBody::loadVolumeFile(const VolumeFile& file) {
@@ -297,4 +306,3 @@ void PhotoViewerBody::updateShownBitmap() {
 }
 
 } // namespace os
-

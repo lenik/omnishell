@@ -9,8 +9,8 @@ MinesweeperFrame::MinesweeperFrame(App* app, std::string title)
     createView();
 }
 
-void MinesweeperFrame::createFragmentView(CreateViewContext* ctx) {
-    uiFrame::createFragmentView(ctx);
+wxWindow* MinesweeperFrame::createFragmentView(CreateViewContext* ctx) {
+    return uiFrame::createFragmentView(ctx);
 }
 
 } // namespace os

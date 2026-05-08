@@ -19,7 +19,7 @@ class ControlPanelBody : public UIFragment {
     explicit ControlPanelBody(App* app);
     ~ControlPanelBody() override = default;
 
-    void createFragmentView(CreateViewContext* ctx) override;
+    wxWindow* createFragmentView(CreateViewContext* ctx) override;
 
   private:
     void OnCategorySelected(wxCommandEvent& event);

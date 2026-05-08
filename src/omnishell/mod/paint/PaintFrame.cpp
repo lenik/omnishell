@@ -10,8 +10,8 @@ PaintFrame::PaintFrame(App* app, std::string title)
     createView();
 }
 
-void PaintFrame::createFragmentView(CreateViewContext* ctx) {
-    uiFrame::createFragmentView(ctx);
+wxWindow* PaintFrame::createFragmentView(CreateViewContext* ctx) {
+    return uiFrame::createFragmentView(ctx);
 }
 
 } // namespace os

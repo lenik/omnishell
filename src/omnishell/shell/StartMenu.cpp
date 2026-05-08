@@ -602,8 +602,9 @@ void StartMenu::BuildSubMenuContent(RowKind kind, CategoryId categoryId) {
         if (!m)
             return;
         auto b = m->image.toBitmap1(kIconSize, kIconSize);
-        AddMenuItem(m_subScrollArea, sizer, m->label, m, false, b.IsOk() ? &b : nullptr, ROW_LEAF,
-                    ID_CATEGORY_NONE);
+        AddMenuItem(m_subScrollArea, sizer, m->label, m, false, //
+            b.bitmapPtr(), //
+            ROW_LEAF, ID_CATEGORY_NONE);
         m_subMenuModules.push_back(m);
     };
 
@@ -710,8 +711,8 @@ void StartMenu::CreateMenuContent() {
             return;
         usedUris.insert(m->getFullUri());
         auto b = m->image.toBitmap1(kIconSize, kIconSize);
-        AddMenuItem(m_scrollArea, sizer, m->label, m, false, b.IsOk() ? &b : nullptr, ROW_LEAF,
-                    ID_CATEGORY_NONE);
+        AddMenuItem(m_scrollArea, sizer, m->label, m, false, //
+            b.bitmapPtr(), ROW_LEAF, ID_CATEGORY_NONE);
     };
     auto addPseudo = [&](const wxString& text, const wxBitmap* icon, RowKind kind) {
         AddMenuItem(m_scrollArea, sizer, text, nullptr, false, icon, kind, ID_CATEGORY_NONE);
@@ -748,17 +749,17 @@ void StartMenu::CreateMenuContent() {
             continue;
         auto catIcon = cat.icon.toBitmap1(kIconSize, kIconSize);
         AddMenuItem(m_scrollArea, sizer, cat.label, nullptr, false,
-                    catIcon.IsOk() ? &catIcon : nullptr, ROW_CATEGORY_FOLDER, cat.id);
+                    catIcon.bitmapPtr(), ROW_CATEGORY_FOLDER, cat.id);
     }
     addSep();
-    addPseudo(_("Recent files"), iconRecent.IsOk() ? &iconRecent : nullptr, ROW_RECENT_FOLDER);
-    addPseudo(_("Trash"), iconTrash.IsOk() ? &iconTrash : nullptr, ROW_PSEUDO_TRASH);
+    addPseudo(_("Recent files"), iconRecent.bitmapPtr(), ROW_RECENT_FOLDER);
+    addPseudo(_("Trash"), iconTrash.bitmapPtr(), ROW_PSEUDO_TRASH);
     addSep();
     addModule(findByName("console"));
     addModule(findByName("controlpanel"));
     addModule(findByName("registry"));
     addSep();
-    addPseudo(_("Exit"), iconExit.IsOk() ? &iconExit : nullptr, ROW_PSEUDO_EXIT);
+    addPseudo(_("Exit"), iconExit.bitmapPtr(), ROW_PSEUDO_EXIT);
 
     m_scrollArea->SetSizer(sizer);
     m_scrollArea->Layout();

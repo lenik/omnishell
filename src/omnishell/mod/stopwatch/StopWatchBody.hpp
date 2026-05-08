@@ -14,7 +14,7 @@ public:
     StopWatchBody();
     ~StopWatchBody() override;
 
-    void createFragmentView(CreateViewContext* ctx) override;
+    wxWindow* createFragmentView(CreateViewContext* ctx) override;
     wxEvtHandler* getEventHandler() override;
 
 private:

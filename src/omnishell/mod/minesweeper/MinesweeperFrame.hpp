@@ -16,7 +16,7 @@ class MinesweeperFrame : public uiFrame {
     MinesweeperFrame(App* app, std::string title);
     ~MinesweeperFrame() override = default;
 
-    void createFragmentView(CreateViewContext* ctx) override;
+    wxWindow* createFragmentView(CreateViewContext* ctx) override;
 
     MinesweeperBody& body() { return m_body; }
 

@@ -15,7 +15,7 @@ class SudokuBody : public UIFragment {
     explicit SudokuBody(App* app);
     ~SudokuBody() override = default;
 
-    void createFragmentView(CreateViewContext* ctx) override;
+    wxWindow* createFragmentView(CreateViewContext* ctx) override;
 
   private:
     uiFrame* m_frame{nullptr};

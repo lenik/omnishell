@@ -17,7 +17,7 @@ public:
     TaskManagerBody() = default;
     ~TaskManagerBody() override;
 
-    void createFragmentView(CreateViewContext* ctx) override;
+    wxWindow* createFragmentView(CreateViewContext* ctx) override;
 
 private:
     uiFrame* m_frame{nullptr};

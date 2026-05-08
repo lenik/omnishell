@@ -10,8 +10,8 @@ PhotoViewerFrame::PhotoViewerFrame(App* app, std::string title)
     createView();
 }
 
-void PhotoViewerFrame::createFragmentView(CreateViewContext* ctx) {
-    uiFrame::createFragmentView(ctx);
+wxWindow* PhotoViewerFrame::createFragmentView(CreateViewContext* ctx) {
+    return uiFrame::createFragmentView(ctx);
 }
 
 } // namespace os

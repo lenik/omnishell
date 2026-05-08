@@ -15,7 +15,7 @@ class SolitaireBody : public UIFragment {
     explicit SolitaireBody(App* app);
     ~SolitaireBody() override = default;
 
-    void createFragmentView(CreateViewContext* ctx) override;
+    wxWindow* createFragmentView(CreateViewContext* ctx) override;
 
   private:
     uiFrame* m_frame{nullptr};

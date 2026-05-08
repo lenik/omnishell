@@ -1,5 +1,7 @@
 #include "PaintBody.hpp"
 
+#include "../../core/App.hpp"
+
 #include <bas/ui/arch/ImageSet.hpp>
 
 #include <wx/artprov.h>
@@ -296,7 +298,7 @@ private:
 };
 
 PaintBody::PaintBody() {
-    std::string dir = "heroicons/normal";
+    auto theme = os::app.getIconTheme();
 
     // Top-level menu groups (force consistent menu ordering + explicit submenus).
     group(ID_GROUP_TOOLS, "tools", "_root", 1000, "&Tools", "Tools menu").install();
@@ -305,61 +307,61 @@ PaintBody::PaintBody() {
 
     int seq = 0;
     action(ID_SAVE_PNG, "file", "save_png", seq++, "Save &PNG...", "Save image as PNG")
-        .icon(wxART_FILE_SAVE_AS, dir, "arrow-down-tray.svg")
+        .icon(theme->icon("paint", "save_png"))
         .performFn([this](PerformContext* ctx) { onSavePng(ctx); })
         .install();
     action(ID_CLEAR, "edit", "clear", seq++, "&Clear", "Clear canvas")
-        .icon(wxART_DELETE, dir, "trash.svg")
+        .icon(theme->icon("paint", "clear"))
         .performFn([this](PerformContext* ctx) { onClear(ctx); })
         .install();
 
     seq = 0;
     action(ID_TOOL_PENCIL, "tools/draw", "pencil", seq++, "&Pencil", "Pencil tool")
-        .icon(wxART_TIP, dir, "pencil.svg")
+        .icon(theme->icon("paint", "pencil"))
         .no_tool()
         .performFn([this](PerformContext* ctx) { onToolPencil(ctx); })
         .install();
     action(ID_TOOL_BRUSH, "tools/draw", "brush", seq++, "&Brush", "Brush tool")
-        .icon(wxART_TIP, dir, "paint-brush.svg")
+        .icon(theme->icon("paint", "brush"))
         .no_tool()
         .performFn([this](PerformContext* ctx) { onToolBrush(ctx); })
         .install();
     action(ID_TOOL_ERASER, "tools/draw", "eraser", seq++, "&Eraser", "Eraser tool")
-        .icon(wxART_DELETE, dir, "backspace.svg")
+        .icon(theme->icon("paint", "eraser"))
         .no_tool()
         .performFn([this](PerformContext* ctx) { onToolEraser(ctx); })
         .install();
 
     seq = 0;
     action(ID_TOOL_LINE, "tools/shapes", "line", seq++, "&Line", "Line tool")
-        .icon(wxART_MINUS, dir, "minus.svg")
+        .icon(theme->icon("paint", "line"))
         .no_tool()
         .performFn([this](PerformContext* ctx) { onToolLine(ctx); })
         .install();
     action(ID_TOOL_RECT, "tools/shapes", "rect", seq++, "&Rectangle", "Rectangle tool")
-        .icon(wxART_NORMAL_FILE, dir, "rectangle-group.svg")
+        .icon(theme->icon("paint", "rect"))
         .no_tool()
         .performFn([this](PerformContext* ctx) { onToolRect(ctx); })
         .install();
     action(ID_TOOL_ELLIPSE, "tools/shapes", "ellipse", seq++, "&Ellipse", "Ellipse tool")
-        .icon(wxART_NORMAL_FILE, dir, "stop-circle.svg")
+        .icon(theme->icon("paint", "ellipse"))
         .no_tool()
         .performFn([this](PerformContext* ctx) { onToolEllipse(ctx); })
         .install();
 
     seq = 0;
     action(ID_TOOL_FILL, "tools", "fill", seq++, "&Fill", "Fill tool")
-        .icon(wxART_TIP, dir, "swatch.svg")
+        .icon(theme->icon("paint", "fill"))
         .no_tool()
         .performFn([this](PerformContext* ctx) { onToolFill(ctx); })
         .install();
     action(ID_TOOL_PICKER, "tools", "picker", seq++, "Pick &Color", "Color picker tool")
-        .icon(wxART_FIND, dir, "eye-dropper.svg")
+        .icon(theme->icon("paint", "picker"))
         .no_tool()
         .performFn([this](PerformContext* ctx) { onToolPicker(ctx); })
         .install();
     action(ID_TOOL_TEXT, "tools", "text", seq++, "&Text", "Text tool")
-        .icon(wxART_TIP, dir, "chat-bubble-bottom-center-text.svg")
+        .icon(theme->icon("paint", "text"))
         .no_tool()
         .performFn([this](PerformContext* ctx) { onToolText(ctx); })
         .install();
@@ -373,15 +375,11 @@ void PaintBody::loadImage(const wxImage& img) {
     m_pendingImage = img;
 }
 
-void PaintBody::createFragmentView(CreateViewContext* ctx) {
-    wxWindow* parent = ctx->getParent();
-    uiFrame* frame = dynamic_cast<uiFrame*>(parent);
-    if (!frame)
-        return;
-    m_frame = frame;
+wxWindow* PaintBody::createFragmentView(CreateViewContext* ctx) {
+    uiFrame* frame = ctx->findParentFrame();
 
+    wxWindow* parent = ctx->getParent();
     m_root = new wxPanel(parent, wxID_ANY, ctx->getPos(), ctx->getSize());
-    wxBoxSizer* rootSizer = new wxBoxSizer(wxHORIZONTAL);
 
     m_toolToggles.clear();
 
@@ -389,7 +387,7 @@ void PaintBody::createFragmentView(CreateViewContext* ctx) {
     toolsPanel->SetMinSize(wxSize(88, -1));
     wxBoxSizer* toolsSizer = new wxBoxSizer(wxVERTICAL);
 
-    const std::string iconDir = "heroicons/normal";
+    const std::string iconDir = "heroicons/svg/normal";
     constexpr int kIconPx = 24;
     auto toolBmp = [&](wxArtID art, const char* svg) {
         return ImageSet(art, iconDir, svg).toBitmap1(kIconPx, kIconPx);
@@ -489,13 +487,15 @@ void PaintBody::createFragmentView(CreateViewContext* ctx) {
     addColor(wxColour(0xff, 0xa5, 0x00));
     addColor(wxColour(0x80, 0x00, 0x80));
     addColor(wxColour(0x00, 0xff, 0xff));
+
     paletteSizer->AddStretchSpacer();
     palettePanel->SetSizer(paletteSizer);
 
     rightSizer->Add(m_canvas, 1, wxEXPAND | wxALL, 6);
     rightSizer->Add(palettePanel, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, 6);
     rightPanel->SetSizer(rightSizer);
-
+    
+    wxBoxSizer* rootSizer = new wxBoxSizer(wxHORIZONTAL);
     rootSizer->Add(toolsPanel, 0, wxEXPAND);
     rootSizer->Add(rightPanel, 1, wxEXPAND);
     m_root->SetSizer(rootSizer);
@@ -514,6 +514,8 @@ void PaintBody::createFragmentView(CreateViewContext* ctx) {
         auto ctx2 = toPerformContext(e);
         onSavePng(&ctx2);
     });
+
+    return m_root;
 }
 
 void PaintBody::onSavePng(PerformContext*) {

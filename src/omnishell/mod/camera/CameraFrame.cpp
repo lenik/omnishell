@@ -10,8 +10,8 @@ CameraFrame::CameraFrame(App* app, std::string title)
     createView();
 }
 
-void CameraFrame::createFragmentView(CreateViewContext* ctx) {
-    uiFrame::createFragmentView(ctx);
+wxWindow* CameraFrame::createFragmentView(CreateViewContext* ctx) {
+    return uiFrame::createFragmentView(ctx);
 }
 
 } // namespace os

@@ -14,7 +14,7 @@ class BrowserFrame : public uiFrame {
     BrowserFrame(VolumeManager* vm, std::string title);
     ~BrowserFrame() override = default;
 
-    void createFragmentView(CreateViewContext* ctx) override;
+    wxWindow* createFragmentView(CreateViewContext* ctx) override;
 
     BrowserBody& body() { return m_body; }
 

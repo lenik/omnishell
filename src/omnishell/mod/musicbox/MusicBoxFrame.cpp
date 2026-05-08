@@ -12,8 +12,8 @@ MusicBoxFrame::MusicBoxFrame(App* app, VolumeManager* vm, std::string title)
     createView();
 }
 
-void MusicBoxFrame::createFragmentView(CreateViewContext* ctx) {
-    uiFrame::createFragmentView(ctx);
+wxWindow* MusicBoxFrame::createFragmentView(CreateViewContext* ctx) {
+    return uiFrame::createFragmentView(ctx);
 }
 
 } // namespace os

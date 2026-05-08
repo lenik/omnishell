@@ -24,13 +24,7 @@ namespace os {
 
 namespace {
 
-enum {
-    ID_START = wxID_HIGHEST + 1,
-    ID_PAUSE,
-    ID_STOP,
-    ID_REPLAY,
-    ID_SAVE
-};
+enum { ID_START = wxID_HIGHEST + 1, ID_PAUSE, ID_STOP, ID_REPLAY, ID_SAVE };
 
 constexpr int kTickMs = 50;
 constexpr int kWaveMaxPoints = 4000;
@@ -168,55 +162,48 @@ SoundRecorderBody::~SoundRecorderBody() {
         m_tickTimer.Stop();
     if (m_frame)
         m_frame->Unbind(wxEVT_TIMER, &SoundRecorderBody::OnTick, this, m_tickTimer.GetId());
-#if HAVE_WX_MEDIA
     if (m_media)
         m_media->Unbind(wxEVT_MEDIA_FINISHED, &SoundRecorderBody::OnMediaFinished, this);
-#endif
     closeMic();
 }
 
-void SoundRecorderBody::createFragmentView(CreateViewContext* ctx) {
-    wxWindow* parent = ctx->getParent();
-    uiFrame* frame = dynamic_cast<uiFrame*>(parent);
-    if (!frame)
-        return;
-    m_frame = frame;
+wxWindow* SoundRecorderBody::createFragmentView(CreateViewContext* ctx) {
+    m_frame = ctx->findParentFrame();
 
+    wxWindow* parent = ctx->getParent();
     m_panel = new wxPanel(parent, wxID_ANY, ctx->getPos(), ctx->getSize());
     m_panel->SetMinSize(wxSize(420, 320));
 
-    auto* mainsizer = new wxBoxSizer(wxVERTICAL);
-
     auto* wf = new WaveformPanel(m_panel);
     m_waveform = wf;
-    mainsizer->Add(wf, 1, wxEXPAND | wxLEFT | wxRIGHT | wxTOP, 12);
 
-    m_timerDisplay =
-        new wxStaticText(m_panel, wxID_ANY, "00:00.0", wxDefaultPosition, wxDefaultSize, wxALIGN_CENTER);
-    m_timerDisplay->SetFont(wxFont(28, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD));
-    mainsizer->Add(m_timerDisplay, 0, wxALL | wxALIGN_CENTER, 8);
+    m_timerDisplay = new wxStaticText(m_panel, wxID_ANY, "00:00.0", wxDefaultPosition,
+                                      wxDefaultSize, wxALIGN_CENTER);
+    m_timerDisplay->SetFont(
+        wxFont(28, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD));
 
-    auto* btnsizer = new wxBoxSizer(wxHORIZONTAL);
     m_startBtn = new wxButton(m_panel, ID_START, "Start");
     m_pauseBtn = new wxButton(m_panel, ID_PAUSE, "Pause");
     m_stopBtn = new wxButton(m_panel, ID_STOP, "Stop");
     m_replayBtn = new wxButton(m_panel, ID_REPLAY, "Replay");
     m_saveBtn = new wxButton(m_panel, ID_SAVE, "Save");
 
+    auto* btnsizer = new wxBoxSizer(wxHORIZONTAL);
     btnsizer->Add(m_startBtn, 1, wxALL, 6);
     btnsizer->Add(m_pauseBtn, 1, wxALL, 6);
     btnsizer->Add(m_stopBtn, 1, wxALL, 6);
     btnsizer->Add(m_replayBtn, 1, wxALL, 6);
     btnsizer->Add(m_saveBtn, 1, wxALL, 6);
 
+    auto* mainsizer = new wxBoxSizer(wxVERTICAL);
+    mainsizer->Add(wf, 1, wxEXPAND | wxLEFT | wxRIGHT | wxTOP, 12);
+    mainsizer->Add(m_timerDisplay, 0, wxALL | wxALIGN_CENTER, 8);
     mainsizer->Add(btnsizer, 0, wxEXPAND | wxLEFT | wxRIGHT, 8);
 
-#if HAVE_WX_MEDIA
     m_media = new wxMediaCtrl(m_panel, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize(1, 1), 0);
     m_media->Show(false);
     mainsizer->Add(m_media, 0, wxALL, 0);
     m_media->Bind(wxEVT_MEDIA_FINISHED, &SoundRecorderBody::OnMediaFinished, this);
-#endif
 
     m_panel->SetSizer(mainsizer);
 
@@ -249,6 +236,8 @@ void SoundRecorderBody::createFragmentView(CreateViewContext* ctx) {
     ensureMicOpen();
     updateButtonStates();
     updateTimerLabel();
+
+    return m_panel;
 }
 
 void SoundRecorderBody::ensureMicOpen() {
@@ -258,9 +247,8 @@ void SoundRecorderBody::ensureMicOpen() {
     snd_pcm_t* pcm = nullptr;
     if (snd_pcm_open(&pcm, "default", SND_PCM_STREAM_CAPTURE, 0) < 0)
         return;
-    if (snd_pcm_set_params(pcm, SND_PCM_FORMAT_S16_LE, SND_PCM_ACCESS_RW_INTERLEAVED, 1, m_sampleRate, 1,
-                           500000)
-        < 0) {
+    if (snd_pcm_set_params(pcm, SND_PCM_FORMAT_S16_LE, SND_PCM_ACCESS_RW_INTERLEAVED, 1,
+                           m_sampleRate, 1, 500000) < 0) {
         snd_pcm_close(pcm);
         return;
     }
@@ -333,7 +321,6 @@ void SoundRecorderBody::OnStop(wxCommandEvent&) {
 void SoundRecorderBody::OnReplay(wxCommandEvent&) {
     if (m_pcmData.empty())
         return;
-#if HAVE_WX_MEDIA
     wxString path = wxFileName::CreateTempFileName("omni_soundrec_");
     path += ".wav";
     if (!writePcmWav(path, m_pcmData, m_sampleRate)) {
@@ -345,10 +332,6 @@ void SoundRecorderBody::OnReplay(wxCommandEvent&) {
     } else {
         wxMessageBox("Could not load recording for replay.", "Sound Recorder", wxOK | wxICON_ERROR);
     }
-#else
-    wxMessageBox("Replay requires wxWidgets built with media support (HAVE_WX_MEDIA).", "Sound Recorder",
-                 wxOK | wxICON_INFORMATION);
-#endif
 }
 
 void SoundRecorderBody::OnSave(wxCommandEvent&) {
@@ -365,16 +348,12 @@ void SoundRecorderBody::OnSave(wxCommandEvent&) {
     }
 }
 
-void SoundRecorderBody::OnTick(wxTimerEvent&) {
-    tickCapture();
-}
+void SoundRecorderBody::OnTick(wxTimerEvent&) { tickCapture(); }
 
-#if HAVE_WX_MEDIA
 void SoundRecorderBody::OnMediaFinished(wxMediaEvent&) {
     if (m_media)
         m_media->Stop();
 }
-#endif
 
 void SoundRecorderBody::tickCapture() {
     auto* wf = dynamic_cast<WaveformPanel*>(m_waveform);
@@ -417,10 +396,11 @@ void SoundRecorderBody::tickCapture() {
 #else
         if (m_state == SoundRecState::Recording) {
 #endif
-            const int synthFrames =
-                static_cast<int>(static_cast<double>(m_sampleRate) * static_cast<double>(kTickMs) / 1000.0);
+            const int synthFrames = static_cast<int>(static_cast<double>(m_sampleRate) *
+                                                     static_cast<double>(kTickMs) / 1000.0);
             for (int i = 0; i < synthFrames; ++i) {
-                m_synthPhase += 2.0 * 3.14159265358979323846 * 440.0 / static_cast<double>(m_sampleRate);
+                m_synthPhase +=
+                    2.0 * 3.14159265358979323846 * 440.0 / static_cast<double>(m_sampleRate);
                 const double s = std::sin(m_synthPhase) * 12000.0;
                 m_pcmData.push_back(static_cast<int16_t>(std::clamp(s, -32768.0, 32767.0)));
             }

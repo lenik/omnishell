@@ -16,7 +16,7 @@ public:
     TaskManagerFrame(App* app, std::string title);
     ~TaskManagerFrame() override = default;
 
-    void createFragmentView(CreateViewContext* ctx) override;
+    wxWindow* createFragmentView(CreateViewContext* ctx) override;
 
     TaskManagerBody& body() { return m_body; }
 

@@ -8,17 +8,12 @@
 
 #include <wx/event.h>
 #include <wx/longlong.h>
+#include <wx/mediactrl.h>
 #include <wx/timer.h>
 
 #include <optional>
 
 class VolumeManager;
-
-#if HAVE_WX_MEDIA
-#include <wx/mediactrl.h>
-#else
-class wxMediaCtrl;
-#endif
 
 namespace os {
 
@@ -27,7 +22,7 @@ class MediaPlayerBody : public UIFragment {
     explicit MediaPlayerBody(VolumeManager* vm);
     ~MediaPlayerBody() override;
 
-    void createFragmentView(CreateViewContext* ctx) override;
+    wxWindow* createFragmentView(CreateViewContext* ctx) override;
 
     /** Load file from explorer / app open (autoplay). */
     void openVolumePath(size_t volumeIndex, const std::string& pathOnVolume);
@@ -45,9 +40,7 @@ class MediaPlayerBody : public UIFragment {
 
     void onFrameClose(wxCloseEvent& event);
     void onVizTimer(wxTimerEvent& event);
-#if HAVE_WX_MEDIA
     void onMediaFinished(wxMediaEvent& event);
-#endif
 
     void loadVolumeFile(const VolumeFile& file, bool autoplay);
     void updateFrameTitle();
@@ -58,9 +51,7 @@ class MediaPlayerBody : public UIFragment {
     uiFrame* m_frame = nullptr;
     wxPanel* m_root = nullptr;
     wxPanel* m_visualizer = nullptr;
-#if HAVE_WX_MEDIA
     wxMediaCtrl* m_media = nullptr;
-#endif
     wxTimer m_vizTimer;
 
     std::optional<VolumeFile> m_file;

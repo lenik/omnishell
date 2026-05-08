@@ -25,6 +25,7 @@
 #include <wx/filename.h>
 #include <wx/image.h>
 #include <wx/imaglist.h>
+#include <wx/mediactrl.h>
 #include <wx/mstream.h>
 #include <wx/radiobox.h>
 #include <wx/sizer.h>
@@ -32,10 +33,6 @@
 #include <wx/stattext.h>
 #include <wx/timer.h>
 #include <wx/uri.h>
-
-#if HAVE_WX_MEDIA
-#include <wx/mediactrl.h>
-#endif
 
 #include <algorithm>
 #include <cctype>
@@ -87,12 +84,12 @@ std::string stripLeadingSlash(std::string s) {
 
 enum {
     ID_GROUP_CAMERA = uiFrame::ID_APP_HIGHEST + 460,
-    ID_CAPTURE = uiFrame::ID_APP_HIGHEST + 461,
-    ID_RECORD = uiFrame::ID_APP_HIGHEST + 462,
-    ID_PAUSE = uiFrame::ID_APP_HIGHEST + 463,
-    ID_STOP = uiFrame::ID_APP_HIGHEST + 464,
-    ID_REPLAY = uiFrame::ID_APP_HIGHEST + 465,
-    ID_SETTINGS = uiFrame::ID_APP_HIGHEST + 466,
+    ID_CAPTURE,
+    ID_RECORD,
+    ID_PAUSE,
+    ID_STOP,
+    ID_REPLAY,
+    ID_SETTINGS,
 };
 
 } // namespace
@@ -196,7 +193,7 @@ CameraBody::CameraBody() {
     action(ID_SETTINGS, "media/camera", "settings", seq++)
         .label("&Settings")
         .description("Camera settings")
-        .icon(theme->icon("camera", "app.settings"))
+        .icon(theme->icon("camera", "edit.settings"))
         .performFn([this](PerformContext*) {
             try {
                 onSettings();
@@ -222,11 +219,10 @@ CameraBody::~CameraBody() {
     m_gstPreview.reset();
 }
 
-void CameraBody::createFragmentView(CreateViewContext* ctx) {
+wxWindow* CameraBody::createFragmentView(CreateViewContext* ctx) {
+    m_frame = ctx->findParentFrame();
+
     wxWindow* parent = ctx->getParent();
-    m_frame = dynamic_cast<uiFrame*>(parent);
-    if (!m_frame)
-        return;
     // Most modules just read VolumeManager from the global ShellApp.
     if (auto* sh = ShellApp::getInstance())
         m_vm = sh->getVolumeManager();
@@ -263,7 +259,6 @@ void CameraBody::createFragmentView(CreateViewContext* ctx) {
                                      wxALIGN_CENTRE_HORIZONTAL);
     previewSizer->Add(m_videoStatus, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, 4);
 
-#if HAVE_WX_MEDIA
     m_media =
         new wxMediaCtrl(preview, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0);
     previewSizer->Add(m_media, 1, wxEXPAND | wxALL, 8);
@@ -275,9 +270,6 @@ void CameraBody::createFragmentView(CreateViewContext* ctx) {
         refreshModeUi();
     });
     m_media->Show(false);
-#else
-    (void)previewSizer;
-#endif
 
     preview->SetSizer(previewSizer);
     outer->Add(preview, 1, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, 8);
@@ -358,6 +350,8 @@ void CameraBody::createFragmentView(CreateViewContext* ctx) {
         refreshModeUi();
     });
 #endif
+
+    return m_root;
 }
 
 void CameraBody::onModeChanged(wxCommandEvent& e) {
@@ -365,12 +359,10 @@ void CameraBody::onModeChanged(wxCommandEvent& e) {
     const CameraMode newMode =
         (m_modeBox && m_modeBox->GetSelection() == 1) ? CameraMode::Video : CameraMode::Photo;
 
-#if HAVE_WX_MEDIA
     if (m_mode == CameraMode::Video && newMode == CameraMode::Photo && m_media) {
         m_media->Stop();
         m_videoLoaded = true;
     }
-#endif
 
     m_mode = newMode;
     refreshModeUi();
@@ -388,17 +380,14 @@ void CameraBody::refreshModeUi() {
     const bool isPhoto = (m_mode == CameraMode::Photo);
     (void)isPhoto;
 
-#if HAVE_WX_MEDIA
     if (m_media)
         m_media->Show(m_mode == CameraMode::Video && m_videoLoaded);
-#endif
     if (m_photoPreview)
         m_photoPreview->Show(true);
 
     if (m_videoStatus) {
         const wxString pv = m_previewPlaying ? "playing" : "still";
         if (m_mode == CameraMode::Video) {
-#if HAVE_WX_MEDIA
             if (m_videoLoaded && m_media) {
                 const auto st = m_media->GetState();
                 const wxString ms = (st == wxMEDIASTATE_PLAYING)  ? "playing"
@@ -410,9 +399,6 @@ void CameraBody::refreshModeUi() {
                 m_videoStatus->SetLabel("Video mode — record via file selection (preview " + pv +
                                         " preview)");
             }
-#else
-            m_videoStatus->SetLabel("Video mode");
-#endif
         } else {
             m_videoStatus->SetLabel("Photo mode — capture via file selection (preview " + pv +
                                     " preview)");
@@ -600,12 +586,10 @@ void CameraBody::deleteLastCapture() {
 
     m_lastSavedFile.reset();
 
-#if HAVE_WX_MEDIA
     if (m_mode == CameraMode::Video && m_videoLoaded && m_media) {
         m_media->Stop();
         m_videoLoaded = false;
     }
-#endif
 
     applyGalleryFilterAndRefresh();
 
@@ -683,11 +667,7 @@ void CameraBody::OnKeyDown(wxKeyEvent& event) {
         if (m_mode == CameraMode::Photo) {
             capturePhoto();
         } else {
-#if HAVE_WX_MEDIA
             pauseOrReplayVideo();
-#else
-            recordVideo();
-#endif
         }
         event.Skip(false);
         return;
@@ -697,14 +677,10 @@ void CameraBody::OnKeyDown(wxKeyEvent& event) {
         if (m_mode == CameraMode::Photo) {
             capturePhoto();
         } else {
-#if HAVE_WX_MEDIA
             if (!m_videoLoaded)
                 recordVideo();
             else
                 stopVideo();
-#else
-            recordVideo();
-#endif
         }
         event.Skip(false);
         return;
@@ -912,7 +888,6 @@ void CameraBody::capturePhoto() {
 void CameraBody::recordVideo() {
     if (m_mode != CameraMode::Video)
         return;
-#if HAVE_WX_MEDIA
     if (!m_vm || !m_destDir)
         return;
 
@@ -974,15 +949,10 @@ void CameraBody::recordVideo() {
     m_videoLoaded = true;
     refreshModeUi();
     if (m_videoStatus)
-        m_videoStatus->SetLabel("Saved video: " +
-                                wxString::FromUTF8(savedName.data(), savedName.size()));
-#else
-    (void)m_frame;
-#endif
+        m_videoStatus->SetLabel("Saved video: " + savedName);
 }
 
 void CameraBody::pauseOrReplayVideo() {
-#if HAVE_WX_MEDIA
     if (m_mode != CameraMode::Video)
         return;
     if (!m_videoLoaded) {
@@ -1003,11 +973,9 @@ void CameraBody::pauseOrReplayVideo() {
     else if (st == wxMEDIASTATE_PAUSED)
         m_media->Play();
     refreshModeUi();
-#endif
 }
 
 void CameraBody::stopVideo() {
-#if HAVE_WX_MEDIA
     if (m_mode != CameraMode::Video || !m_videoLoaded)
         return;
     if (!m_media)
@@ -1015,11 +983,9 @@ void CameraBody::stopVideo() {
     m_media->Stop();
     m_videoLoaded = true;
     refreshModeUi();
-#endif
 }
 
 void CameraBody::replayVideo() {
-#if HAVE_WX_MEDIA
     if (m_mode != CameraMode::Video || !m_videoLoaded)
         return;
     if (!m_media)
@@ -1030,7 +996,6 @@ void CameraBody::replayVideo() {
         m_media->Play();
     }
     refreshModeUi();
-#endif
 }
 
 void CameraBody::onOpenGalleryItem(VolumeFile& file) {

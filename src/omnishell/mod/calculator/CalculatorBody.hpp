@@ -16,7 +16,7 @@ public:
     CalculatorBody() = default;
     ~CalculatorBody() override = default;
 
-    void createFragmentView(CreateViewContext* ctx) override;
+    wxWindow* createFragmentView(CreateViewContext* ctx) override;
 
 private:
     uiFrame* m_frame{nullptr};

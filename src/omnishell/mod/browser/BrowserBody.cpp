@@ -114,13 +114,13 @@ void BrowserBody::focusAddressBar() {
         m_urlCombo->SetSelection(0, static_cast<long>(v.length()));
 }
 
-void BrowserBody::createFragmentView(CreateViewContext* ctx) {
-    wxWindow* parent = ctx->getParent();
-    m_frame = dynamic_cast<uiFrame*>(parent);
-    wxPanel* root = new wxPanel(parent, wxID_ANY, ctx->getPos(), ctx->getSize());
-    wxBoxSizer* v = new wxBoxSizer(wxVERTICAL);
-    wxBoxSizer* bar = new wxBoxSizer(wxHORIZONTAL);
+wxWindow* BrowserBody::createFragmentView(CreateViewContext* ctx) {
+    m_frame = ctx->findParentFrame();
 
+    wxWindow* parent = ctx->getParent();
+
+    wxPanel* root = new wxPanel(parent, wxID_ANY, ctx->getPos(), ctx->getSize());
+    
     m_btnBack = new wxButton(root, ID_BTN_BACK, "<");
     m_btnBack->SetToolTip("Back");
     m_btnFwd = new wxButton(root, ID_BTN_FWD, ">");
@@ -134,18 +134,9 @@ void BrowserBody::createFragmentView(CreateViewContext* ctx) {
     auto* refresh = new wxButton(root, ID_BTN_REFRESH, "Refresh");
     auto* home = new wxButton(root, ID_BTN_HOME, "Home");
 
-    bar->Add(m_btnBack, 0, wxALL, 2);
-    bar->Add(m_btnFwd, 0, wxALL, 2);
-    bar->Add(m_urlCombo, 1, wxALL | wxEXPAND, 2);
-    bar->Add(go, 0, wxALL, 2);
-    bar->Add(refresh, 0, wxALL, 2);
-    bar->Add(home, 0, wxALL, 2);
-    v->Add(bar, 0, wxEXPAND);
-
     m_web = wxWebView::New(root, ID_WEBVIEW, wxWebViewDefaultURLStr, wxDefaultPosition, wxDefaultSize,
                            wxWebViewBackendDefault);
     m_web->EnableContextMenu(true);
-    v->Add(m_web, 1, wxEXPAND);
 
     if (ShellApp* sh = ShellApp::getInstance()) {
         m_httpBase = sh->vfsDaemon().httpBase();
@@ -160,8 +151,6 @@ void BrowserBody::createFragmentView(CreateViewContext* ctx) {
     m_web->SetAcceleratorTable(wxAcceleratorTable(2, wvNav));
     m_web->Bind(wxEVT_MENU, [this](wxCommandEvent&) { goBack(); }, ID_WV_ACCEL_BACK);
     m_web->Bind(wxEVT_MENU, [this](wxCommandEvent&) { goForward(); }, ID_WV_ACCEL_FWD);
-
-    root->SetSizer(v);
 
     m_btnBack->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) { goBack(); });
     m_btnFwd->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) { goForward(); });
@@ -206,6 +195,20 @@ void BrowserBody::createFragmentView(CreateViewContext* ctx) {
     }
 
     updateNavButtons();
+
+    wxBoxSizer* vert = new wxBoxSizer(wxVERTICAL);
+    wxBoxSizer* topbar = new wxBoxSizer(wxHORIZONTAL);
+    topbar->Add(m_btnBack, 0, wxALL, 2);
+    topbar->Add(m_btnFwd, 0, wxALL, 2);
+    topbar->Add(m_urlCombo, 1, wxALL | wxEXPAND, 2);
+    topbar->Add(go, 0, wxALL, 2);
+    topbar->Add(refresh, 0, wxALL, 2);
+    topbar->Add(home, 0, wxALL, 2);
+    vert->Add(topbar, 0, wxEXPAND);
+    vert->Add(m_web, 1, wxEXPAND);
+    root->SetSizer(vert);
+    
+    return root;
 }
 
 wxString BrowserBody::mapVirtualToHttp(const wxString& url) const {

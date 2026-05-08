@@ -16,7 +16,7 @@ public:
     SnippingToolFrame(App* app, std::string title);
     ~SnippingToolFrame() override = default;
 
-    void createFragmentView(CreateViewContext* ctx) override;
+    wxWindow* createFragmentView(CreateViewContext* ctx) override;
 
     SnippingToolBody& body() { return m_body; }
 

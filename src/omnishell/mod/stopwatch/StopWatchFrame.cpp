@@ -10,8 +10,8 @@ StopWatchFrame::StopWatchFrame(App* app, std::string title)
     createView();
 }
 
-void StopWatchFrame::createFragmentView(CreateViewContext* ctx) {
-    uiFrame::createFragmentView(ctx);
+wxWindow* StopWatchFrame::createFragmentView(CreateViewContext* ctx) {
+    return uiFrame::createFragmentView(ctx);
 }
 
 } // namespace os

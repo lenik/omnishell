@@ -16,7 +16,7 @@ class BackgroundSettingsFrame : public uiFrame {
     BackgroundSettingsFrame(App* app, std::string title);
     ~BackgroundSettingsFrame() override = default;
 
-    void createFragmentView(CreateViewContext* ctx) override;
+    wxWindow* createFragmentView(CreateViewContext* ctx) override;
 
   private:
     BackgroundSettingsBody m_body;

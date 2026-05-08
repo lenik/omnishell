@@ -416,23 +416,14 @@ SudokuBody::SudokuBody(App* app) {
         .install();
 }
 
-void SudokuBody::createFragmentView(CreateViewContext* ctx) {
+wxWindow* SudokuBody::createFragmentView(CreateViewContext* ctx) {
+    m_frame = ctx->findParentFrame();
+    
     wxWindow* parent = ctx->getParent();
-    uiFrame* frame = dynamic_cast<uiFrame*>(parent);
-    if (!frame)
-        return;
-    m_frame = frame;
+    m_canvas = new SudokuCanvas(parent);
+    m_canvas->SetFocus();
 
-    auto* panel = new SudokuCanvas(parent);
-    m_canvas = panel;
-    wxBoxSizer* s = new wxBoxSizer(wxVERTICAL);
-    s->Add(panel, 1, wxEXPAND);
-    parent->SetSizer(s);
-    panel->SetFocus();
-}
-
-wxEvtHandler* SudokuBody::getEventHandler() {
-    return m_canvas ? m_canvas->GetEventHandler() : nullptr;
+    return m_canvas;
 }
 
 } // namespace os

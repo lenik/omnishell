@@ -40,24 +40,24 @@ MinesweeperBody::MinesweeperBody(App* app) {
         .install();
 }
 
-void MinesweeperBody::createFragmentView(CreateViewContext* ctx) {
+wxWindow* MinesweeperBody::createFragmentView(CreateViewContext* ctx) {
+    m_frame = ctx->findParentFrame();
+
     wxWindow* parent = ctx->getParent();
-    uiFrame* frame = dynamic_cast<uiFrame*>(parent);
-    if (!frame)
-        return;
-    m_frame = frame;
-
-    wxBoxSizer* mainSizer = new wxBoxSizer(wxVERTICAL);
-
+    
     m_statusText = new wxStaticText(parent, wxID_ANY, "Left click: reveal, Right click: flag");
-    mainSizer->Add(m_statusText, 0, wxEXPAND | wxALL, 5);
 
     m_gridPanel = new wxPanel(parent, wxID_ANY);
-    mainSizer->Add(m_gridPanel, 1, wxEXPAND | wxALL, 5);
     m_gridPanel->Bind(wxEVT_SIZE, &MinesweeperBody::onGridPanelSize, this);
 
+    wxBoxSizer* mainSizer = new wxBoxSizer(wxVERTICAL);
+    mainSizer->Add(m_statusText, 0, wxEXPAND | wxALL, 5);
+    mainSizer->Add(m_gridPanel, 1, wxEXPAND | wxALL, 5);
     parent->SetSizer(mainSizer);
+    
     resetGame();
+
+    return m_gridPanel;
 }
 
 wxEvtHandler* MinesweeperBody::getEventHandler() {

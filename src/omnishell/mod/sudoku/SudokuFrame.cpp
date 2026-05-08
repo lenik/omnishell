@@ -9,8 +9,8 @@ SudokuFrame::SudokuFrame(App* app, std::string title)
     createView();
 }
 
-void SudokuFrame::createFragmentView(CreateViewContext* ctx) {
-    uiFrame::createFragmentView(ctx);
+wxWindow* SudokuFrame::createFragmentView(CreateViewContext* ctx) {
+    return uiFrame::createFragmentView(ctx);
 }
 
 } // namespace os

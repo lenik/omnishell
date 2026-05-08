@@ -40,21 +40,21 @@ void ExplorerBody::setOpenTarget(Volume* volume, const std::string& dir) {
     m_dir = dir.empty() ? "/" : normalizePath(dir);
 }
 
-void ExplorerBody::createFragmentView(CreateViewContext* ctx) {
+wxWindow* ExplorerBody::createFragmentView(CreateViewContext* ctx) {
     wxWindow* parent = ctx->getParent();
     m_panel = new wxPanel(parent, wxID_ANY, ctx->getPos(), ctx->getSize());
 
     Volume* vol = m_volume ? m_volume : (m_vm ? m_vm->getDefaultVolume() : nullptr);
     if (!vol) {
         m_panel->SetSizer(new wxBoxSizer(wxVERTICAL));
-        return;
+        return nullptr;
     }
     if (!ensureVolumeAccess(vol)) {
         wxBoxSizer* s = new wxBoxSizer(wxVERTICAL);
         s->Add(new wxStaticText(m_panel, wxID_ANY, "Unable to authenticate selected volume."), 0,
                wxALL, 8);
         m_panel->SetSizer(s);
-        return;
+        return nullptr;
     }
     m_locationHistory = std::make_unique<LocationHistory>(vol, normalizePath(m_dir));
     Location location = m_locationHistory->location();
@@ -79,6 +79,8 @@ void ExplorerBody::createFragmentView(CreateViewContext* ctx) {
     m_panel->SetSizer(mainSizer);
 
     setupCallbacks();
+
+    return m_panel;
 }
 
 void ExplorerBody::createActions() {
@@ -144,6 +146,7 @@ void ExplorerBody::createActions() {
         .label("List View")
         .description("Show list")
         .icon(theme->icon("explorer", "view.list"))
+        .shortcut("Ctrl+1")
         .performFn([this](PerformContext* c) { doSetListViewMode(c); })
         .install();
     action(wxID_VIEW_SMALLICONS, "view", "grid")

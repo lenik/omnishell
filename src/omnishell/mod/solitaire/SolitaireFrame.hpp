@@ -16,7 +16,7 @@ class SolitaireFrame : public uiFrame {
     SolitaireFrame(App* app, std::string title);
     ~SolitaireFrame() override = default;
 
-    void createFragmentView(CreateViewContext* ctx) override;
+    wxWindow* createFragmentView(CreateViewContext* ctx) override;
 
   private:
     SolitaireBody m_body;

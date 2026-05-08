@@ -57,18 +57,30 @@ static std::string joinLines(const std::vector<std::string>& v) {
 
 } // namespace
 
+enum {
+    ID_GROUP_CONSOLE = uiFrame::ID_APP_HIGHEST + 1,
+    ID_CLEAR,
+    ID_FONT_UP,
+    ID_FONT_DOWN,
+    ID_FONT_RESET,
+    ID_CMD_PREV,
+    ID_CMD_NEXT,
+    ID_PAGE_PREV,
+    ID_PAGE_NEXT,
+};
+
 ConsoleBody::ConsoleBody(App* app) : m_app(app) {
     const IconTheme* theme = app->getIconTheme();
 
     // Use a dedicated group id range for console actions.
-    group(120050, "system", "console", 1200)
+    group(ID_GROUP_CONSOLE, "system", "console", 1200)
         .label("&Console")
         .description("Console")
         .icon(theme->icon("console", "group.console"))
         .install();
 
     int seq = 0;
-    action(120051, "system/console", "clear", seq++)
+    action(ID_CLEAR, "system/console", "clear", seq++)
         .label("&Clear")
         .description("Clear screen")
         .icon(theme->icon("console", "edit.clear"))
@@ -82,7 +94,7 @@ ConsoleBody::ConsoleBody(App* app) : m_app(app) {
         })
         .install();
 
-    action(120052, "system/console", "font_up", seq++)
+    action(ID_FONT_UP, "system/console", "font_up", seq++)
         .label("Font &+")
         .description("Increase font size")
         .icon(theme->icon("console", "view.zoom_in"))
@@ -96,7 +108,7 @@ ConsoleBody::ConsoleBody(App* app) : m_app(app) {
         })
         .install();
 
-    action(120053, "system/console", "font_down", seq++)
+    action(ID_FONT_DOWN, "system/console", "font_down", seq++)
         .label("Font &-")
         .description("Decrease font size")
         .icon(theme->icon("console", "view.zoom_in"))
@@ -110,7 +122,7 @@ ConsoleBody::ConsoleBody(App* app) : m_app(app) {
         })
         .install();
 
-    action(120054, "system/console", "font_reset", seq++)
+    action(ID_FONT_RESET, "system/console", "font_reset", seq++)
         .label("Font &Reset")
         .description("Reset font size")
         .icon(theme->icon("console", "view.zoom_reset"))
@@ -124,7 +136,7 @@ ConsoleBody::ConsoleBody(App* app) : m_app(app) {
         })
         .install();
 
-    action(120055, "system/console", "cmd_prev", seq++)
+    action(ID_CMD_PREV, "system/console", "cmd_prev", seq++)
         .label("&Previous Command")
         .description("History previous")
         .icon(theme->icon("console", "nav.history_prev"))
@@ -138,7 +150,7 @@ ConsoleBody::ConsoleBody(App* app) : m_app(app) {
         })
         .install();
 
-    action(120056, "system/console", "cmd_next", seq++)
+    action(ID_CMD_NEXT, "system/console", "cmd_next", seq++)
         .label("&Next Command")
         .description("History next")
         .icon(theme->icon("console", "nav.history_next"))
@@ -152,7 +164,7 @@ ConsoleBody::ConsoleBody(App* app) : m_app(app) {
         })
         .install();
 
-    action(120057, "system/console", "page_prev", seq++)
+    action(ID_PAGE_PREV, "system/console", "page_prev", seq++)
         .label("Previous &Page")
         .description("Scroll up one page")
         .icon(theme->icon("console", "nav.page_prev"))
@@ -166,7 +178,7 @@ ConsoleBody::ConsoleBody(App* app) : m_app(app) {
         })
         .install();
 
-    action(120058, "system/console", "page_next", seq++)
+    action(ID_PAGE_NEXT, "system/console", "page_next", seq++)
         .label("Next P&age")
         .description("Scroll down one page")
         .icon(theme->icon("console", "nav.page_next"))
@@ -183,21 +195,16 @@ ConsoleBody::ConsoleBody(App* app) : m_app(app) {
 
 ConsoleBody::~ConsoleBody() = default;
 
-void ConsoleBody::createFragmentView(CreateViewContext* ctx) {
+wxWindow* ConsoleBody::createFragmentView(CreateViewContext* ctx) {
+    m_frame = ctx->findParentFrame();
+
     wxWindow* parent = ctx->getParent();
-    m_frame = dynamic_cast<uiFrame*>(parent);
-    if (!m_frame)
-        return;
-
-    m_console = new wxConsole(m_frame);
-
-    auto* sz = new wxBoxSizer(wxVERTICAL);
-    sz->Add(m_console, 1, wxEXPAND);
-    m_frame->SetSizer(sz);
+    m_console = new wxConsole(parent);
+    m_frame->Bind(wxEVT_CLOSE_WINDOW, &ConsoleBody::onFrameClose, this);
 
     loadHistory();
 
-    m_frame->Bind(wxEVT_CLOSE_WINDOW, &ConsoleBody::onFrameClose, this);
+    return m_console;
 }
 
 void ConsoleBody::onFrameClose(wxCloseEvent& e) {

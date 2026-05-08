@@ -16,7 +16,7 @@ public:
     PhotoViewerFrame(App* app, std::string title);
     ~PhotoViewerFrame() override = default;
 
-    void createFragmentView(CreateViewContext* ctx) override;
+    wxWindow* createFragmentView(CreateViewContext* ctx) override;
 
     PhotoViewerBody& body() { return m_body; }
 

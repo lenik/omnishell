@@ -9,8 +9,8 @@ MediaPlayerFrame::MediaPlayerFrame(VolumeManager* vm, std::string title)
     createView();
 }
 
-void MediaPlayerFrame::createFragmentView(CreateViewContext* ctx) {
-    uiFrame::createFragmentView(ctx);
+wxWindow* MediaPlayerFrame::createFragmentView(CreateViewContext* ctx) {
+    return uiFrame::createFragmentView(ctx);
 }
 
 } // namespace os

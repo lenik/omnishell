@@ -128,9 +128,11 @@ MusicBoxBody::MusicBoxBody(VolumeManager* vm) : m_vm(vm) {
     state(ID_REPEAT, "playlist", "repeat", 10)
         .label("&Repeat")
         .description("Repeat current track when it reaches the end")
+        .shortcut("Ctrl+R")
+        .icon(theme->icon("musicbox", "media.repeat"))
         .stateType(UIStateType::BOOL)
-        .valueDescriptorFn(
-            UIState::ValueDescriptorFn([this, theme](const UIStateVariant& nv) -> UIStateValueDescriptor {
+        .valueDescriptorFn(UIState::ValueDescriptorFn(
+            [this, theme](const UIStateVariant& nv) -> UIStateValueDescriptor {
                 UIStateValueDescriptor d;
                 d.label = m_repeat ? "Repeat" : "No Repeat";
                 d.description = m_repeat ? "Repeat current track when it reaches the end"
@@ -150,7 +152,19 @@ MusicBoxBody::MusicBoxBody(VolumeManager* vm) : m_vm(vm) {
     state(ID_SHUFFLE, "playlist", "shuffle", 11)
         .label("Shuffle")
         .description("Shuffle playback order")
+        .shortcut("Ctrl+S")
+        .icon(theme->icon("musicbox", "media.shuffle"))
         .stateType(UIStateType::BOOL)
+        .valueDescriptorFn(UIState::ValueDescriptorFn(
+            [this, theme](const UIStateVariant& nv) -> UIStateValueDescriptor {
+                UIStateValueDescriptor d;
+                d.label = m_shuffle ? "Shuffle" : "Ordered";
+                d.description = m_shuffle ? "Shuffle the playback order"
+                                          : "Play the tracks in the order they are in the playlist";
+                d.icon = m_shuffle ? theme->icon("musicbox", "media.shuffle")
+                                   : theme->icon("musicbox", "media.ordered");
+                return d;
+            }))
         .initValue(UIStateVariant{false})
         .valueRef(&m_shuffleStateSink)
         .connect([this](const UIStateVariant& nv, const UIStateVariant&) {
@@ -170,7 +184,6 @@ MusicBoxBody::MusicBoxBody(VolumeManager* vm) : m_vm(vm) {
         .description("Toggle play/pause")
         .icon(theme->icon("musicbox", "media.play_pause"))
         .performFn([this](PerformContext*) {
-#if HAVE_WX_MEDIA
             if (!m_media || m_queue.empty())
                 return;
             const auto st = m_media->GetState();
@@ -181,7 +194,6 @@ MusicBoxBody::MusicBoxBody(VolumeManager* vm) : m_vm(vm) {
             else
                 openMediaForCurrent(true);
             updateTransportUi();
-#endif
         })
         .install();
     action(ID_STOP, "media", "stop", seq++)
@@ -203,41 +215,40 @@ MusicBoxBody::~MusicBoxBody() {
         m_progressTimer->Stop();
 }
 
-void MusicBoxBody::createFragmentView(CreateViewContext* ctx) {
+wxWindow* MusicBoxBody::createFragmentView(CreateViewContext* ctx) {
+    m_frame = ctx->findParentFrame();
     wxWindow* parent = ctx->getParent();
-    m_frame = dynamic_cast<uiFrame*>(parent);
-    if (!m_frame)
-        return;
+
     if (!m_vm) {
         if (auto* sh = ShellApp::getInstance())
             m_vm = sh->getVolumeManager();
     }
     if (!m_vm)
-        return;
+        return nullptr;
 
     m_root = new wxPanel(parent, wxID_ANY, ctx->getPos(), ctx->getSize());
     m_root->SetMinSize(wxSize(880, 560));
 
-    auto* outer = new wxBoxSizer(wxVERTICAL);
-    auto* main = new wxBoxSizer(wxHORIZONTAL);
-
     // Library column.
     auto* left = new wxPanel(m_root, wxID_ANY);
-    auto* leftSizer = new wxBoxSizer(wxVERTICAL);
 
     auto* libTop = new wxBoxSizer(wxHORIZONTAL);
     auto* chooseBtn = new wxButton(left, wxID_ANY, "Library Folder...");
     chooseBtn->Bind(wxEVT_BUTTON, &MusicBoxBody::onChooseLibraryFolder, this);
     libTop->Add(chooseBtn, 0, wxALL, 6);
     libTop->AddStretchSpacer();
+
+    auto* outer = new wxBoxSizer(wxVERTICAL);
+    auto* main = new wxBoxSizer(wxHORIZONTAL);
+    auto* leftSizer = new wxBoxSizer(wxVERTICAL);
     leftSizer->Add(libTop, 0, wxEXPAND);
+    leftSizer->Add(new wxStaticText(left, wxID_ANY, "No default volume"), 0, wxALL, 8);
 
     // Default library folder.
     Volume* anchor = m_vm->getDefaultVolume();
     if (!anchor) {
-        leftSizer->Add(new wxStaticText(left, wxID_ANY, "No default volume"), 0, wxALL, 8);
         m_root->SetSizer(outer);
-        return;
+        return nullptr;
     }
 
     m_libraryDir = VolumeFile(anchor, kDefaultLibraryPath);
@@ -256,9 +267,7 @@ void MusicBoxBody::createFragmentView(CreateViewContext* ctx) {
     });
     m_libraryView->onFileActivated([this](VolumeFile& f) { onLibraryFileActivated(f); });
     m_libraryView->SetMinSize(wxSize(320, 360));
-    leftSizer->Add(m_libraryView, 1, wxEXPAND | wxALL, 6);
 
-    left->SetSizer(leftSizer);
     main->Add(left, 0, wxEXPAND);
 
     // Playlist column.
@@ -269,10 +278,8 @@ void MusicBoxBody::createFragmentView(CreateViewContext* ctx) {
                                 wxLC_REPORT | wxLC_SINGLE_SEL);
     m_playlist->InsertColumn(0, "Track", wxLIST_FORMAT_LEFT, 360);
     m_playlist->InsertColumn(1, "Ext", wxLIST_FORMAT_LEFT, 80);
-    rightSizer->Add(m_playlist, 1, wxEXPAND | wxALL, 6);
 
     auto* controls = new wxPanel(right, wxID_ANY);
-    auto* cSizer = new wxBoxSizer(wxVERTICAL);
 
     auto* progRow = new wxBoxSizer(wxHORIZONTAL);
     m_seekSlider = new wxSlider(controls, wxID_ANY, 0, 0, kGaugeRange, wxDefaultPosition,
@@ -283,36 +290,36 @@ void MusicBoxBody::createFragmentView(CreateViewContext* ctx) {
     m_timeLabel = new wxStaticText(controls, wxID_ANY, "00:00 / 00:00");
     progRow->Add(m_seekSlider, 1, wxEXPAND | wxLEFT | wxRIGHT, 6);
     progRow->Add(m_timeLabel, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, 8);
-    cSizer->Add(progRow, 0, wxEXPAND | wxTOP, 4);
 
     m_progressGauge =
         new wxGauge(controls, wxID_ANY, kGaugeRange, wxDefaultPosition, wxSize(-1, 10));
     m_progressGauge->SetValue(0);
-    cSizer->Add(m_progressGauge, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, 6);
-
-    controls->SetSizer(cSizer);
-    rightSizer->Add(controls, 0, wxEXPAND | wxALL, 6);
 
     // Hidden media control used for playback.
-#if HAVE_WX_MEDIA
     m_media = new wxMediaCtrl(right, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize(1, 1), 0);
     m_media->Show(false);
     m_media->Bind(wxEVT_MEDIA_FINISHED, &MusicBoxBody::onMediaFinished, this);
-#else
-    m_media = nullptr;
-#endif
 
     // Periodic UI refresh (progress).
+    updateTransportUi();
+
+    leftSizer->Add(m_libraryView, 1, wxEXPAND | wxALL, 6);
+    left->SetSizer(leftSizer);
+    rightSizer->Add(m_playlist, 1, wxEXPAND | wxALL, 6);
+    auto* cSizer = new wxBoxSizer(wxVERTICAL);
+    cSizer->Add(progRow, 0, wxEXPAND | wxTOP, 4);
+
+    cSizer->Add(m_progressGauge, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, 6);
+    controls->SetSizer(cSizer);
+    rightSizer->Add(controls, 0, wxEXPAND | wxALL, 6);
+
     m_progressTimer = new wxTimer(m_root, wxID_ANY);
     m_root->Bind(wxEVT_TIMER, &MusicBoxBody::onProgressTick, this, m_progressTimer->GetId());
     m_progressTimer->Start(kSeekTimerMs);
 
     right->SetSizer(rightSizer);
     main->Add(right, 1, wxEXPAND);
-
     outer->Add(main, 1, wxEXPAND);
-
-    updateTransportUi();
 
     outer->SetSizeHints(parent);
     m_root->SetSizer(outer);
@@ -321,6 +328,8 @@ void MusicBoxBody::createFragmentView(CreateViewContext* ctx) {
     m_frame->Bind(wxEVT_CLOSE_WINDOW, &MusicBoxBody::onFrameClose, this);
 
     refreshLibrary();
+
+    return m_root;
 }
 
 void MusicBoxBody::refreshLibrary() {

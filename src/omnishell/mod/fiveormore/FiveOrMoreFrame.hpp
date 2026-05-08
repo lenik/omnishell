@@ -16,7 +16,7 @@ class FiveOrMoreFrame : public uiFrame {
     FiveOrMoreFrame(App* app, std::string title);
     ~FiveOrMoreFrame() override = default;
 
-    void createFragmentView(CreateViewContext* ctx) override;
+    wxWindow* createFragmentView(CreateViewContext* ctx) override;
 
   private:
     FiveOrMoreBody m_body;

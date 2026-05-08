@@ -733,14 +733,14 @@ void DesktopWindow::CreateIconControls(DesktopIcon& icon) {
     // Create icon bitmap
     wxBitmap bitmap;
     auto tmp = moduleIcon->module->image.toBitmap(32, 32);
-    if (tmp && tmp->IsOk()) {
-        bitmap = *tmp;
+    if (tmp.isOk()) {
+        bitmap = tmp;
     } else {
         // Default icon
         ImageSet executable = ImageSet(wxART_EXECUTABLE_FILE);
         tmp = executable.toBitmap(32, 32);
-        if (tmp && tmp->IsOk()) {
-            bitmap = *tmp;
+        if (tmp.isOk()) {
+            bitmap = tmp;
         }
     }
 

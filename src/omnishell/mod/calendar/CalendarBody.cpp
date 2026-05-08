@@ -1,5 +1,7 @@
 #include "CalendarBody.hpp"
 
+#include "../../core/App.hpp"
+
 #include <wx/dateevt.h>
 
 namespace os {
@@ -14,33 +16,31 @@ enum {
 }
 
 CalendarBody::CalendarBody() {
-    std::string dir = "heroicons/normal";
+    auto theme = os::app.getIconTheme();
 
     group(ID_GROUP_NAV, "view", "navigate", 1000, "&Navigate", "Calendar navigation").install();
 
     int seq = 0;
     action(ID_TODAY, "view/navigate", "today", seq++, "&Today", "Go to today")
-        .icon(wxART_GO_HOME, dir, "calendar-days.svg")
+        .icon(theme->icon("calendar", "today"))
         .performFn([this](PerformContext* ctx) { onToday(ctx); })
         .install();
     action(ID_PREV_MONTH, "view/navigate", "prev_month", seq++, "&Previous Month", "Go to previous month")
-        .icon(wxART_GO_BACK, dir, "arrow-left.svg")
+        .icon(theme->icon("calendar", "prev_month"))
         .performFn([this](PerformContext* ctx) { onPrevMonth(ctx); })
         .install();
     action(ID_NEXT_MONTH, "view/navigate", "next_month", seq++, "&Next Month", "Go to next month")
-        .icon(wxART_GO_FORWARD, dir, "arrow-right.svg")
+        .icon(theme->icon("calendar", "next_month"))
         .performFn([this](PerformContext* ctx) { onNextMonth(ctx); })
         .install();
 }
 
-void CalendarBody::createFragmentView(CreateViewContext* ctx) {
+wxWindow* CalendarBody::createFragmentView(CreateViewContext* ctx) {
+    m_frame = ctx->findParentFrame();
+    
     wxWindow* parent = ctx->getParent();
-    uiFrame* frame = dynamic_cast<uiFrame*>(parent);
-    if (!frame)
-        return;
-    m_frame = frame;
-
     m_cal = new wxCalendarCtrl(parent, wxID_ANY, wxDefaultDateTime, ctx->getPos(), ctx->getSize());
+    return m_cal;
 }
 
 void CalendarBody::onToday(PerformContext*) {

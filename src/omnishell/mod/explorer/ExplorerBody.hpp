@@ -32,7 +32,7 @@ public:
     /** Set initial volume and path (call before createFragmentView when running as standalone). */
     void setOpenTarget(Volume* volume, const std::string& dir);
 
-    void createFragmentView(CreateViewContext* ctx) override;
+    wxWindow* createFragmentView(CreateViewContext* ctx) override;
 
 private:
     void createActions();

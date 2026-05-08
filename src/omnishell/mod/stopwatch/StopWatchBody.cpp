@@ -1,5 +1,7 @@
 #include "StopWatchBody.hpp"
 
+#include "../../core/App.hpp"
+
 #include <wx/button.h>
 #include <wx/panel.h>
 #include <wx/sizer.h>
@@ -16,21 +18,21 @@ enum {
 }
 
 StopWatchBody::StopWatchBody() {
-    const std::string dir = "heroicons/normal";
+    auto theme = os::app.getIconTheme();
 
     group(ID_GROUP_SW, "controls", "stopwatch", 1000, "&StopWatch", "Stopwatch controls").install();
 
     int seq = 0;
     action(ID_START, "controls/stopwatch", "start", seq++, "&Start", "Start timer")
-        .icon(wxART_TIP, dir, "clock.svg")
+        .icon(theme->icon("stopwatch", "start"))
         .performFn([this](PerformContext* ctx) { onStart(ctx); })
         .install();
     action(ID_STOP, "controls/stopwatch", "stop", seq++, "S&top", "Stop timer")
-        .icon(wxART_TIP, dir, "stop.svg")
+        .icon(theme->icon("stopwatch", "stop"))
         .performFn([this](PerformContext* ctx) { onStop(ctx); })
         .install();
     action(ID_RESET, "controls/stopwatch", "reset", seq++, "&Reset", "Reset timer")
-        .icon(wxART_TIP, dir, "arrow-path.svg")
+        .icon(theme->icon("stopwatch", "reset"))
         .performFn([this](PerformContext* ctx) { onReset(ctx); })
         .install();
 }
@@ -40,11 +42,11 @@ StopWatchBody::~StopWatchBody() {
         m_timer.Stop();
 }
 
-void StopWatchBody::createFragmentView(CreateViewContext* ctx) {
+wxWindow* StopWatchBody::createFragmentView(CreateViewContext* ctx) {
     wxWindow* parent = ctx->getParent();
     uiFrame* frame = dynamic_cast<uiFrame*>(parent);
     if (!frame)
-        return;
+        return nullptr;
     m_frame = frame;
 
     m_frame->Bind(wxEVT_CLOSE_WINDOW, &StopWatchBody::onClose, this);
@@ -85,6 +87,8 @@ void StopWatchBody::createFragmentView(CreateViewContext* ctx) {
     sizer->Add(m_display, 1, wxEXPAND | wxALL | wxALIGN_CENTER, 10);
     sizer->Add(buttonSizer, 0, wxEXPAND | wxALL, 5);
     root->SetSizer(sizer);
+
+    return root;
 }
 
 void StopWatchBody::onStart(PerformContext*) {

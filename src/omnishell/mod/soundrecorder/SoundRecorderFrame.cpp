@@ -10,8 +10,8 @@ SoundRecorderFrame::SoundRecorderFrame(App* app, std::string title)
     createView();
 }
 
-void SoundRecorderFrame::createFragmentView(CreateViewContext* ctx) {
-    uiFrame::createFragmentView(ctx);
+wxWindow* SoundRecorderFrame::createFragmentView(CreateViewContext* ctx) {
+    return uiFrame::createFragmentView(ctx);
 }
 
 } // namespace os

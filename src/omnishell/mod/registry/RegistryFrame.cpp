@@ -10,8 +10,8 @@ RegistryFrame::RegistryFrame(App* app, std::string title)
     createView();
 }
 
-void RegistryFrame::createFragmentView(CreateViewContext* ctx) {
-    uiFrame::createFragmentView(ctx);
+wxWindow* RegistryFrame::createFragmentView(CreateViewContext* ctx) {
+    return uiFrame::createFragmentView(ctx);
 }
 
 } // namespace os

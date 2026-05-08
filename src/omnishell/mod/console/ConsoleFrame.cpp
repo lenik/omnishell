@@ -14,8 +14,8 @@ ConsoleFrame::ConsoleFrame(App* app)
     SetSize(wxSize(900, 520));
 }
 
-void ConsoleFrame::createFragmentView(CreateViewContext* ctx) {
-    uiFrame::createFragmentView(ctx);
+wxWindow* ConsoleFrame::createFragmentView(CreateViewContext* ctx) {
+    return uiFrame::createFragmentView(ctx);
 }
 
 } // namespace os

@@ -13,14 +13,11 @@
 #include <wx/bmpbuttn.h>
 #include <wx/dcclient.h>
 #include <wx/log.h>
+#include <wx/mediactrl.h>
 #include <wx/panel.h>
 #include <wx/sizer.h>
 #include <wx/stattext.h>
 #include <wx/uri.h>
-
-#if HAVE_WX_MEDIA
-#include <wx/mediactrl.h>
-#endif
 
 #include <algorithm>
 #include <cmath>
@@ -212,17 +209,16 @@ MediaPlayerBody::MediaPlayerBody(VolumeManager* vm) : m_vm(vm) {
     state(ID_STATE_REPEAT, "media/mediaplayer", "repeat", 10)
         .label("Repeat")
         .description("Repeat when playback reaches the end")
+        .shortcut("Ctrl+R")
+        .icon(theme->icon("mediaplayer", "media.repeat"))
         .stateType(UIStateType::BOOL)
-        .valueDescriptorFn([this](const UIStateVariant& nv) -> UIStateValueDescriptor {
+        .valueDescriptorFn([this, theme](const UIStateVariant& nv) -> UIStateValueDescriptor {
             UIStateValueDescriptor d;
             d.label = m_repeat ? "Repeat" : "No Repeat";
             d.description = m_repeat ? "Repeat when playback reaches the end"
                                      : "No repeat when playback reaches the end";
-            d.icon = m_repeat
-                         ? ImageSet(wxART_REPEAT,
-                                    Path(slv_core_pop, "interface-essential/button-loop.svg"))
-                         : ImageSet(wxART_SEQUENCE,
-                                    Path(slv_core_pop, "interface-essential/arrange-number.svg"));
+            d.icon = m_repeat ? theme->icon("mediaplayer", "media.repeat")
+                              : theme->icon("mediaplayer", "media.once");
             return d;
         })
         .initValue(UIStateVariant{false})
@@ -236,10 +232,21 @@ MediaPlayerBody::MediaPlayerBody(VolumeManager* vm) : m_vm(vm) {
     state(ID_STATE_AUDIO_SPECTRUM, "media/mediaplayer", "audio_spectrum", 11)
         .label("Spectrum view")
         .description("Show spectrum bars instead of waveform (audio)")
+        .shortcut("Ctrl+M")
+        .icon(theme->icon("mediaplayer", "media.spectrum"))
         .stateType(UIStateType::BOOL)
+        .valueDescriptorFn([this, theme](const UIStateVariant& nv) -> UIStateValueDescriptor {
+            UIStateValueDescriptor d;
+            d.label = m_audioSpectrum ? "Spectrum view" : "Waveform view";
+            d.description = m_audioSpectrum ? "Show spectrum bars instead of waveform (audio)"
+                                            : "Show waveform instead of spectrum bars (audio)";
+            d.icon = m_audioSpectrum ? theme->icon("mediaplayer", "media.spectrum")
+                                     : theme->icon("mediaplayer", "media.waveform");
+            return d;
+        })
         .initValue(UIStateVariant{false})
         .valueRef(&m_spectrumStateSink)
-        .connect([this](const UIStateVariant& nv, const UIStateVariant&) {
+        .connect([this, theme](const UIStateVariant& nv, const UIStateVariant&) {
             if (const bool* b = std::get_if<bool>(&nv)) {
                 m_audioSpectrum = *b;
                 if (m_visualizer)
@@ -254,51 +261,29 @@ MediaPlayerBody::~MediaPlayerBody() {
         m_vizTimer.Stop();
 }
 
-void MediaPlayerBody::createFragmentView(CreateViewContext* ctx) {
+wxWindow* MediaPlayerBody::createFragmentView(CreateViewContext* ctx) {
+    m_frame = ctx->findParentFrame();
+
     wxWindow* parent = ctx->getParent();
-    m_frame = dynamic_cast<uiFrame*>(parent);
-    if (!m_frame) {
-        wxMessageBox("Parent is not a uiFrame", "Media Player", wxOK | wxICON_ERROR);
-        return;
-    }
-
     m_root = new wxPanel(parent, wxID_ANY, ctx->getPos(), ctx->getSize());
-    auto* mainSizer = new wxBoxSizer(wxVERTICAL);
-
     m_visualizer = new MediaAudioVisualizer(m_root);
     asViz(m_visualizer)->setSpectrumMode(m_audioSpectrum);
-    mainSizer->Add(m_visualizer, 0, wxEXPAND | wxLEFT | wxRIGHT | wxTOP, 4);
 
-#if HAVE_WX_MEDIA
     m_media = new wxMediaCtrl(m_root, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0);
-    mainSizer->Add(m_media, 1, wxEXPAND | wxALL, 4);
-
     m_media->Bind(wxEVT_MEDIA_FINISHED, &MediaPlayerBody::onMediaFinished, this);
-#else
-    mainSizer->Add(
-        new wxStaticText(m_root, wxID_ANY,
-                         _("wxMediaCtrl is not available (link wxWidgets media library).")),
-        0, wxALL, 8);
-#endif
 
-    wxBitmap bmpPlay = ImageSet(wxART_GO_FORWARD, //
-                                Path(slv_core_pop, "entertainment/button-play.svg"))
-                           .toBitmap1(kControlIconPx, kControlIconPx);
-    wxBitmap bmpPause = ImageSet(wxART_PAUSE, //
-                                 Path(slv_core_pop, "entertainment/button-pause-2.svg"))
-                            .toBitmap1(kControlIconPx, kControlIconPx);
-    wxBitmap bmpStop = ImageSet(wxART_STOP, //
-                                Path(slv_core_pop, "entertainment/button-stop.svg"))
-                           .toBitmap1(kControlIconPx, kControlIconPx);
+    auto theme = os::app.getIconTheme();
 
     auto* bar = new wxPanel(m_root, wxID_ANY);
     auto* barSizer = new wxBoxSizer(wxHORIZONTAL);
     barSizer->AddStretchSpacer();
 
-    auto makeBtn = [this, bar, &barSizer](const wxBitmap& bmp, const wxString& tip,
+    auto makeBtn = [this, bar, &barSizer](const ImageSet& icon, const wxString& tip,
                                           void (MediaPlayerBody::*fn)(PerformContext*)) {
-        auto* b = new wxBitmapButton(bar, wxID_ANY, bmp, wxDefaultPosition, wxDefaultSize,
-                                     wxBU_AUTODRAW | wxBORDER_NONE);
+        int iconSize = kControlIconPx;
+        auto* b =
+            new wxBitmapButton(bar, wxID_ANY, icon.toBitmap1(iconSize, iconSize), //
+                               wxDefaultPosition, wxDefaultSize, wxBU_AUTODRAW | wxBORDER_NONE);
         b->SetToolTip(tip);
         b->Bind(wxEVT_BUTTON, [this, fn](wxCommandEvent& e) {
             auto pc = toPerformContext(e);
@@ -307,14 +292,18 @@ void MediaPlayerBody::createFragmentView(CreateViewContext* ctx) {
         barSizer->Add(b, 0, wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, 6);
     };
 
-    makeBtn(bmpPlay, _("Play"), &MediaPlayerBody::onPlay);
-    makeBtn(bmpPause, _("Pause"), &MediaPlayerBody::onPause);
-    makeBtn(bmpStop, _("Stop"), &MediaPlayerBody::onStop);
+    makeBtn(theme->icon("mediaplayer", "media.play"), _("Play"), &MediaPlayerBody::onPlay);
+    makeBtn(theme->icon("mediaplayer", "media.pause"), _("Pause"), &MediaPlayerBody::onPause);
+    makeBtn(theme->icon("mediaplayer", "media.stop"), _("Stop"), &MediaPlayerBody::onStop);
+
+    auto* mainSizer = new wxBoxSizer(wxVERTICAL);
+    mainSizer->Add(m_visualizer, 0, wxEXPAND | wxLEFT | wxRIGHT | wxTOP, 4);
+    mainSizer->Add(m_media, 1, wxEXPAND | wxALL, 4);
 
     barSizer->AddStretchSpacer();
     bar->SetSizer(barSizer);
-    mainSizer->Add(bar, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, 6);
 
+    mainSizer->Add(bar, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, 6);
     m_root->SetSizer(mainSizer);
 
     m_vizTimer.SetOwner(m_root);
@@ -323,21 +312,19 @@ void MediaPlayerBody::createFragmentView(CreateViewContext* ctx) {
 
     syncVisualizerLayout();
     updateFrameTitle();
+
+    return m_root;
 }
 
 wxLongLong MediaPlayerBody::playbackTellMs() const {
-#if HAVE_WX_MEDIA
     if (m_media)
         return m_media->Tell();
-#endif
     return wxLongLong(0);
 }
 
 bool MediaPlayerBody::isPlaybackPlaying() const {
-#if HAVE_WX_MEDIA
     if (m_media)
         return m_media->GetState() == wxMEDIASTATE_PLAYING;
-#endif
     return false;
 }
 
@@ -379,7 +366,6 @@ void MediaPlayerBody::loadVolumeFile(const VolumeFile& file, bool autoplay) {
     updateFrameTitle();
     syncVisualizerLayout();
 
-#if HAVE_WX_MEDIA
     if (!m_media || !m_vm)
         return;
     ShellApp* sh = ShellApp::getInstance();
@@ -405,16 +391,11 @@ void MediaPlayerBody::loadVolumeFile(const VolumeFile& file, bool autoplay) {
     }
     if (autoplay)
         m_media->Play();
-#else
-    (void)autoplay;
-#endif
 
     if (m_vizTimer.IsRunning())
         m_vizTimer.Stop();
-#if HAVE_WX_MEDIA
     if (extensionIsAudio(file.getPath()))
         m_vizTimer.Start(kVizTimerMs);
-#endif
     refreshVisualizer();
 }
 
@@ -462,32 +443,25 @@ void MediaPlayerBody::onOpen(PerformContext*) {
 }
 
 void MediaPlayerBody::onPlay(PerformContext*) {
-#if HAVE_WX_MEDIA
     if (m_media)
         m_media->Play();
-#endif
     if (m_file && extensionIsAudio(m_file->getPath()) && !m_vizTimer.IsRunning())
         m_vizTimer.Start(kVizTimerMs);
     refreshVisualizer();
 }
 
 void MediaPlayerBody::onPause(PerformContext*) {
-#if HAVE_WX_MEDIA
     if (m_media)
         m_media->Pause();
-#endif
     refreshVisualizer();
 }
 
 void MediaPlayerBody::onStop(PerformContext*) {
-#if HAVE_WX_MEDIA
     if (m_media)
         m_media->Stop();
-#endif
     refreshVisualizer();
 }
 
-#if HAVE_WX_MEDIA
 void MediaPlayerBody::onMediaFinished(wxMediaEvent&) {
     if (m_repeat && m_media) {
         m_media->Seek(0);
@@ -496,6 +470,5 @@ void MediaPlayerBody::onMediaFinished(wxMediaEvent&) {
     }
     refreshVisualizer();
 }
-#endif
 
 } // namespace os

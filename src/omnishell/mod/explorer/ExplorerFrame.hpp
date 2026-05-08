@@ -19,7 +19,7 @@ class ExplorerFrame : public uiFrame {
     ExplorerFrame(App* app, VolumeManager* vm, Volume* volume, std::string dir);
     ~ExplorerFrame() override = default;
 
-    void createFragmentView(CreateViewContext* ctx) override;
+    wxWindow* createFragmentView(CreateViewContext* ctx) override;
 
     ExplorerBody& body() { return m_body; }
 

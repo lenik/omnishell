@@ -14,10 +14,7 @@
 namespace os {
 
 namespace {
-enum {
-    ID_REFRESH = wxID_HIGHEST + 1,
-    ID_END_TASK
-};
+enum { ID_REFRESH = wxID_HIGHEST + 1, ID_END_TASK };
 }
 
 TaskManagerBody::~TaskManagerBody() {
@@ -27,32 +24,29 @@ TaskManagerBody::~TaskManagerBody() {
         m_frame->Unbind(wxEVT_TIMER, &TaskManagerBody::OnTimer, this, m_refreshTimer.GetId());
 }
 
-void TaskManagerBody::createFragmentView(CreateViewContext* ctx) {
+wxWindow* TaskManagerBody::createFragmentView(CreateViewContext* ctx) {
+    m_frame = ctx->findParentFrame();
+
     wxWindow* parent = ctx->getParent();
-    uiFrame* frame = dynamic_cast<uiFrame*>(parent);
-    if (!frame)
-        return;
-    m_frame = frame;
 
     m_panel = new wxPanel(parent, wxID_ANY, ctx->getPos(), ctx->getSize());
     m_panel->SetMinSize(wxSize(600, 400));
-
-    auto* mainsizer = new wxBoxSizer(wxVERTICAL);
 
     m_processList = new wxListCtrl(m_panel, wxID_ANY, wxDefaultPosition, wxDefaultSize,
                                    wxLC_REPORT | wxLC_SINGLE_SEL);
     m_processList->InsertColumn(0, "Window", wxLIST_FORMAT_LEFT, 360);
     m_processList->InsertColumn(1, "State", wxLIST_FORMAT_LEFT, 200);
 
-    mainsizer->Add(m_processList, 1, wxEXPAND | wxALL, 10);
-
-    auto* btnsizer = new wxBoxSizer(wxHORIZONTAL);
     m_refreshBtn = new wxButton(m_panel, ID_REFRESH, "Refresh");
     m_endTaskBtn = new wxButton(m_panel, ID_END_TASK, "End Task");
+
+    auto* btnsizer = new wxBoxSizer(wxHORIZONTAL);
     btnsizer->Add(m_refreshBtn, 0, wxALL, 5);
     btnsizer->Add(m_endTaskBtn, 0, wxALL, 5);
     btnsizer->AddStretchSpacer();
 
+    auto* mainsizer = new wxBoxSizer(wxVERTICAL);
+    mainsizer->Add(m_processList, 1, wxEXPAND | wxALL, 10);
     mainsizer->Add(btnsizer, 0, wxEXPAND | wxLEFT | wxRIGHT, 10);
     m_panel->SetSizer(mainsizer);
 
@@ -68,6 +62,8 @@ void TaskManagerBody::createFragmentView(CreateViewContext* ctx) {
     m_refreshTimer.Start(2000);
 
     refreshProcessList();
+
+    return m_panel;
 }
 
 void TaskManagerBody::OnRefresh(wxCommandEvent& event) {
@@ -77,8 +73,7 @@ void TaskManagerBody::OnRefresh(wxCommandEvent& event) {
 
 void TaskManagerBody::OnEndTask(wxCommandEvent& event) {
     (void)event;
-    long selected =
-        m_processList->GetNextItem(-1, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED);
+    long selected = m_processList->GetNextItem(-1, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED);
     if (selected == -1) {
         wxMessageBox("Please select a window to close.", "Task Manager", wxOK | wxICON_INFORMATION);
         return;

@@ -23,12 +23,10 @@ enum {
 };
 }
 
-void SnippingToolBody::createFragmentView(CreateViewContext* ctx) {
+wxWindow* SnippingToolBody::createFragmentView(CreateViewContext* ctx) {
+    m_frame = ctx->findParentFrame();
+    
     wxWindow* parent = ctx->getParent();
-    uiFrame* frame = dynamic_cast<uiFrame*>(parent);
-    if (!frame)
-        return;
-    m_frame = frame;
 
     m_panel = new wxPanel(parent, wxID_ANY, ctx->getPos(), ctx->getSize());
     m_panel->SetMinSize(wxSize(400, 300));
@@ -40,6 +38,7 @@ void SnippingToolBody::createFragmentView(CreateViewContext* ctx) {
     toolsizer->Add(new wxButton(m_panel, ID_SAVE, "Save"), 0, wxALL, 5);
     toolsizer->Add(new wxButton(m_panel, ID_COPY, "Copy"), 0, wxALL, 5);
     toolsizer->Add(new wxStaticText(m_panel, wxID_ANY, "Mode:"), 0, wxALIGN_CENTER_VERTICAL | wxLEFT, 10);
+    
     m_modeChoice = new wxChoice(m_panel, ID_MODE);
     m_modeChoice->Append("Free-form");
     m_modeChoice->Append("Rectangular");
@@ -68,6 +67,8 @@ void SnippingToolBody::createFragmentView(CreateViewContext* ctx) {
             OnCopy(e);
     });
     m_panel->Bind(wxEVT_CHOICE, &SnippingToolBody::OnMode, this, ID_MODE);
+
+    return m_panel;
 }
 
 void SnippingToolBody::OnNewSnip(wxCommandEvent& event) {

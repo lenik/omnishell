@@ -17,7 +17,7 @@ class MinesweeperBody : public UIFragment {
     explicit MinesweeperBody(App* app);
     ~MinesweeperBody() override = default;
 
-    void createFragmentView(CreateViewContext* ctx) override;
+    wxWindow* createFragmentView(CreateViewContext* ctx) override;
     wxEvtHandler* getEventHandler() override;
 
     void resetGame();

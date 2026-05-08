@@ -16,7 +16,7 @@ public:
     CalculatorFrame(App* app, std::string title);
     ~CalculatorFrame() override = default;
 
-    void createFragmentView(CreateViewContext* ctx) override;
+    wxWindow* createFragmentView(CreateViewContext* ctx) override;
 
     CalculatorBody& body() { return m_body; }
 

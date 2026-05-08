@@ -482,6 +482,7 @@ FiveOrMoreBody::FiveOrMoreBody(App* app) {
 
     observable<UIStateVariant>* difficultyValueSink = nullptr;
 
+    
     state(ID_DIFFICULTY, "game/fiveormore", "difficulty", 5)
         .label("Difficulty")
         .description("Balls per move after each turn; start a new game to apply.")
@@ -489,17 +490,17 @@ FiveOrMoreBody::FiveOrMoreBody(App* app) {
         .enumValues({1, 2, 3})
         .initValue(UIStateVariant{3})
         .valueRef(&difficultyValueSink)
-        .valueDescriptorFn([](int v) -> UIStateValueDescriptor {
+        .valueDescriptorFn([theme](int v) -> UIStateValueDescriptor {
             UIStateValueDescriptor d;
             d.label = v == 1 ? "Easy" : (v == 2 ? "Medium" : "Hard");
             d.description = v == 1 ? "1 new ball per move"
                                    : (v == 2 ? "2 new balls per move" : "3 new balls per move");
             if (v == 1)
-                d.icon = ImageSet(Path(slv_core_flat, "phone/signal-low.svg"));
+                d.icon = theme->icon("fiveormore", "difficulty.easy");
             else if (v == 2)
-                d.icon = ImageSet(Path(slv_core_flat, "phone/signal-medium.svg"));
+                d.icon = theme->icon("fiveormore", "difficulty.medium");
             else
-                d.icon = ImageSet(Path(slv_core_flat, "phone/signal-full.svg"));
+                d.icon = theme->icon("fiveormore", "difficulty.hard");
             return d;
         })
         .connect([this](const UIStateVariant& nv, const UIStateVariant&) {
@@ -517,17 +518,16 @@ FiveOrMoreBody::FiveOrMoreBody(App* app) {
         .install();
 }
 
-void FiveOrMoreBody::createFragmentView(CreateViewContext* ctx) {
+wxWindow* FiveOrMoreBody::createFragmentView(CreateViewContext* ctx) {
+    // uiFrame *frame = ctx->findParentFrame();
+
     wxWindow* parent = ctx->getParent();
-    if (!dynamic_cast<uiFrame*>(parent))
-        return;
 
     auto* panel = new FiveOrMoreCanvas(parent, this);
     m_canvas = panel;
-    wxBoxSizer* s = new wxBoxSizer(wxVERTICAL);
-    s->Add(panel, 1, wxEXPAND);
-    parent->SetSizer(s);
     panel->SetFocus();
+
+    return panel;
 }
 
 } // namespace os

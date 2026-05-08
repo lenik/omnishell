@@ -13,8 +13,8 @@ ExplorerFrame::ExplorerFrame(App* app, VolumeManager* vm, Volume* volume, std::s
     createView();
 }
 
-void ExplorerFrame::createFragmentView(CreateViewContext* ctx) {
-    uiFrame::createFragmentView(ctx);
+wxWindow* ExplorerFrame::createFragmentView(CreateViewContext* ctx) {
+    return uiFrame::createFragmentView(ctx);
 }
 
 } // namespace os

@@ -1,5 +1,6 @@
 #include "BackgroundSettingsBody.hpp"
 
+#include "../../core/App.hpp"
 #include "../../core/RegistryDb.hpp"
 #include "../../shell/Shell.hpp"
 #include "../../ui/dialogs/ChooseFileDialog.hpp"
@@ -23,33 +24,31 @@ enum {
 }
 
 BackgroundSettingsBody::BackgroundSettingsBody() {
-    const std::string dir = "heroicons/normal";
+    auto theme = os::app.getIconTheme();
 
     group(ID_GROUP_BG, "settings", "background", 1000, "&Background", "Desktop background settings").install();
 
     int seq = 0;
     action(ID_CHOOSE_IMAGE, "settings/background", "choose_image", seq++, "&Choose Image...", "Select background image")
-        .icon(wxART_FILE_OPEN, dir, "photo.svg")
+        .icon(theme->icon("backgroundsettings", "choose_image"))
         .performFn([this](PerformContext* ctx) { onChooseImage(ctx); })
         .install();
     action(ID_APPLY_COLOR, "settings/background", "apply_color", seq++, "Apply &Color", "Apply solid color")
-        .icon(wxART_TIP, dir, "swatch.svg")
+        .icon(theme->icon("backgroundsettings", "apply_color"))
         .performFn([this](PerformContext* ctx) { onApplyColor(ctx); })
         .install();
     action(ID_APPLY_IMAGE, "settings/background", "apply_image", seq++, "Apply &Image", "Apply selected image")
-        .icon(wxART_TIP, dir, "photo.svg")
+        .icon(theme->icon("backgroundsettings", "apply_image"))
         .performFn([this](PerformContext* ctx) { onApplyImage(ctx); })
         .install();
 }
 
-void BackgroundSettingsBody::createFragmentView(CreateViewContext* ctx) {
-    wxWindow* parent = ctx->getParent();
-    uiFrame* frame = dynamic_cast<uiFrame*>(parent);
-    if (!frame)
-        return;
-    m_frame = frame;
+wxWindow* BackgroundSettingsBody::createFragmentView(CreateViewContext* ctx) {
+    m_frame = ctx->findParentFrame();
 
+    wxWindow* parent = ctx->getParent();
     m_root = new wxPanel(parent, wxID_ANY, ctx->getPos(), ctx->getSize());
+    
     wxBoxSizer* sizer = new wxBoxSizer(wxVERTICAL);
 
     wxStaticText* title = new wxStaticText(m_root, wxID_ANY, "Desktop background");
@@ -96,6 +95,8 @@ void BackgroundSettingsBody::createFragmentView(CreateViewContext* ctx) {
     });
 
     m_root->SetSizer(sizer);
+
+    return m_root;
 }
 
 void BackgroundSettingsBody::onChooseImage(PerformContext*) {

@@ -17,7 +17,7 @@ class ConsoleBody : public UIFragment {
     ConsoleBody(App* app);
     ~ConsoleBody() override;
 
-    void createFragmentView(CreateViewContext* ctx) override;
+    wxWindow* createFragmentView(CreateViewContext* ctx) override;
 
     wxConsole* GetConsole() const { return m_console; }
     wxTerminal* GetTerminal() const { return m_console ? m_console->GetTerminal() : nullptr; }

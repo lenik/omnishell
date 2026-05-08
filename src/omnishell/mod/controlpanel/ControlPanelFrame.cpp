@@ -9,8 +9,8 @@ ControlPanelFrame::ControlPanelFrame(App* app, std::string title)
     createView();
 }
 
-void ControlPanelFrame::createFragmentView(CreateViewContext* ctx) {
-    uiFrame::createFragmentView(ctx);
+wxWindow* ControlPanelFrame::createFragmentView(CreateViewContext* ctx) {
+    return uiFrame::createFragmentView(ctx);
 }
 
 } // namespace os

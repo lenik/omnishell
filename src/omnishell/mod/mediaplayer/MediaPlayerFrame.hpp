@@ -16,7 +16,7 @@ class MediaPlayerFrame : public uiFrame {
     MediaPlayerFrame(VolumeManager* vm, std::string title);
     ~MediaPlayerFrame() override = default;
 
-    void createFragmentView(CreateViewContext* ctx) override;
+    wxWindow* createFragmentView(CreateViewContext* ctx) override;
 
     MediaPlayerBody& body() { return m_body; }
 

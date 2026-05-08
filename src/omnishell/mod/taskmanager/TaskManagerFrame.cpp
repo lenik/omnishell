@@ -10,8 +10,8 @@ TaskManagerFrame::TaskManagerFrame(App* app, std::string title)
     createView();
 }
 
-void TaskManagerFrame::createFragmentView(CreateViewContext* ctx) {
-    uiFrame::createFragmentView(ctx);
+wxWindow* TaskManagerFrame::createFragmentView(CreateViewContext* ctx) {
+    return uiFrame::createFragmentView(ctx);
 }
 
 } // namespace os

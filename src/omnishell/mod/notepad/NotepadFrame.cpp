@@ -18,8 +18,8 @@ NotepadFrame::NotepadFrame(App* app, std::string title) //
     // statusBar_->SetStatusText("UTF-8", 1);
 }
 
-void NotepadFrame::createFragmentView(CreateViewContext* ctx) {
-    uiFrame::createFragmentView(ctx);
+wxWindow* NotepadFrame::createFragmentView(CreateViewContext* ctx) {
+    return uiFrame::createFragmentView(ctx);
 }
 
 } // namespace os

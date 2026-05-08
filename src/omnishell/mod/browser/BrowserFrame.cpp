@@ -35,8 +35,8 @@ BrowserFrame::BrowserFrame(VolumeManager* vm, std::string title)
     Bind(wxEVT_MENU, [this](wxCommandEvent&) { m_body.focusAddressBar(); }, ID_BROWSER_ACC_FOCUS_URL);
 }
 
-void BrowserFrame::createFragmentView(CreateViewContext* ctx) {
-    uiFrame::createFragmentView(ctx);
+wxWindow* BrowserFrame::createFragmentView(CreateViewContext* ctx) {
+    return uiFrame::createFragmentView(ctx);
 }
 
 } // namespace os

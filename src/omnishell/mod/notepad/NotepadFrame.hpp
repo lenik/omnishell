@@ -15,7 +15,7 @@ class NotepadFrame : public uiFrame {
     NotepadFrame(App* app, std::string title);
     ~NotepadFrame() override = default;
 
-    void createFragmentView(CreateViewContext* ctx) override;
+    wxWindow* createFragmentView(CreateViewContext* ctx) override;
 
     NotepadBody& body() { return m_body; }
 

@@ -16,7 +16,7 @@ class StopWatchFrame : public uiFrame {
     StopWatchFrame(App* app, std::string title);
     ~StopWatchFrame() override = default;
 
-    void createFragmentView(CreateViewContext* ctx) override;
+    wxWindow* createFragmentView(CreateViewContext* ctx) override;
 
   private:
     StopWatchBody m_body;

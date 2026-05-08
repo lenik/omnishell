@@ -31,7 +31,7 @@ public:
     explicit MusicBoxBody(VolumeManager* vm);
     ~MusicBoxBody() override;
 
-    void createFragmentView(CreateViewContext* ctx) override;
+    wxWindow* createFragmentView(CreateViewContext* ctx) override;
 
 private:
     void refreshLibrary();

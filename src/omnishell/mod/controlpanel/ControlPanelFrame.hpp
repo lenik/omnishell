@@ -16,7 +16,7 @@ class ControlPanelFrame : public uiFrame {
     ControlPanelFrame(App* app, std::string title);
     ~ControlPanelFrame() override = default;
 
-    void createFragmentView(CreateViewContext* ctx) override;
+    wxWindow* createFragmentView(CreateViewContext* ctx) override;
 
   private:
     ControlPanelBody m_body;

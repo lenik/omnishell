@@ -9,8 +9,8 @@ SolitaireFrame::SolitaireFrame(App* app, std::string title)
     createView();
 }
 
-void SolitaireFrame::createFragmentView(CreateViewContext* ctx) {
-    uiFrame::createFragmentView(ctx);
+wxWindow* SolitaireFrame::createFragmentView(CreateViewContext* ctx) {
+    return uiFrame::createFragmentView(ctx);
 }
 
 } // namespace os

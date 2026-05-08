@@ -14,7 +14,7 @@ public:
     CameraFrame(App* app, std::string title);
     ~CameraFrame() override = default;
 
-    void createFragmentView(CreateViewContext* ctx) override;
+    wxWindow* createFragmentView(CreateViewContext* ctx) override;
 
     CameraBody& body() { return m_body; }
 

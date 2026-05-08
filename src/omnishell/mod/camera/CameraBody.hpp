@@ -3,26 +3,25 @@
 
 #include "CameraGstPreview.hpp"
 
+#include "../../ui/widget/FileListView.hpp"
+
 #include <bas/ui/arch/UIFragment.hpp>
 #include <bas/volume/VolumeFile.hpp>
 #include <bas/volume/VolumeManager.hpp>
 #include <bas/wx/uiframe.hpp>
 
+#include <wx/event.h>
+#include <wx/mediactrl.h>
+#include <wx/panel.h>
+#include <wx/radiobox.h>
+#include <wx/sizer.h>
+#include <wx/timer.h>
+#include <wx/window.h>
+
 #include <memory>
 #include <optional>
 #include <unordered_set>
 #include <vector>
-
-class wxButton;
-class wxKeyEvent;
-class wxMediaCtrl;
-class wxStaticBitmap;
-class wxStaticText;
-class wxRadioBox;
-class wxPanel;
-class wxTimer;
-
-class FileListView;
 
 namespace os {
 
@@ -33,7 +32,7 @@ public:
     CameraBody();
     ~CameraBody() override;
 
-    void createFragmentView(CreateViewContext* ctx) override;
+    wxWindow* createFragmentView(CreateViewContext* ctx) override;
 
 private:
     void onModeChanged(wxCommandEvent& e);
@@ -86,9 +85,7 @@ private:
     wxRadioBox* m_modeBox{nullptr};
     wxStaticBitmap* m_photoPreview{nullptr};
 
-#if HAVE_WX_MEDIA
     wxMediaCtrl* m_media{nullptr};
-#endif
     bool m_videoLoaded{false};
     wxStaticText* m_videoStatus{nullptr};
 

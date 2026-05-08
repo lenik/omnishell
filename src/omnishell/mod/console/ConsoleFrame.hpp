@@ -13,7 +13,7 @@ class ConsoleFrame : public uiFrame {
 public:
     explicit ConsoleFrame(App* app);
 
-    void createFragmentView(CreateViewContext* ctx) override;
+    wxWindow* createFragmentView(CreateViewContext* ctx) override;
 
 private:
     ConsoleBody m_body;
