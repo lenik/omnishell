@@ -1,15 +1,16 @@
 #include "IconTheme.hpp"
 
+#include <bas/log/uselog.h>
 #include <bas/ui/arch/ImageSet.hpp>
 #include <bas/ui/arch/UIAction.hpp>
 
 #include <wx/artprov.h>
 
-#include <boost/property_tree/json_parser.hpp>
-#include <boost/property_tree/ptree.hpp>
+#include <boost/json/parse.hpp>
+#include <boost/system/error_code.hpp>
 
+#include <exception>
 #include <optional>
-#include <sstream>
 
 namespace os {
 
@@ -101,57 +102,6 @@ IconMap parseIconMap(const boost::json::object& in) {
     return map;
 }
 
-static ImageSet parseImageSetPtree(const boost::property_tree::ptree& node) {
-    wxArtID artId;
-    std::string assetPath;
-    std::map<std::pair<int, int>, std::string> scales;
-
-    for (const auto& child : node) {
-        const std::string& key = child.first;
-        const auto& v = child.second;
-
-        if (key == "wxartid") {
-            const std::string s = v.get_value<std::string>();
-            artId = wxArtID(s.c_str());
-        } else if (key == "asset") {
-            assetPath = v.get_value<std::string>();
-        } else if (key.find('x') != std::string::npos) {
-            const size_t pos = key.find('x');
-            if (pos != std::string::npos) {
-                try {
-                    const int w = std::stoi(key.substr(0, pos));
-                    const int h = std::stoi(key.substr(pos + 1));
-                    scales[{w, h}] = v.get_value<std::string>();
-                } catch (...) {
-                }
-            }
-        }
-    }
-
-    std::string text = assetPath;
-    if (text.empty())
-        text = artId.ToStdString();
-
-    std::optional<Path> assetOpt;
-    if (!assetPath.empty())
-        assetOpt = Path(assetPath);
-
-    ImageSet icon(artId, assetOpt, text);
-    for (const auto& [scale, path] : scales) {
-        icon.scale(scale.first, scale.second, Path(path));
-    }
-    return icon;
-}
-
-static IconMap parseIconMapPtree(const boost::property_tree::ptree& in) {
-    IconMap map;
-    for (const auto& kv : in) {
-        const std::string& iconId = kv.first;
-        const auto& value = kv.second;
-        map[iconId] = parseImageSetPtree(value);
-    }
-    return map;
-}
 void IconTheme::jsonIn(boost::json::object& in, const JsonFormOptions& opts) {
     (void)opts;
     for (auto& [key, value] : in) {
@@ -171,18 +121,22 @@ void IconTheme::jsonIn(boost::json::object& in, const JsonFormOptions& opts) {
 }
 
 const std::optional<ImageSet> IconTheme::getIcon(const std::string& app, const std::string& id) const {
-    if (m_appIcons.find(app) != m_appIcons.end()) {
-        auto& map = m_appIcons.at(app);
-        auto it = map.find(id);
-        if (it != map.end()) {
-            return it->second;
+    if (m_appIcons.find(app) == m_appIcons.end()) {
+        logerror_fmt("IconTheme: app %s not found", app.c_str());
+        return std::nullopt;
+    }
+
+    auto& map = m_appIcons.at(app);
+    auto it = map.find(id);
+    if (it == map.end()) {
+        it = m_defaultIcons.find(id);
+        if (it == m_defaultIcons.end()) {
+            logerror_fmt("IconTheme: id %s not found in app %s and defaults", id.c_str(), app.c_str());
+            return std::nullopt;
         }
     }
-    auto it = m_defaultIcons.find(id);
-    if (it != m_defaultIcons.end()) {
-        return it->second;
-    }
-    return std::nullopt;
+    
+    return it->second;
 }
 
 ImageSet IconTheme::icon(const std::string& app, const std::string& id) const {
@@ -191,26 +145,29 @@ ImageSet IconTheme::icon(const std::string& app, const std::string& id) const {
 }
 
 bool IconTheme::loadFromJsonText(const std::string& jsonText) {
-    using boost::property_tree::ptree;
     try {
-        ptree root;
-        std::stringstream ss(jsonText);
-        boost::property_tree::read_json(ss, root);
+        boost::system::error_code ec;
+        boost::json::value root = boost::json::parse(
+            boost::json::string_view(jsonText.data(), jsonText.size()), ec);
+        if (ec) {
+            logerror_fmt("IconTheme: JSON parse error: %s", ec.message().c_str());
+            return false;
+        }
+        if (!root.is_object()) {
+            logerror_fmt("IconTheme: JSON root is not an object (kind=%s)",
+                         kindToString(root.kind()).c_str());
+            return false;
+        }
 
         m_defaultIcons.clear();
         m_appIcons.clear();
-
-        for (const auto& kv : root) {
-            const std::string& key = kv.first;
-            const ptree& child = kv.second;
-            if (key == "default") {
-                m_defaultIcons = parseIconMapPtree(child);
-            } else {
-                m_appIcons[key] = parseIconMapPtree(child);
-            }
-        }
+        jsonIn(root.as_object(), JsonFormOptions::DEFAULT);
         return true;
+    } catch (const std::exception& e) {
+        logerror_fmt("IconTheme: exception while loading theme: %s", e.what());
+        return false;
     } catch (...) {
+        logerror_fmt("IconTheme: unknown exception while loading theme");
         return false;
     }
 }

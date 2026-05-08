@@ -5,10 +5,10 @@
 
 namespace ThemeStyles {
 
-constexpr std::string_view hi_micro = "heroicons/micro";
-constexpr std::string_view hi_mini = "heroicons/mini";
-constexpr std::string_view hi_normal = "heroicons/normal";
-constexpr std::string_view hi_solid = "heroicons/solid";
+constexpr std::string_view hi_micro = "heroicons/svg/micro";
+constexpr std::string_view hi_mini = "heroicons/svg/mini";
+constexpr std::string_view hi_normal = "heroicons/svg/normal";
+constexpr std::string_view hi_solid = "heroicons/svg/solid";
 
 constexpr std::string_view slv_block_arrows = "streamline-vectors/block/arrows";
 constexpr std::string_view slv_block_commerce = "streamline-vectors/block/commerce";
