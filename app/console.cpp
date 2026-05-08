@@ -8,6 +8,7 @@
 #include <omnishell/core/ModuleRegistry.hpp>
 #include <omnishell/mod/console/ConsoleApp.hpp>
 
+#include <bas/log/deflog.h>
 #include <bas/proc/env.hpp>
 #include <bas/proc/stackdump.h>
 #include <bas/volume/LocalVolume.hpp>
@@ -17,14 +18,25 @@
 
 #include <wx/log.h>
 
+#include <cstdlib>
+#include <iostream>
+#include <vector>
+
+#include "config.h"
+
 #if defined(__unix__) || defined(__APPLE__)
 #include <getopt.h>
 #endif
 
+define_logger();
+
+extern logger_t omni_logger;
+extern logger_t ui_logger;
+
 namespace os {
 
 class ConsoleWxApp : public uiApp {
-public:
+  public:
     ConsoleWxApp() = default;
 
     ~ConsoleWxApp() override {
@@ -65,7 +77,7 @@ public:
         return true;
     }
 
-private:
+  private:
     static constexpr const char* kConsoleUri = "omnishell.Console";
 
     ModuleRegistry* m_moduleRegistry{nullptr};
@@ -82,13 +94,15 @@ int main(int argc, char** argv) {
     os::app.volumeManager = std::make_unique<VolumeManager>();
     os::app.startFiles.clear();
 
-#if defined(__unix__) || defined(__APPLE__)
-    static struct option longopts[] = {{"open", required_argument, nullptr, 'o'},
-                                         {"local", required_argument, nullptr, 'l'},
-                                         {nullptr, 0, nullptr, 0}};
+    enum { kOptVersion = 1 };
+    static struct option longopts[] = {
+        {"open", required_argument, nullptr, 'o'},      {"local", required_argument, nullptr, 'l'},
+        {"verbose", no_argument, nullptr, 'v'},         {"quiet", no_argument, nullptr, 'q'},
+        {"version", no_argument, nullptr, kOptVersion}, {nullptr, 0, nullptr, 0},
+    };
 
     int opt;
-    while ((opt = getopt_long(argc, argv, "l:o:", longopts, nullptr)) != -1) {
+    while ((opt = getopt_long(argc, argv, "l:o:vq", longopts, nullptr)) != -1) {
         switch (opt) {
         case 'l':
             if (optarg && optarg[0]) {
@@ -99,14 +113,36 @@ int main(int argc, char** argv) {
             if (optarg)
                 os::app.startFiles.push_back(optarg);
             break;
+        case 'v':
+            wxLog::SetLogLevel(wxLOG_Max);
+            log_more();
+            logger_more(&omni_logger);
+            logger_more(&ui_logger);
+            break;
+        case 'q':
+            wxLog::SetLogLevel(wxLOG_Error);
+            log_less();
+            logger_less(&omni_logger);
+            logger_less(&ui_logger);
+            break;
+        case kOptVersion:
+            std::cout << OMNISHELL_VERSION << '\n';
+            std::exit(0);
         default:
             break;
         }
     }
-#endif
 
     os::app.addDefaultLocalVolumesIfEmpty();
 
     os::ConsoleWxApp wxApp;
-    return wxApp.main(argc, argv);
+    // getopt consumes our flags but leaves them in argv; wx would re-parse and reject
+    // clusters like -vvvv. Pass only argv[0] and trailing non-option arguments.
+    std::vector<char*> wxArgv;
+    wxArgv.reserve(static_cast<size_t>(argc - optind + 1));
+    wxArgv.push_back((argc > 0 && argv[0]) ? argv[0] : const_cast<char*>("console"));
+    for (int i = optind; i < argc; ++i)
+        wxArgv.push_back(argv[i]);
+    const int wxArgc = static_cast<int>(wxArgv.size());
+    return wxApp.main(wxArgc, wxArgv.data());
 }
