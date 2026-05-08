@@ -70,7 +70,7 @@ endif
 
 curl_dep = dependency('libcurl', required: true)
 date_dep = subproject('date_tz').get_variable('date_dep')
-unconst_dep = dependency('unconst', required: true)
+#unconst_dep = dependency('unconst', required: true)
 openssl_dep = dependency('openssl', required: true)
 wx_sub = subproject('wx_logic')
 wx_dep = wx_sub.get_variable('wx_dep')
@@ -259,7 +259,7 @@ exe_deps = [
     date_dep,
     curl_dep,
     openssl_dep,
-    unconst_dep,
+    #unconst_dep,
     wx_dep,
     zash_dep,
 ]
@@ -272,7 +272,7 @@ exe_static_deps = [
     curl_dep,
     date_dep,
     openssl_dep,
-    unconst_dep,
+    #unconst_dep,
     wx_dep,
     zash_static_dep,
 ]
@@ -470,7 +470,7 @@ foreach app_cpp : app_cpp_list
         app_cpp,
         include_directories: exe_inc,
         dependencies: exe_deps + [omnishell_dep],
-        cpp_args: cpp_nowarn + ['-DLOGGER_NAME=' + app_name, '-DASSETS_NAME=omni'],
+        cpp_args: cpp_nowarn + ['-DLOGGER_NAME=' + app_name],
         cpp_pch: cpp_pch,
         override_options: ['b_asneeded=false'],
         install: true,

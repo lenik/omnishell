@@ -10,5 +10,5 @@ format:
 	organize-includes -n -I $(CURDIR) $(SOURCES)
 
 bulk.h:
-	grep -r -h '^#include <' | sort -u | grep -v bas/ >$@
+	(grep -r -h '^#include <'; cat bulk_1.h) | sort -u | grep -v bas/ >$@
 
