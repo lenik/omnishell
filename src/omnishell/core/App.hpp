@@ -24,6 +24,8 @@ class App {
     /** Environment snapshot at startup (pointer target of RunConfig::env). */
     std::unordered_map<std::string, std::string> runtimeEnv;
 
+    static void init();
+    
     App();
     ~App();
 

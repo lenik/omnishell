@@ -1,8 +1,6 @@
 #include "config.h"
 
-#ifdef __cplusplus
-extern "C" void omnishell_ensure_omni_assets_registered();
-#endif
+#include <omnishell/core/App.hpp>
 
 #include <bas/log/uselog.h>
 #include <bas/proc/AssetsRegistry.hpp>
@@ -27,7 +25,7 @@ void testLoadBitmap() {
     std::cout << "best match 32 path: " << *path << std::endl;
 
     auto bmp = icon.toBitmap(32, 32);
-    if (bmp && bmp->IsOk()) {
+    if (bmp.isOk()) {
         std::cout << "Bitmap loaded from Path: " << *path << std::endl;
     } else {
         std::cout << "Failed to convert to bitmap" << std::endl;
@@ -37,8 +35,8 @@ void testLoadBitmap() {
 int main(int argc, char** argv) {
     std::cout << "omnishell " << PROJECT_VERSION << std::endl;
 
-    omnishell_ensure_omni_assets_registered();
-
+    os::App::init();
+    
     auto vol = AssetsRegistry::instance().get();
     overlay_ls(vol, argc, argv);
     return 0;

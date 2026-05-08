@@ -18,9 +18,15 @@
 extern char** environ;
 #endif
 
+extern "C" void omnishell_init();
+
 namespace os {
 
 App app;
+
+void App::init() {
+    omnishell_init();
+}
 
 App::App() : volumeManager(std::make_unique<VolumeManager>()), startFiles() {}
 App::~App() {}
@@ -67,12 +73,23 @@ const IconTheme* App::getIconTheme() const {
     static constexpr const char* kPopularThemePath = "themes/popular.json";
     Volume* assets = AssetsRegistry::instance().get();
     try {
-        if (assets->exists(kPopularThemePath)) {
-            const auto data = assets->readFile(kPopularThemePath);
-            if (!data.empty()) {
-                std::string text(reinterpret_cast<const char*>(data.data()), data.size());
-                (void)m_iconTheme.loadFromJsonText(text);
-            }
+        if (!assets->exists(kPopularThemePath)) {
+            logerror_fmt("IconTheme: theme file %s not found", kPopularThemePath);
+            std::exit(1);
+        }
+        
+        const auto data = assets->readFile(kPopularThemePath);
+        if (data.empty()) {
+            logerror_fmt("IconTheme: theme file %s is empty", kPopularThemePath);
+            std::exit(1);
+        }
+        
+        std::string text(reinterpret_cast<const char*>(data.data()), data.size());
+        
+        loglog_fmt("IconTheme: loading theme file %s", kPopularThemePath);
+        if (!m_iconTheme.loadFromJsonText(text)) {
+            logerror_fmt("IconTheme: failed to parse theme file %s", kPopularThemePath);
+            std::exit(1);
         }
     } catch (...) {
         logerror_fmt("Failed to load icon theme: %s", kPopularThemePath);

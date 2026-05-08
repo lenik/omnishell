@@ -20,8 +20,6 @@
 
 #include <iostream>
 
-extern "C" void omnishell_ensure_omni_assets_registered();
-
 #if defined(__unix__) || defined(__APPLE__)
 #include <getopt.h>
 #endif
@@ -30,7 +28,6 @@ int main(int argc, char** argv) {
     stackdump_install_crash_handler(&stackdump_color_schema_default);
     stackdump_set_interactive(1);
 
-    omnishell_ensure_omni_assets_registered();
     OverlayVolume* overlay = AssetsRegistry::instance().get();
     for (const auto& layer : overlay->layers()) {
         std::cout << "Layer " << layer->getUrl() << ": " << layer->getDeviceUrl() //
