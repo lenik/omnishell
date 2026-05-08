@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: omnishell\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-06 20:07+0800\n"
+"POT-Creation-Date: 2026-05-08 16:43+0800\n"
 "PO-Revision-Date: 2026-04-07 00:00+0000\n"
 "Last-Translator: OmniShell <>\n"
 "Language-Team: ja_JP <>\n"
@@ -207,12 +207,6 @@ msgid "Version: 1.1.1"
 msgstr "バージョン: 1.1.1"
 
 #: src/omnishell/mod/mediaplayer/MediaPlayerBody.cpp
-msgid "wxMediaCtrl is not available (link wxWidgets media library)."
-msgstr ""
-"wxMediaCtrl が利用できません（wxWidgets メディア ライブラリをリンクしてくださ"
-"い）。"
-
-#: src/omnishell/mod/mediaplayer/MediaPlayerBody.cpp
 msgid "Play"
 msgstr "再生"
 
@@ -263,3 +257,8 @@ msgstr "パスワード:"
 #: src/omnishell/mod/passwordmanager/PasswordManager.cpp
 msgid "Sign in"
 msgstr "サインイン"
+
+#~ msgid "wxMediaCtrl is not available (link wxWidgets media library)."
+#~ msgstr ""
+#~ "wxMediaCtrl が利用できません（wxWidgets メディア ライブラリをリンクしてく"
+#~ "ださい）。"

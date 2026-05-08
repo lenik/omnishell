@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: omnishell\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-06 20:07+0800\n"
+"POT-Creation-Date: 2026-05-08 16:43+0800\n"
 "PO-Revision-Date: 2026-04-07 00:00+0000\n"
 "Last-Translator: OmniShell <>\n"
 "Language-Team: ko_KR <>\n"
@@ -207,12 +207,6 @@ msgid "Version: 1.1.1"
 msgstr "버전: 1.1.1"
 
 #: src/omnishell/mod/mediaplayer/MediaPlayerBody.cpp
-msgid "wxMediaCtrl is not available (link wxWidgets media library)."
-msgstr ""
-"wxMediaCtrl을(를) 사용할 수 없습니다(wxWidgets 미디어 라이브러리를 연결하세"
-"요)."
-
-#: src/omnishell/mod/mediaplayer/MediaPlayerBody.cpp
 msgid "Play"
 msgstr "재생"
 
@@ -263,3 +257,8 @@ msgstr "암호:"
 #: src/omnishell/mod/passwordmanager/PasswordManager.cpp
 msgid "Sign in"
 msgstr "로그인"
+
+#~ msgid "wxMediaCtrl is not available (link wxWidgets media library)."
+#~ msgstr ""
+#~ "wxMediaCtrl을(를) 사용할 수 없습니다(wxWidgets 미디어 라이브러리를 연결하"
+#~ "세요)."

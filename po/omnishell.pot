@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: omnishell\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-06 20:07+0800\n"
+"POT-Creation-Date: 2026-05-08 16:43+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -38,23 +38,23 @@ msgstr ""
 msgid "All programs"
 msgstr ""
 
-#: src/omnishell/shell/StartMenu.cpp:616
+#: src/omnishell/shell/StartMenu.cpp:617
 msgid "  (empty)"
 msgstr ""
 
-#: src/omnishell/shell/StartMenu.cpp:642
+#: src/omnishell/shell/StartMenu.cpp:643
 msgid "  (no recent items)"
 msgstr ""
 
-#: src/omnishell/shell/StartMenu.cpp:754
+#: src/omnishell/shell/StartMenu.cpp:755
 msgid "Recent files"
 msgstr ""
 
-#: src/omnishell/shell/StartMenu.cpp:755
+#: src/omnishell/shell/StartMenu.cpp:756
 msgid "Trash"
 msgstr ""
 
-#: src/omnishell/shell/StartMenu.cpp:761
+#: src/omnishell/shell/StartMenu.cpp:762
 msgid "Exit"
 msgstr ""
 
@@ -62,180 +62,176 @@ msgstr ""
 msgid "Start"
 msgstr ""
 
-#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:29
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:21
 msgid "Categories:"
 msgstr ""
 
-#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:35
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:27
 msgid "Module Manager"
 msgstr ""
 
-#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:35
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:27
 msgid "Manage installed modules"
 msgstr ""
 
-#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:36
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:28
 msgid "System Settings"
 msgstr ""
 
-#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:36
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:28
 msgid "Configure system options"
 msgstr ""
 
-#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:37
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:29
 msgid "User Configuration"
 msgstr ""
 
-#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:37
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:29
 msgid "User preferences"
 msgstr ""
 
-#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:38
-#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:248
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:30
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:246
 msgid "Desktop"
 msgstr ""
 
-#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:38
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:30
 msgid "Desktop appearance"
 msgstr ""
 
-#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:39
-#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:284
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:31
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:282
 msgid "Display"
 msgstr ""
 
-#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:39
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:31
 msgid "Screen settings"
 msgstr ""
 
-#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:40
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:32
 msgid "About"
 msgstr ""
 
-#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:40
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:32
 msgid "System information"
 msgstr ""
 
-#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:58
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:45
 msgid "Select a category to view options"
 msgstr ""
 
-#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:113
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:109
 msgid "Installed Modules:"
 msgstr ""
 
-#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:121
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:117
 msgid "Name"
 msgstr ""
 
-#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:122
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:118
 msgid "Description"
 msgstr ""
 
-#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:123
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:119
 msgid "Status"
 msgstr ""
 
-#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:136
-#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:154
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:132
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:150
 msgid "Enabled"
 msgstr ""
 
-#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:136
-#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:154
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:132
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:150
 msgid "Disabled"
 msgstr ""
 
-#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:144
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:140
 msgid "Enable"
 msgstr ""
 
-#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:146
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:142
 msgid "Disable"
 msgstr ""
 
-#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:148
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:144
 msgid "Close"
 msgstr ""
 
-#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:210
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:204
 msgid "System"
 msgstr ""
 
-#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:215
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:210
 #, c-format
 msgid "OS Name: %s"
 msgstr ""
 
-#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:217
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:213
 #, c-format
 msgid "OS Version: %s"
 msgstr ""
 
-#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:232
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:228
 msgid "User"
 msgstr ""
 
-#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:237
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:234
 #, c-format
 msgid "Name: %s"
 msgstr ""
 
-#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:239
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:237
 #, c-format
 msgid "Role: %s"
 msgstr ""
 
-#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:253
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:251
 msgid "Background Settings"
 msgstr ""
 
-#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:269
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:267
 msgid "Arrange Desktop Icons"
 msgstr ""
 
-#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:291
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:290
 #, c-format
 msgid "Resolution: %d x %d"
 msgstr ""
 
-#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:300
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:299
 msgid "About OmniShell"
 msgstr ""
 
-#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:305
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:304
 msgid "OmniShell Desktop Environment"
 msgstr ""
 
-#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:307
+#: src/omnishell/mod/controlpanel/ControlPanelBody.cpp:306
 msgid "Version: 1.1.1"
 msgstr ""
 
-#: src/omnishell/mod/mediaplayer/MediaPlayerBody.cpp:280
-msgid "wxMediaCtrl is not available (link wxWidgets media library)."
-msgstr ""
-
-#: src/omnishell/mod/mediaplayer/MediaPlayerBody.cpp:310
+#: src/omnishell/mod/mediaplayer/MediaPlayerBody.cpp:295
 msgid "Play"
 msgstr ""
 
-#: src/omnishell/mod/mediaplayer/MediaPlayerBody.cpp:311
+#: src/omnishell/mod/mediaplayer/MediaPlayerBody.cpp:296
 msgid "Pause"
 msgstr ""
 
-#: src/omnishell/mod/mediaplayer/MediaPlayerBody.cpp:312
+#: src/omnishell/mod/mediaplayer/MediaPlayerBody.cpp:297
 msgid "Stop"
 msgstr ""
 
-#: src/omnishell/mod/mediaplayer/MediaPlayerBody.cpp:450
+#: src/omnishell/mod/mediaplayer/MediaPlayerBody.cpp:431
 msgid "Open media"
 msgstr ""
 
-#: src/omnishell/mod/mediaplayer/MediaPlayerBody.cpp:452
+#: src/omnishell/mod/mediaplayer/MediaPlayerBody.cpp:433
 msgid "Audio/Video"
 msgstr ""
 
-#: src/omnishell/mod/mediaplayer/MediaPlayerBody.cpp:454
+#: src/omnishell/mod/mediaplayer/MediaPlayerBody.cpp:435
 msgid "All files"
 msgstr ""
 
