@@ -38,6 +38,13 @@ struct JsonTreePathResolution {
 bool resolveJsonTreePath(const std::string& key, JsonTreePathResolution& out);
 
 /**
+ * Unified layout for in-memory JsonRegistry only: '/' and '.' are interchangeable segment
+ * separators. Canonical map keys join segments with '/'.
+ */
+std::vector<std::string> splitUnifiedRegistryPath(const std::string& key);
+std::string canonicalUnifiedRegistryKey(const std::string& key);
+
+/**
  * Fs layout: '/' and '.' are both path segments; second-to-last segment is JSON filename stem.
  * Example: foo/bar/cat.dog.name1 -> file root/foo/bar/cat/dog.json, { "name1": "..." }.
  */

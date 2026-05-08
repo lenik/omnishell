@@ -34,7 +34,7 @@ class VolumeRegistry : public AbstractRegistry {
 
     std::map<std::string, std::string> snapshotStrings() const override;
 
-  private:
+  protected:
     void ensureLoaded() const;
 
     void loadFromVolume();
@@ -45,6 +45,7 @@ class VolumeRegistry : public AbstractRegistry {
     void collectKeysForGroup(const reg::DualPathResolution& sample,
                              std::map<std::vector<std::string>, std::string>& out) const;
 
+  private:
     VolumeFile m_root;
 };
 

@@ -3,20 +3,19 @@
 
 #include "AbstractRegistry.hpp"
 
+#include <boost/json.hpp>
+
 #include <string>
 
 namespace os {
 
 /**
- * JSON tree registry: both '/' and '.' map into nested JSON. The parent path + .json is the file;
- * the last slash-separated field (dot-separated) is the object path inside that file.
- * Example: foo/bar/cat.dog.k -> file <root>/foo/bar.json, { "cat": { "dog": { "k": "..." } } }.
- *
- * Root may be a directory (tree of .json files) or a single .json file (its stem is the top name).
+ * In-memory JSON tree: '/' and '.' both separate object path segments (see reg::splitUnifiedRegistryPath).
+ * Internal leaf keys use canonical '/' form. No file I/O; callers map this document to files if needed.
  */
 class JsonRegistry : public AbstractRegistry {
   public:
-    explicit JsonRegistry(std::string root_path);
+    JsonRegistry() = default;
 
     bool load() override;
     bool save() const override;
@@ -32,21 +31,15 @@ class JsonRegistry : public AbstractRegistry {
 
     std::map<std::string, std::string> snapshotStrings() const override;
 
+    const boost::json::value& document() const { return m_doc; }
+    boost::json::value& document() { return m_doc; }
+
   private:
     void ensureLoaded() const;
+    void rebuildFlatKeys();
+    static std::string normalizeKey(const std::string& key);
 
-    bool loadFromDisk();
-    bool writeAllFiles() const;
-
-    void syncJsonFile(const std::string& jsonFileRel);
-    void collectKeysForJsonFile(const std::string& jsonFileRel,
-                                std::map<std::vector<std::string>, std::string>& out) const;
-
-    std::string fileAbsPath(const std::string& jsonFileRel) const;
-
-    std::string m_rootDir;
-    /** If non-empty, only this file (relative name) under m_rootDir is used. */
-    std::string m_singleJsonFile;
+    boost::json::value m_doc{boost::json::object{}};
 };
 
 } // namespace os

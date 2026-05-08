@@ -72,6 +72,29 @@ bool resolveDualPath(const std::string& key, DualPathResolution& out) {
     return true;
 }
 
+std::vector<std::string> splitUnifiedRegistryPath(const std::string& key) {
+    std::vector<std::string> out;
+    std::string cur;
+    cur.reserve(key.size());
+    for (unsigned char uch : key) {
+        char c = static_cast<char>(uch);
+        if (c == '/' || c == '.') {
+            if (!cur.empty()) {
+                out.push_back(cur);
+                cur.clear();
+            }
+        } else
+            cur += c;
+    }
+    if (!cur.empty())
+        out.push_back(cur);
+    return out;
+}
+
+std::string canonicalUnifiedRegistryKey(const std::string& key) {
+    return joinSlash(splitUnifiedRegistryPath(key));
+}
+
 bool resolveJsonTreePath(const std::string& key, JsonTreePathResolution& out) {
     out = {};
     if (key.empty())
